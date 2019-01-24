@@ -1,6 +1,6 @@
 <?php
 
-namespace Package\OfflineAgency\MongoAutoSync\Providers;
+namespace OfflineAgency\MongoAutoSync\Providers;
 
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
 

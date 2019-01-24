@@ -1,6 +1,6 @@
 <?php
 
-namespace OfflineAgency\MongoAutoSync\Models\Auth\Def;
+namespace OfflineAgency\MongoAutoSync\Http\Models;
 
 use Illuminate\Database\Eloquent\Model;
 

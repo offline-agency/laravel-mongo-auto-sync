@@ -1,6 +1,6 @@
 <?php
 
-namespace OfflineAgency\MongoAutoSync\Models\Auth\Def;
+namespace OfflineAgency\MongoAutoSync\Http\Models;
 
 use Jenssegers\Mongodb\Eloquent\Model as Eloquent;
 use OfflineAgency\MongoAutoSync\Traits\ModelAdditionalMethod;
