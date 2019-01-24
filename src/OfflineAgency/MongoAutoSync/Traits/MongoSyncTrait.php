@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Traits;
+namespace OfflineAgency\MongoAutoSync\Traits;
 
 use DateTime;
 use Illuminate\Http\Request;
 use MongoDB\BSON\UTCDateTime;
 
-trait OaMongoSyncTrait
+trait MongoSyncTrait
 {
 
 

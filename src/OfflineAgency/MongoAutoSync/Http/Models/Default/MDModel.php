@@ -1,16 +1,16 @@
 <?php
 
-namespace App\Models\Auth\Def;
+namespace OfflineAgency\MongoAutoSync\Models\Auth\Def;
 
-use App\Traits\OaModelAdditionalMethod;
-use App\Traits\OaMongoSyncTrait;
 use Jenssegers\Mongodb\Eloquent\Model as Eloquent;
+use OfflineAgency\MongoAutoSync\Traits\ModelAdditionalMethod;
+use OfflineAgency\MongoAutoSync\Traits\MongoSyncTrait;
 
 class MDModel extends Eloquent
 {
     protected $connection = 'mongodb';
     protected $dates = ['deleted_at', 'created_at', 'updated_at'];
-    use OaMongoSyncTrait, OaModelAdditionalMethod;
+    use MongoSyncTrait, ModelAdditionalMethod;
 
     /**
      * Overload model __construct.

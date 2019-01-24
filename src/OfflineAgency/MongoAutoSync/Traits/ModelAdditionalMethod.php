@@ -1,16 +1,16 @@
 <?php
 
-namespace App\Traits;
+namespace OfflineAgency\MongoAutoSync\Traits;
 
 
 use Exception;
-use Extensions\CustomCollection;
+use Extensions\MongoCollection;
 
-trait OaModelAdditionalMethod {
+trait ModelAdditionalMethod {
 
 
 	public function newCollection( array $models = Array() ) {
-		return new CustomCollection( $models );
+		return new MongoCollection( $models );
 	}
 
 	/**

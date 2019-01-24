@@ -1,9 +1,61 @@
 <?php
 
-use App\Models\Municipality;
-use App\Models\Province;
+
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Jenssegers\Mongodb\Eloquent\Model;
+
+if (!function_exists('getTranslatedContent')) {
+
+	/**
+	 * @param array $mlCollection
+	 *
+	 * @return string
+	 */
+	function getTranslatedContent($mlCollection)
+	{
+		//Get current Lang
+		$cl = Config::get('app.locale');
+		//dd($mlCollection);
+		if (is_array($mlCollection) && (array_key_exists('en_EN', $mlCollection) || array_key_exists('it_IT', $mlCollection) || !is_null($mlCollection || !isset($destination)))) {
+			return $mlCollection[$cl];
+		} else {
+			return "";
+		}
+	}
+}
+
+if (!function_exists('cl')) {
+
+	/**
+	 *
+	 * @return string current Lang
+	 */
+	function cl()
+	{
+		//Get current Lang
+		return Config::get('app.locale');
+	}
+}
+
+if (!function_exists('ml')) {
+	//save a localized field
+	/**
+	 * @param array $destination
+	 * @param string $input
+	 *
+	 * @return array ready to be saved
+	 */
+	function ml($destination, $input)
+	{
+		if (is_null($destination)) {
+			$destination = array();
+
+		}
+
+		return array_merge($destination, array(cl() => $input));
+	}
+}
 
 if (!function_exists('isML')) {
     function isML($value)
