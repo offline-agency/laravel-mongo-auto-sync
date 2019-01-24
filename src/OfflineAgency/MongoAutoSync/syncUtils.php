@@ -16,7 +16,7 @@ if (!function_exists('getTranslatedContent')) {
 	{
 		//Get current Lang
 		$cl = Config::get('app.locale');
-		//dd($mlCollection);
+
 		if (is_array($mlCollection) && (array_key_exists('en_EN', $mlCollection) || array_key_exists('it_IT', $mlCollection) || !is_null($mlCollection || !isset($destination)))) {
 			return $mlCollection[$cl];
 		} else {
