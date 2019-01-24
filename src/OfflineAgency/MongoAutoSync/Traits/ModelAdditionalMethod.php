@@ -4,7 +4,7 @@ namespace OfflineAgency\MongoAutoSync\Traits;
 
 
 use Exception;
-use Extensions\MongoCollection;
+use OfflineAgency\MongoAutoSync\Extensions\MongoCollection;
 
 trait ModelAdditionalMethod {
 
