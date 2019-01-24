@@ -45,7 +45,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "OfflineAgency\\MongoAutoSync\\ServiceProvider"
+                "OfflineAgency\\MongoAutoSync\\Providers\\ServiceProvider"
             ]
         }
     }
