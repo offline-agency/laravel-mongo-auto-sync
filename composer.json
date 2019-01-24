@@ -1,0 +1,52 @@
+{
+    "name": "offline-agency/laravel-mongo-auto-sync",
+    "description": "A package that allow to sync changes between collections on MongoDB project.",
+    "type": "library",
+    "keywords": ["laravel","database","mongodb","eloquent"],
+    "require": {
+        "php": ">=7.0",
+        "ext-json": "*",
+        "ext-mongodb": "*",
+        "evercode1/trait-maker": "^1.0",
+        "jenssegers/mongodb": "^3.3",
+        "laravel/framework": "5.7.*",
+        "laravel/tinker": "~1.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^7.5",
+        "orchestra/testbench" : "~3.7.0",
+        "mockery/mockery": "^1.0"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Offline Agency",
+            "email": "info@offlineagency.it"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Package\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit"
+    },
+    "config": {
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "optimize-autoloader": true
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Package\\Providers\\ServiceProvider"
+            ]
+        }
+    }
+}
