@@ -1,6 +1,6 @@
 {
     "name": "offline-agency/laravel-mongo-auto-sync",
-    "description": "A package that allow to sync changes between collections on MongoDB project.",
+    "description": "A package that allows to sync changes between collections on MongoDB project.",
     "type": "library",
     "keywords": ["laravel","database","mongodb","eloquent"],
     "require": {
@@ -27,7 +27,10 @@
     "autoload": {
         "psr-4": {
             "OfflineAgency\\MongoAutoSync\\": "src/"
-        }
+        },
+        "files": [
+            "src/syncUtils.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
