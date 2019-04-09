@@ -187,4 +187,53 @@ class MongoCollection extends Collection
 			return $col->autoincrement_id == $aid;
 		})->first();
 	}
+  /**
+     * @param $id
+     * @return bool
+     */
+    public function hasPermission($id)
+    {
+        if (is_null($id)) {
+            return false;
+        }
+
+        $out = $this->filter(function ($col) use ($id) {
+            if ($col->ref_id == $id) {
+                return true;
+            }
+        });
+
+
+        if ($out->count() > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * @param $name
+     * @return bool
+     */
+    public function checkPermission($name)
+    {
+        if (is_null($name)) {
+            return false;
+        }
+
+        $out = $this->filter(function ($col) use ($name) {
+            if ($col->name == $name) {
+                return true;
+            }
+        });
+
+
+        if ($out->count() > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+
 }
