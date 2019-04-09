@@ -54,8 +54,22 @@ class MDModel extends Eloquent
 		return $this->id;
 	}
 
+	/**
+	 * @return string
+	 */
 	public function getCollection(){
 		return $this->collection;
+	}
+
+	/**
+	 * https://github.com/jenssegers/laravel-mongodb/issues/1493
+	 *
+	 * @param int $size
+	 *
+	 * @return mixed
+	 */
+	public function getRandom($size = 3){
+		return parent::raw(function($collection) use ($size){ return $collection->aggregate([ ['$sample' => ['size' => $size]] ]); });
 	}
 
 }
