@@ -63,53 +63,12 @@ class MDModel extends Eloquent
 	}
 
 	/**
-	 * https://github.com/jenssegers/laravel-mongodb/issues/1493
 	 *
 	 * @param int $size
 	 *
 	 * @return mixed
 	 */
 	public function getRandom($size = 3){
-		$now = new DateTime('now');
-		$tags = parent::raw(function($collection) use ($size){
-			return $collection->aggregate([ ['$sample' => ['size' => $size]] ]);
-		});
-		return $this->fixBson($tags);
-	}
-
-	/**
-	 * @param $item
-	 *
-	 * @return array
-	 */
-	function formatTypeBson($item) {
-
-		if (isset($item) && gettype($item) == "object" && (get_class($item) == "MongoDB\Model\BSONArray" || get_class($item) == "MongoDB\Model\BSONDocument")) {
-
-			return (array)$item->bsonSerialize();
-
-		} else if (isset($item) && gettype($item) == "object" && get_class($item) == "MongoDB\BSON\UTCDateTime") {
-
-			return $item->toDateTime();
-		}
-
-		return $item;
-	}
-
-	/**
-	 * @param $tags
-	 *
-	 * @return mixed
-	 */
-	function fixBson($tags){
-		foreach ($tags as $item) {
-
-			$attributes = [];
-			foreach ($item->attributes as $key => $attribute){
-				$attributes[$key] = $this->formatTypeBson($attribute);
-			}
-			$item->attributes = $attributes;
-		}
-		return $tags;
+		return $this->all()->random($size);
 	}
 }
