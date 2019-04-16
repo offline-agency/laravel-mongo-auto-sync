@@ -211,6 +211,30 @@ class MongoCollection extends Collection
         }
     }
 
+	/**
+	 * @param $name
+	 * @return bool
+	 */
+	public function hasRole($name)
+	{
+		if (is_null($name)) {
+			return false;
+		}
+
+		$out = $this->filter(function ($col) use ($name) {
+			if ($col->name == $name) {
+				return true;
+			}
+		});
+
+
+		if ($out->count() > 0) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
     /**
      * @param $name
      * @return bool
