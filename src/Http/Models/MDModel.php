@@ -9,66 +9,68 @@ use OfflineAgency\MongoAutoSync\Traits\MongoSyncTrait;
 
 class MDModel extends Eloquent
 {
-	protected $connection = 'mongodb';
-	protected $dates = ['deleted_at', 'created_at', 'updated_at'];
-	use MongoSyncTrait, ModelAdditionalMethod;
+    protected $connection = 'mongodb';
+    protected $dates = ['deleted_at', 'created_at', 'updated_at'];
+    use MongoSyncTrait, ModelAdditionalMethod;
 
-	/**
-	 * Overload model __construct.
-	 *
-	 *  (Optional)
-	 */
+    /**
+     * Overload model __construct.
+     *
+     *  (Optional)
+     */
 
 
-	public function __construct(array $attributes = [])
-	{
+    public function __construct(array $attributes = [])
+    {
+        parent::__construct($attributes);
+    }
 
-		parent::__construct($attributes);
-	}
+    /**
+     * Overload model save.
+     *
+     * $name_equals string Assert User's name (Optional)
+     */
+    public function save(array $options = array())
+    {
 
-	/**
-	 * Overload model save.
-	 *
-	 * $name_equals string Assert User's name (Optional)
-	 */
-	public function save(array $options = array())
-	{
+        // Do great things...
 
-		// Do great things...
+        parent::save($options); // Calls Default Save
+    }
 
-		parent::save($options); // Calls Default Save
-	}
+    public function delete()
+    {
+        $options = array();
+        parent::save($options); // Calls Default Save
+        // Do great things...
 
-	public function delete()
-	{
-		$options = array();
-		parent::save($options); // Calls Default Save
-		// Do great things...
+        parent::delete(); // Calls Default Save
+    }
 
-		parent::delete(); // Calls Default Save
-	}
+    /**
+     * @return mixed
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
 
-	/**
-	 * @return mixed
-	 */
-	public function getId(){
-		return $this->id;
-	}
+    /**
+     * @return string
+     */
+    public function getCollection()
+    {
+        return $this->collection;
+    }
 
-	/**
-	 * @return string
-	 */
-	public function getCollection(){
-		return $this->collection;
-	}
-
-	/**
-	 *
-	 * @param int $size
-	 *
-	 * @return mixed
-	 */
-	public function getRandom($size = 3){
-		return $this->all()->random($size);
-	}
+    /**
+     *
+     * @param int $size
+     *
+     * @return mixed
+     */
+    public function getRandom($size = 3)
+    {
+        return $this->all()->random($size);
+    }
 }
