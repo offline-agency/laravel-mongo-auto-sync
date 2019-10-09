@@ -7,54 +7,53 @@ use Jenssegers\Mongodb\Eloquent\Model;
 
 if (!function_exists('getTranslatedContent')) {
 
-	/**
-	 * @param array $mlCollection
-	 *
-	 * @return string
-	 */
-	function getTranslatedContent($mlCollection)
-	{
-		//Get current Lang
-		$cl = Config::get('app.locale');
+    /**
+     * @param array $mlCollection
+     *
+     * @return string
+     */
+    function getTranslatedContent($mlCollection)
+    {
+        //Get current Lang
+        $cl = Config::get('app.locale');
 
-		if (is_array($mlCollection) && (array_key_exists('en_EN', $mlCollection) || array_key_exists('it_IT', $mlCollection) || !is_null($mlCollection || !isset($destination)))) {
-			return $mlCollection[$cl];
-		} else {
-			return "";
-		}
-	}
+        if (is_array($mlCollection) && (array_key_exists('en_EN', $mlCollection) || array_key_exists('it_IT', $mlCollection) || !is_null($mlCollection || !isset($destination)))) {
+            return $mlCollection[$cl];
+        } else {
+            return "";
+        }
+    }
 }
 
 if (!function_exists('cl')) {
 
-	/**
-	 *
-	 * @return string current Lang
-	 */
-	function cl()
-	{
-		//Get current Lang
-		return Config::get('app.locale');
-	}
+    /**
+     *
+     * @return string current Lang
+     */
+    function cl()
+    {
+        //Get current Lang
+        return Config::get('app.locale');
+    }
 }
 
 if (!function_exists('ml')) {
-	//save a localized field
-	/**
-	 * @param array $destination
-	 * @param string $input
-	 *
-	 * @return array ready to be saved
-	 */
-	function ml($destination, $input)
-	{
-		if (is_null($destination)) {
-			$destination = array();
+    //save a localized field
+    /**
+     * @param array $destination
+     * @param string $input
+     *
+     * @return array ready to be saved
+     */
+    function ml($destination, $input)
+    {
+        if (is_null($destination)) {
+            $destination = array();
+        }
 
-		}
-
-		return array_merge($destination, array(cl() => $input));
-	}
+        return array_merge($destination, array(cl() => $input));
+    }
 }
 
 if (!function_exists('isML')) {
@@ -193,7 +192,6 @@ if (!function_exists('getPrimaryRequest')) {
      */
     function getPrimaryRequest($request)
     {
-
         if (!is_null($request)) {
             $arr = [];
             $categorylistdataJson = $request;
@@ -230,7 +228,6 @@ if (!function_exists('getAID')) {
             $arr['autoincrement_id'] = $q->autoincrement_id + 1;
         }
         return $arr['autoincrement_id'];
-
     }
 }
 
@@ -259,7 +256,6 @@ if (!function_exists('processList')) {
 
 
 if (!function_exists('processInvoiceItemList')) {
-
     function processInvoiceItemList($request, $type)
     {
         // create obj for every product
@@ -315,7 +311,6 @@ if (!function_exists('processInvoiceItemList')) {
 
 
 if (!function_exists('isRequestReadyToBeProcessed')) {
-
     function isRequestReadyToBeProcessed(Request $request)
     {
         $requests = $request->all();
@@ -332,7 +327,6 @@ if (!function_exists('isRequestReadyToBeProcessed')) {
 }
 
 if (!function_exists('removeSubCollectionInput')) {
-
     function removeSubCollectionInput(Request $request)
     {
         return $request;
@@ -347,9 +341,8 @@ if (!function_exists('prepareRequest')) {
      *
      * @return Request
      */
-    function prepareRequest(Request $request, Array $additionalData)
+    function prepareRequest(Request $request, array $additionalData)
     {
-
         $request = $request->merge($additionalData);
         $additionalData = removeSubCollectionInput($request);
         $request = new Request;
@@ -420,8 +413,6 @@ if (!function_exists('getAddress')) {
      */
     function getAddress(Request $request, $i)
     {
-
-
         $address = new stdClass();
         $address->officeName = $request->officeName[$i];
 
@@ -459,7 +450,6 @@ if (!function_exists('getShippingAddress')) {
     {
         return getAddress($request, 1);
     }
-
 }
 if (!function_exists('getAdditionalDataForCompany')) {
     /**
@@ -509,15 +499,11 @@ if (!function_exists('getAdditionalDataForCompany')) {
             $arr['additionaladdress-municipalitywithname-1'] = $request->municipalitywithname[1];
             $arr['additionaladdress-provincewithname-1'] = $request->provincewithname[1];
             $aa_counter++;
-
-        } else if ($sizeAddress == 2 && !$shipping_exist) {
-
+        } elseif ($sizeAddress == 2 && !$shipping_exist) {
             $arr_AA[$aa_counter] = getAddress($request, $aa_counter);
             $arr['additionaladdress-municipalitywithname-' . $aa_counter] = $request->municipalitywithname[1];
             $arr['additionaladdress-provincewithname-' . $aa_counter] = $request->provincewithname[1];
-
-
-        } else if ($sizeAddress >= 2 && $shipping_exist) {
+        } elseif ($sizeAddress >= 2 && $shipping_exist) {
             $arr_SA[0] = $shippingAddress;
             $arr['shippingaddress-municipalitywithname'] = $request->municipalitywithname[1];
             $arr['shippingaddress-provincewithname'] = $request->provincewithname[1];
@@ -536,16 +522,13 @@ if (!function_exists('getAdditionalDataForCompany')) {
                 $aa_counter++;
             }
             //Add BillingAddress as ShippingAddress
-
-
-        } else if ($sizeAddress >= 2 && !$shipping_exist) {
+        } elseif ($sizeAddress >= 2 && !$shipping_exist) {
             for ($i = 1; $i < $sizeAddress; $i++) {
                 $arr_AA[$aa_counter] = getAddress($request, $i);
                 $arr['additionaladdress-municipalitywithname-' . $aa_counter] = $request->municipalitywithname[$i];
                 $arr['additionaladdress-provincewithname-' . $aa_counter] = $request->provincewithname[$i];
                 $aa_counter++;
             }
-
         } else {//!$shipping_is_null
             // Forse non serve
             for ($i = 2; $i < $sizeAddress; $i++) {
@@ -553,7 +536,6 @@ if (!function_exists('getAdditionalDataForCompany')) {
                 $arr['additionaladdress-municipalitywithname-' . $aa_counter] = $request->municipalitywithname[$i];
                 $arr['additionaladdress-provincewithname-' . $aa_counter] = $request->provincewithname[$i];
                 $aa_counter++;
-
             }
         }
 

@@ -8,9 +8,7 @@ use MongoDB\BSON\UTCDateTime;
 
 trait MongoSyncTrait
 {
-
-
-    public function storeWithSync(Request $request, Array $additionalData = [])
+    public function storeWithSync(Request $request, array $additionalData = [])
     {
         $request = $request->merge($additionalData);
         //$request = prepareRequest($request,$additionalData);
@@ -38,7 +36,7 @@ trait MongoSyncTrait
                         $old_value = $this->$key;
                     }
                     $this->$key = ml($old_value, $request->input($key));
-                } else if ($is_MD) {
+                } elseif ($is_MD) {
                     //  dd( new UTCDateTime(new DateTime($request->input($key))));
                     if ($request->input($key) == "" || $request->input($key) == null) {
                         //dd('if');
@@ -46,10 +44,8 @@ trait MongoSyncTrait
                     } else {
                         $this->$key = new UTCDateTime(new DateTime($request->input($key)));
                     }
-
                 } else {
                     $this->$key = $request->input($key);
-
                 }
             }
         }
@@ -98,13 +94,11 @@ trait MongoSyncTrait
                     //Delete EmbedsMany or EmbedsOne on Target
                     if ($hasTarget) {
                         $this->deleteTargetObj($method, $modelTarget, $methodOnTarget, $is_EO);
-
                     }
                     //Delete EmbedsMany or EmbedsOne on current object
                     if ($is_EM) {
                         $this->$method()->delete();
                     }
-
                 }
 
                 if (!empty($objs)) {
@@ -123,7 +117,6 @@ trait MongoSyncTrait
 
     public function updateRelationWithSync(Request $request, $methodOnTarget, $modelOnTarget)
     {
-
         $embededModel = new $modelOnTarget;
         //Get the item name
         $items = $embededModel->getItems();
@@ -137,22 +130,19 @@ trait MongoSyncTrait
 
             if ($is_ML) {
                 $embededModel->$key = ml(array(), $embededObj->$key);
-            } else if ($is_MD) {
-
+            } elseif ($is_MD) {
                 if ($embededObj->$key == "" || $embededObj->$key == null) {
                     //dd('if');
                     $embededModel->$key = null;
                 } else {
                     $embededModel->$key = new UTCDateTime(new DateTime($embededObj->$key));
                 }
-
             } else {
                 $embededModel->$key = $embededObj->$key;
             }
         }
         $this->$methodOnTarget()->associate($embededModel);
         $this->save();
-
     }
 
     /**
@@ -184,11 +174,10 @@ trait MongoSyncTrait
 
                 if ($is_ML) {
                     $embedObj->$EOkey = ml(array(), $obj->$EOkey);
-                } else if ($EOkey == "updated_at" || $EOkey == "created_at") {
+                } elseif ($EOkey == "updated_at" || $EOkey == "created_at") {
                     $embedObj->$EOkey = now();
-                } else if ($is_MD) {
-
-                    if ( $obj->$EOkey == "" ||  $obj->$EOkey == null) {
+                } elseif ($is_MD) {
+                    if ($obj->$EOkey == "" ||  $obj->$EOkey == null) {
                         //dd('if');
                         $embedObj->$EOkey = null;
                     } else {
@@ -244,7 +233,7 @@ trait MongoSyncTrait
      * @param $id
      * @param Request $request
      */
-    public function updateWithSync(Request $request, Array $additionalData = [])
+    public function updateWithSync(Request $request, array $additionalData = [])
     {
         $request = $request->merge($additionalData);
         $this->storeEditAllItems($request, "update");
@@ -318,16 +307,12 @@ trait MongoSyncTrait
                 if ($is_EO || $is_EM) {//EmbedsOne Create - EmbedsMany Create
                     //Delete EmbedsMany or EmbedsOne on Target
                     $this->deleteTargetObj($method, $modelTarget, $methodOnTarget, $is_EO);
-
-                } else if ($is_HM) {//HasMany
-
-                } else if ($is_HO) {//HasOne Create
-
+                } elseif ($is_HM) {//HasMany
+                } elseif ($is_HO) {//HasOne Create
                 }
             }
         }
         //Delete current object
         $this->delete();
     }
-
 }
