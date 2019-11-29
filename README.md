@@ -7,7 +7,7 @@ composer require offlineagency/laravel-mongo-auto-sync
 ```
 
 ## Documentation
-You can find the documentation [here]('https://docs.offlineagency.com/laravel-mongo-auto-sync/') 
+You can find the documentation [here](https://docs.offlineagency.com/laravel-mongo-auto-sync/)
 
 ## Testing
 Run the tests with:
@@ -16,7 +16,7 @@ composer test
 ```
 
 ## Contributing
-Please see [CONTRIBUTING]('https://github.com/offline-agency/laravel-mongo-auto-sync/blob/master/CONTRIBUTING.md') for details.
+Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
 
 ## Security
 If you discover any security-related issues, please email [support@offlineagency.com]('https://mail.google.com/mail/u/0/?view=cm&fs=1&tf=1&source=mailto&to=support@offlineagency.com') instead of using the issue tracker.
