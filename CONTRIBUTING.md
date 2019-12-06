@@ -1,7 +1,7 @@
-#Awesome! How do I contribute?
+# Awesome! How do I contribute?
 Contributions are welcome, and are accepted via pull requests. Please review these guidelines before submitting any pull requests.
 
-##Guidelines
+## Guidelines
 - Please follow the [PSR-2 Coding Standard]('https://www.php-fig.org/psr/psr-2/') and [PHP-FIG Naming Conventions]('https://www.php-fig.org/bylaws/psr-naming-conventions/').
 
 - Ensure that the current tests pass, and if you've added something new, add the tests where relevant.
