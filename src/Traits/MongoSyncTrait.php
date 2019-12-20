@@ -187,7 +187,12 @@ trait MongoSyncTrait
 
 //                    $embedObj->$EOkey = new UTCDateTime(new DateTime($obj->$EOkey));
                 } else {
+                    if (!property_exists($obj, $EOkey)) {
+                        $msg = ('Error - ' . $EOkey . ' attribute not found on obj ' . json_encode($obj));
+                        throw (new \Exception($msg) );
+                    }
                     $embedObj->$EOkey = $obj->$EOkey;
+
                 }
             }
         }
@@ -214,7 +219,14 @@ trait MongoSyncTrait
             //sync Permission to Permissiongroup
             //Init the Target Model
             $target_model = new $modelTarget;
+
+            if (!property_exists($obj, 'ref_id')) {
+                $msg = ('Error - ref_id attribute not found on obj ' . json_encode($obj));
+                throw (new \Exception($msg) );
+            }
+
             $target_id = $obj->ref_id;
+
             $ref_id = $this->getId();
 
             $requestToBeSync = getRequestToBeSync($ref_id, $modelOnTarget, $request, $methodOnTarget);
