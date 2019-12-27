@@ -192,7 +192,6 @@ trait MongoSyncTrait
                         throw (new \Exception($msg) );
                     }
                     $embedObj->$EOkey = $obj->$EOkey;
-
                 }
             }
         }
