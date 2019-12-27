@@ -7,7 +7,6 @@
         "php": ">=7.0",
         "ext-json": "*",
         "ext-mongodb": "*",
-        "evercode1/trait-maker": "^1.0",
         "jenssegers/mongodb": "^3.3"
     },
     "require-dev": {
