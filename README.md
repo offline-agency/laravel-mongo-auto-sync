@@ -1,4 +1,10 @@
 # Laravel Mongo Auto Sync
+[![Latest Stable Version](https://poser.pugx.org/offline-agency/laravel-mongo-auto-sync/v/stable)](https://packagist.org/packages/offline-agency/laravel-mongo-auto-sync)
+[![MIT Licensed](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
+[![Build Status](https://travis-ci.com/offline-agency/laravel-mongo-auto-sync.svg?branch=master)](https://travis-ci.org/offline-agency/laravel-mongo-auto-sync)
+[![Quality Score](https://img.shields.io/scrutinizer/g/offline-agency/laravel-mongo-auto-sync.svg?style=flat-square)](https://scrutinizer-ci.com/g/offline-agency/laravel-mongo-auto-sync)
+[![StyleCI](https://github.styleci.io/repos/167277388/shield)](https://styleci.io/repos/167277388)
+[![Total Downloads](https://img.shields.io/packagist/dt/offline-agency/laravel-mongo-auto-sync.svg?style=flat-square)](https://packagist.org/packages/offline-agency/laravel-mongo-auto-sync)
 
 ## Installation
 
@@ -16,7 +22,7 @@ composer test
 ```
 
 ## Contributing
-Please see [CONTRIBUTING](https://github.com/offline-agency/laravel-mongo-auto-sync/blob/master/CONTRIBUTING.md) for details.
+Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
 
 ## Security
 If you discover any security-related issues, please email support@offlineagency.com instead of using the issue tracker.
@@ -31,4 +37,4 @@ Offline Agency is a web design agency based in Padua, Italy. You'll find an over
 
 
 ## License
-The MIT License (MIT). Please see [License File](https://github.com/offline-agency/laravel-mongo-auto-sync/blob/master/LICENSE.md) for more information.
+The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
