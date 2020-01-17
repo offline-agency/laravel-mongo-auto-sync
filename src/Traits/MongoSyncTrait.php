@@ -16,6 +16,9 @@ trait MongoSyncTrait
         $this->storeEditAllItems($request, "add");
         $this->processAllRelationships($request, "add", "", "");
 
+        //Dispatch the creation event
+        $this->fireModelEvent('storeWithSync');
+
         return $this;
     }
 
@@ -249,6 +252,11 @@ trait MongoSyncTrait
         $request = $request->merge($additionalData);
         $this->storeEditAllItems($request, "update");
         $this->processAllRelationships($request, "update", "", "");
+
+        //Dispatch the update event
+        $this->fireModelEvent('updateWithSync');
+
+        return $this;
     }
 
     /**
@@ -325,5 +333,10 @@ trait MongoSyncTrait
         }
         //Delete current object
         $this->delete();
+
+        //Dispatch the destroy event
+        $this->fireModelEvent('destroyWithSync');
+
+        return $this;
     }
 }
