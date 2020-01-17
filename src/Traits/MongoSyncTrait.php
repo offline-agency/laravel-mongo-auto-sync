@@ -3,11 +3,18 @@
 namespace OfflineAgency\MongoAutoSync\Traits;
 
 use DateTime;
+use Exception;
 use Illuminate\Http\Request;
 use MongoDB\BSON\UTCDateTime;
 
 trait MongoSyncTrait
 {
+    /**
+     * @param Request $request
+     * @param array $additionalData
+     * @return $this
+     * @throws Exception
+     */
     public function storeWithSync(Request $request, array $additionalData = [])
     {
         $request = $request->merge($additionalData);
@@ -22,6 +29,11 @@ trait MongoSyncTrait
         return $this;
     }
 
+    /**
+     * @param $request
+     * @param $event
+     * @throws Exception
+     */
     public function storeEditAllItems($request, $event)
     {
         //Get the item name
@@ -55,6 +67,13 @@ trait MongoSyncTrait
         $this->save();
     }
 
+    /**
+     * @param Request $request
+     * @param $event
+     * @param $parent
+     * @param $counter
+     * @throws Exception
+     */
     public function processAllRelationships(Request $request, $event, $parent, $counter)
     {
         //Get the relation info
@@ -118,6 +137,12 @@ trait MongoSyncTrait
         }
     }
 
+    /**
+     * @param Request $request
+     * @param $methodOnTarget
+     * @param $modelOnTarget
+     * @throws Exception
+     */
     public function updateRelationWithSync(Request $request, $methodOnTarget, $modelOnTarget)
     {
         $embededModel = new $modelOnTarget;
@@ -162,6 +187,7 @@ trait MongoSyncTrait
      * @param $is_EO
      * @param $is_EM
      * @param $i
+     * @throws Exception
      */
     public function processOneEmbededRelationship(Request $request, $obj, $type, $model, $method, $modelTarget, $methodOnTarget, $modelOnTarget, $event, $hasTarget, $is_EO, $is_EM, $i)
     {
@@ -186,13 +212,10 @@ trait MongoSyncTrait
                     } else {
                         $embedObj->$EOkey = new UTCDateTime(new DateTime($obj->$EOkey));
                     }
-
-
-//                    $embedObj->$EOkey = new UTCDateTime(new DateTime($obj->$EOkey));
                 } else {
                     if (!property_exists($obj, $EOkey)) {
                         $msg = ('Error - ' . $EOkey . ' attribute not found on obj ' . json_encode($obj));
-                        throw (new \Exception($msg) );
+                          (new Exception($msg) );
                     }
                     $embedObj->$EOkey = $obj->$EOkey;
                 }
@@ -243,9 +266,11 @@ trait MongoSyncTrait
         }
     }
 
+
     /**
-     * @param $id
      * @param Request $request
+     * @param array $additionalData
+     * @return $this
      */
     public function updateWithSync(Request $request, array $additionalData = [])
     {
@@ -261,7 +286,6 @@ trait MongoSyncTrait
 
     /**
      * @param $method
-     * @param $typeTarget
      * @param $modelTarget
      * @param $methodOnTarget
      * @param $id
@@ -281,6 +305,11 @@ trait MongoSyncTrait
         }
     }
 
+    /**
+     * @param $target_id
+     * @param $modelTarget
+     * @param $methodOnTarget
+     */
     public function handleSubTarget($target_id, $modelTarget, $methodOnTarget)
     {
         $id = $this->getId();
@@ -297,10 +326,11 @@ trait MongoSyncTrait
         }
     }
 
-
+    /**
+     * @return $this
+     */
     public function destroyWithSync()
     {
-
         //Get the relation info
         $relations = $this->getMongoRelation();
 
@@ -315,7 +345,6 @@ trait MongoSyncTrait
                 $modelTarget = $relation['modelTarget'];
                 $methodOnTarget = $relation['methodOnTarget'];
                 $modelOnTarget = $relation['modelOnTarget'];
-
 
                 $is_EO = is_EO($type);
                 $is_EM = is_EM($type);
