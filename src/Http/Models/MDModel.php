@@ -1,8 +1,6 @@
 <?php
-
 namespace OfflineAgency\MongoAutoSync\Http\Models;
 
-use DateTime;
 use Jenssegers\Mongodb\Eloquent\Model as Eloquent;
 use OfflineAgency\MongoAutoSync\Traits\ModelAdditionalMethod;
 use OfflineAgency\MongoAutoSync\Traits\MongoSyncTrait;
@@ -10,7 +8,12 @@ use OfflineAgency\MongoAutoSync\Traits\MongoSyncTrait;
 class MDModel extends Eloquent
 {
     protected $connection = 'mongodb';
-    protected $dates = ['deleted_at', 'created_at', 'updated_at'];
+    protected $dates = [
+        'deleted_at',
+        'created_at',
+        'updated_at'
+    ];
+
     use MongoSyncTrait, ModelAdditionalMethod;
 
     /**
