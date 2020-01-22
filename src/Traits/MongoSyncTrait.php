@@ -214,7 +214,7 @@ trait MongoSyncTrait
                 } else {
                     if (!property_exists($obj, $EOkey)) {
                         $msg = ('Error - ' . $EOkey . ' attribute not found on obj ' . json_encode($obj));
-                          (new Exception($msg) );
+                        (new Exception($msg) );
                     }
                     $embedObj->$EOkey = $obj->$EOkey;
                 }
