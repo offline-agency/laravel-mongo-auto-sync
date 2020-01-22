@@ -160,7 +160,6 @@ trait MongoSyncTrait
                 $embededModel->$key = ml(array(), $embededObj->$key);
             } elseif ($is_MD) {
                 if ($embededObj->$key == "" || $embededObj->$key == null) {
-                    //dd('if');
                     $embededModel->$key = null;
                 } else {
                     $embededModel->$key = new UTCDateTime(new DateTime($embededObj->$key));
@@ -338,8 +337,6 @@ trait MongoSyncTrait
         foreach ($relations as $method => $relation) {
             //Get Relation Save Mode
             $type = $relation['type'];
-            $mode = $relation['mode'];
-            $model = $relation['model'];
             $hasTarget = hasTarget($relation);
             if ($hasTarget) {
                 $modelTarget = $relation['modelTarget'];
@@ -355,9 +352,12 @@ trait MongoSyncTrait
                 if ($is_EO || $is_EM) {//EmbedsOne Create - EmbedsMany Create
                     //Delete EmbedsMany or EmbedsOne on Target
                     $this->deleteTargetObj($method, $modelTarget, $methodOnTarget, $is_EO);
-                } elseif ($is_HM) {//HasMany
-                } elseif ($is_HO) {//HasOne Create
                 }
+
+                //TODO: Need to be implemented
+               /* elseif ($is_HM) {//HasMany
+                } elseif ($is_HO) {//HasOne Create
+                }*/
             }
         }
         //Delete current object

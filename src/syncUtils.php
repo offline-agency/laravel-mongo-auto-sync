@@ -202,8 +202,7 @@ if (!function_exists('getPrimaryRequest')) {
                 //extract first array  and create the primary category
                 $primarycategory = ($categorylistdataArr[0]);
                 $arr[] = $primarycategory;
-                $out = json_encode($arr);
-                return $out;
+                return json_encode($arr);
             }
         } else {
             return "";
@@ -213,21 +212,15 @@ if (!function_exists('getPrimaryRequest')) {
 
 if (!function_exists('getAID')) {
     /**
-     * @param String $request
-     *
+     * @param Model $model
      * @return String
      */
     function getAID(Model $model)
     {
         //Get Last Obj
-        $q = $model->orderBy('created_at', 'desc')->first();
-        //check if Obj exist and increments numeric id
-        if ($q == null) {
-            $arr['autoincrement_id'] = 1;
-        } else {
-            $arr['autoincrement_id'] = $q->autoincrement_id + 1;
-        }
-        return $arr['autoincrement_id'];
+        $obj = $model->orderBy('created_at', 'desc')->first();
+
+        return is_null($obj) ? 1 : $obj->autoincrement_id + 1;
     }
 }
 
@@ -242,7 +235,7 @@ if (!function_exists('processList')) {
         $final = [];
         for ($i = 0; $i < count($array); $i++) {
             $obj = [];
-            if ($array[$i] != null) {
+            if ($array[$i] !== null) {
                 $obj = ['label' => $array[$i], 'key' => $i];
                 $final[] = $obj;
             } else {
@@ -339,7 +332,7 @@ if (!function_exists('getCounterForRelationships')) {
      */
     function getCounterForRelationships($method, $is_EO, $is_EM, $i)
     {
-        if ($method == "" || ($method !== "" && $is_EO) || ($method == "" && $is_EM)) {
+        if ($method === "" || ($method !== "" && $is_EO) || ($method === "" && $is_EM)) {
             return "";
         } else {
             return "-" . $i;

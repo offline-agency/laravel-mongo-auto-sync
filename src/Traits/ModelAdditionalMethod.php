@@ -47,6 +47,7 @@ trait ModelAdditionalMethod
         $meta_description = "";
         $fb_id = env('FB_ID');
         $img_url ="";
+        $meta = [];
 
         switch ($collection_name) {
             case($collection_name == "article"):
@@ -83,32 +84,32 @@ trait ModelAdditionalMethod
                 $img_url          = getFullUrlImgByKey($this->img_evidence_text);
                 break;
 
-            case($collection_name == "course"):
-                $meta_content     = [ 'article' ];
-                $meta_value       = [ 'og:type', ];
-                $meta_key         = [ 'property', ];
-                $title            = getTranslatedContent($this->title) . " | ";
-                $description      = getTranslatedContent($this->shortDescription);
+            CASE ($collection_name == "course"):
+                $meta_content = ['article'];
+                $meta_value = ['og:type',];
+                $meta_key = ['property',];
+                $title = getTranslatedContent($this->title) . " | ";
+                $description = getTranslatedContent($this->shortDescription);
                 $meta_description = getTranslatedContent($this->shortDescription);
-                $img_url          = getFullUrlImgByKey($this->img_evidence_text);
+                $img_url = getFullUrlImgByKey($this->img_evidence_text);
 
                 break;
 
-            case($collection_name == "event"):
-                $meta_content     = ['product'];
-                $meta_value       = [];
-                $meta_key         = [];
-                $title            = getTranslatedContent($this->title) . " | ";
+            CASE ($collection_name == "event"):
+                $meta_content = ['product'];
+                $meta_value = [];
+                $meta_key = [];
+                $title = getTranslatedContent($this->title) . " | ";
                 $meta_description = getTranslatedContent($this->shortDescription);
-                $img_url          = getFullUrlImgByKey($this->img_evidence_text);
+                $img_url = getFullUrlImgByKey($this->img_evidence_text);
 
                 break;
 
-            case($collection_name == "page"):
-                $meta_content     = [];
-                $meta_value       = [];
-                $meta_key         = [];
-                $title            = getTranslatedContent($this->title) . " | ";
+            CASE ($collection_name == "page"):
+                $meta_content = [];
+                $meta_value = [];
+                $meta_key = [];
+                $title = getTranslatedContent($this->title) . " | ";
                 $meta_description = getTranslatedContent($this->description);
                 $img_url = "";
                 break;
