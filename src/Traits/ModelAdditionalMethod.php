@@ -84,7 +84,7 @@ trait ModelAdditionalMethod
                 $img_url          = getFullUrlImgByKey($this->img_evidence_text);
                 break;
 
-            CASE ($collection_name == "course"):
+            case ($collection_name == "course"):
                 $meta_content = ['article'];
                 $meta_value = ['og:type',];
                 $meta_key = ['property',];
@@ -95,7 +95,7 @@ trait ModelAdditionalMethod
 
                 break;
 
-            CASE ($collection_name == "event"):
+            case ($collection_name == "event"):
                 $meta_content = ['product'];
                 $meta_value = [];
                 $meta_key = [];
@@ -105,7 +105,7 @@ trait ModelAdditionalMethod
 
                 break;
 
-            CASE ($collection_name == "page"):
+            case ($collection_name == "page"):
                 $meta_content = [];
                 $meta_value = [];
                 $meta_key = [];
