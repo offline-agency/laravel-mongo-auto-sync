@@ -1,11 +1,10 @@
 <?php
 
-
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Jenssegers\Mongodb\Eloquent\Model;
 
-if (!function_exists('getTranslatedContent')) {
+if (! function_exists('getTranslatedContent')) {
 
     /**
      * @param array $mlCollection
@@ -17,18 +16,17 @@ if (!function_exists('getTranslatedContent')) {
         //Get current Lang
         $cl = Config::get('app.locale');
 
-        if (is_array($mlCollection) && (array_key_exists('en_EN', $mlCollection) || array_key_exists('it_IT', $mlCollection) || !is_null($mlCollection || !isset($destination)))) {
+        if (is_array($mlCollection) && (array_key_exists('en_EN', $mlCollection) || array_key_exists('it_IT', $mlCollection) || ! is_null($mlCollection || ! isset($destination)))) {
             return $mlCollection[$cl];
         } else {
-            return "";
+            return '';
         }
     }
 }
 
-if (!function_exists('cl')) {
+if (! function_exists('cl')) {
 
     /**
-     *
      * @return string current Lang
      */
     function cl()
@@ -38,7 +36,7 @@ if (!function_exists('cl')) {
     }
 }
 
-if (!function_exists('ml')) {
+if (! function_exists('ml')) {
     //save a localized field
     /**
      * @param array $destination
@@ -49,14 +47,14 @@ if (!function_exists('ml')) {
     function ml($destination, $input)
     {
         if (is_null($destination)) {
-            $destination = array();
+            $destination = [];
         }
 
-        return array_merge($destination, array(cl() => $input));
+        return array_merge($destination, [cl() => $input]);
     }
 }
 
-if (!function_exists('isML')) {
+if (! function_exists('isML')) {
     function isML($value)
     {
         if (array_key_exists('is-ml', $value)) {
@@ -67,8 +65,7 @@ if (!function_exists('isML')) {
     }
 }
 
-
-if (!function_exists('isMD')) {
+if (! function_exists('isMD')) {
     function isMD($value)
     {
         if (array_key_exists('is-md', $value)) {
@@ -78,7 +75,7 @@ if (!function_exists('isMD')) {
         }
     }
 }
-if (!function_exists('is_EM')) {
+if (! function_exists('is_EM')) {
     function is_EM($value)
     {
         if ($value === 'EmbedsMany') {
@@ -89,7 +86,7 @@ if (!function_exists('is_EM')) {
     }
 }
 
-if (!function_exists('is_EO')) {
+if (! function_exists('is_EO')) {
     function is_EO($value)
     {
         if ($value === 'EmbedsOne') {
@@ -100,7 +97,7 @@ if (!function_exists('is_EO')) {
     }
 }
 
-if (!function_exists('is_HM')) {
+if (! function_exists('is_HM')) {
     function is_HM($value)
     {
         if ($value === 'HasMany') {
@@ -111,7 +108,7 @@ if (!function_exists('is_HM')) {
     }
 }
 
-if (!function_exists('is_HO')) {
+if (! function_exists('is_HO')) {
     function is_HO($value)
     {
         if ($value === 'HasOne') {
@@ -122,7 +119,7 @@ if (!function_exists('is_HO')) {
     }
 }
 
-if (!function_exists('isEditable')) {
+if (! function_exists('isEditable')) {
     function isEditable($value)
     {
         if (array_key_exists('is-editable', $value)) {
@@ -133,7 +130,7 @@ if (!function_exists('isEditable')) {
     }
 }
 
-if (!function_exists('hasTarget')) {
+if (! function_exists('hasTarget')) {
     function hasTarget($value)
     {
         if (array_key_exists('has-target', $value)) {
@@ -143,7 +140,7 @@ if (!function_exists('hasTarget')) {
         }
     }
 }
-if (!function_exists('isFillable')) {
+if (! function_exists('isFillable')) {
     function isFillable($value, $event)
     {
         if ($event === 'add') {
@@ -154,7 +151,7 @@ if (!function_exists('isFillable')) {
     }
 }
 
-if (!function_exists('getRequestToBeSync')) {
+if (! function_exists('getRequestToBeSync')) {
     /**
      * @param $ref_id
      * @param $modelOnTarget
@@ -169,51 +166,53 @@ if (!function_exists('getRequestToBeSync')) {
         $items = $model->getItems();
 
         foreach ($items as $key => $item) {
-            if ($key == "ref_id") {
+            if ($key == 'ref_id') {
                 $new_req_embeded->$key = $ref_id;
             } else {
                 $new_req_embeded->$key = $request->input($key);
             }
         }
 
-        $new_req = array();
+        $new_req = [];
         $new_req[$methodOnTarget] = json_encode($new_req_embeded);
         $request = new Request;
         $request->merge($new_req);
+
         return $request;
     }
 }
 
-if (!function_exists('getPrimaryRequest')) {
+if (! function_exists('getPrimaryRequest')) {
     /**
-     * @param String $request
+     * @param string $request
      *
-     * @return String
+     * @return string
      */
     function getPrimaryRequest($request)
     {
-        if (!is_null($request)) {
+        if (! is_null($request)) {
             $arr = [];
             $categorylistdataJson = $request;
             $categorylistdataArr = json_decode($categorylistdataJson);
             if (empty($categorylistdataArr)) {
-                return null;
+                return;
             } else {
                 //extract first array  and create the primary category
                 $primarycategory = ($categorylistdataArr[0]);
                 $arr[] = $primarycategory;
+
                 return json_encode($arr);
             }
         } else {
-            return "";
+            return '';
         }
     }
 }
 
-if (!function_exists('getAID')) {
+if (! function_exists('getAID')) {
     /**
      * @param Model $model
-     * @return String
+     * @return string
      */
     function getAID(Model $model)
     {
@@ -224,11 +223,11 @@ if (!function_exists('getAID')) {
     }
 }
 
-if (!function_exists('processList')) {
+if (! function_exists('processList')) {
     /**
      * @param array $array
      *
-     * @return String
+     * @return string
      */
     function processList($array)
     {
@@ -243,34 +242,36 @@ if (!function_exists('processList')) {
                 array_pop($final);
             }
         }
+
         return json_encode($final);
     }
 }
 
-if (!function_exists('isRequestReadyToBeProcessed')) {
+if (! function_exists('isRequestReadyToBeProcessed')) {
     function isRequestReadyToBeProcessed(Request $request)
     {
         $requests = $request->all();
         unset($requests['_token']);
 
         foreach ($requests as $key => $val) {
-            $pos = strpos($key, "-");
+            $pos = strpos($key, '-');
             if ($pos === false) {
                 return false;
             }
         }
+
         return true;
     }
 }
 
-if (!function_exists('removeSubCollectionInput')) {
+if (! function_exists('removeSubCollectionInput')) {
     function removeSubCollectionInput(Request $request)
     {
         return $request;
     }
 }
 
-if (!function_exists('prepareRequest')) {
+if (! function_exists('prepareRequest')) {
 
     /**
      * @param Request $request
@@ -292,8 +293,7 @@ if (!function_exists('prepareRequest')) {
     }
 }
 
-
-if (!function_exists('getArrayWithEmptyObj')) {
+if (! function_exists('getArrayWithEmptyObj')) {
 
     /**
      * @param $model
@@ -320,7 +320,7 @@ if (!function_exists('getArrayWithEmptyObj')) {
     }
 }
 
-if (!function_exists('getCounterForRelationships')) {
+if (! function_exists('getCounterForRelationships')) {
 
     /**
      * @param $method
@@ -332,10 +332,10 @@ if (!function_exists('getCounterForRelationships')) {
      */
     function getCounterForRelationships($method, $is_EO, $is_EM, $i)
     {
-        if ($method === "" || ($method !== "" && $is_EO) || ($method === "" && $is_EM)) {
-            return "";
+        if ($method === '' || ($method !== '' && $is_EO) || ($method === '' && $is_EM)) {
+            return '';
         } else {
-            return "-" . $i;
+            return '-'.$i;
         }
     }
 }

@@ -20,8 +20,8 @@ trait MongoSyncTrait
     {
         $request = $request->merge($additionalData);
 
-        $this->storeEditAllItems($request, "add", $options);
-        $this->processAllRelationships($request, "add", "", "", $options);
+        $this->storeEditAllItems($request, 'add', $options);
+        $this->processAllRelationships($request, 'add', '', '', $options);
 
         //Dispatch the creation event
         $this->fireModelEvent('storeWithSync');
@@ -46,18 +46,20 @@ trait MongoSyncTrait
             $is_MD = isMD($item);
 
             $is_fillable = isFillable($item, $event);
-            if ( is_null($request->input($key)) && $is_skippable ) { continue; }//Skip with partial request type
+            if (is_null($request->input($key)) && $is_skippable) {
+                continue;
+            }//Skip with partial request type
 
             if ($is_fillable) {
                 if ($is_ML) {
                     if (is_null($this->$key)) {
-                        $old_value = array();
+                        $old_value = [];
                     } else {
                         $old_value = $this->$key;
                     }
                     $this->$key = ml($old_value, $request->input($key));
                 } elseif ($is_MD) {
-                    if ($request->input($key) == "" || $request->input($key) == null) {
+                    if ($request->input($key) == '' || $request->input($key) == null) {
                         $this->$key = null;
                     } else {
                         $this->$key = new UTCDateTime(new DateTime($request->input($key)));
@@ -95,27 +97,29 @@ trait MongoSyncTrait
                 $methodOnTarget = $relation['methodOnTarget'];
                 $modelOnTarget = $relation['modelOnTarget'];
             } else {
-                $modelTarget = "";
-                $methodOnTarget = "";
-                $modelOnTarget = "";
+                $modelTarget = '';
+                $methodOnTarget = '';
+                $modelOnTarget = '';
             }
 
             $is_EO = is_EO($type);
             $is_EM = is_EM($type);
             $is_skippable = $this->getOptionValue($options, 'request_type');
 
-            $key = $parent . $method . $counter;
+            $key = $parent.$method.$counter;
             $value = $request->input($key);
-            if ( is_null($value) && $is_skippable ) { continue; }//Skip with partial request type
+            if (is_null($value) && $is_skippable) {
+                continue;
+            }//Skip with partial request type
 
-            if (!is_null($value) && !($value == "") && !($value == "[]")) {
+            if (! is_null($value) && ! ($value == '') && ! ($value == '[]')) {
                 $objs = json_decode($value);
             } else {
                 $objs = getArrayWithEmptyObj($model, $is_EO, $is_EM);
             }
 
             if ($is_EO || $is_EM) {//EmbedsOne Create - EmbedsMany Create
-                if ($event == "update") {
+                if ($event == 'update') {
 
                     //Delete EmbedsMany or EmbedsOne on Target
                     if ($hasTarget) {
@@ -127,7 +131,7 @@ trait MongoSyncTrait
                     }
                 }
 
-                if (!empty($objs)) {
+                if (! empty($objs)) {
                     $i = 0;
                     foreach ($objs as $obj) {
                         $this->processOneEmbededRelationship(
@@ -174,9 +178,9 @@ trait MongoSyncTrait
             $is_MD = isMD($item);
 
             if ($is_ML) {
-                $embededModel->$key = ml(array(), $embededObj->$key);
+                $embededModel->$key = ml([], $embededObj->$key);
             } elseif ($is_MD) {
-                if ($embededObj->$key == "" || $embededObj->$key == null) {
+                if ($embededObj->$key == '' || $embededObj->$key == null) {
                     $embededModel->$key = null;
                 } else {
                     $embededModel->$key = new UTCDateTime(new DateTime($embededObj->$key));
@@ -213,23 +217,23 @@ trait MongoSyncTrait
         $EOitems = $embedObj->getItems();
         //Current Obj Create
         foreach ($EOitems as $EOkey => $item) {
-            if (!is_null($obj)) {
+            if (! is_null($obj)) {
                 $is_ML = isML($item);
                 $is_MD = isMD($item);
 
                 if ($is_ML) {
-                    $embedObj->$EOkey = ml(array(), $obj->$EOkey);
-                } elseif ($EOkey == "updated_at" || $EOkey == "created_at") {
+                    $embedObj->$EOkey = ml([], $obj->$EOkey);
+                } elseif ($EOkey == 'updated_at' || $EOkey == 'created_at') {
                     $embedObj->$EOkey = now();
                 } elseif ($is_MD) {
-                    if ($obj->$EOkey == "" ||  $obj->$EOkey == null) {
+                    if ($obj->$EOkey == '' || $obj->$EOkey == null) {
                         $embedObj->$EOkey = null;
                     } else {
                         $embedObj->$EOkey = new UTCDateTime(new DateTime($obj->$EOkey));
                     }
                 } else {
-                    if (!property_exists($obj, $EOkey)) {
-                        $msg = ('Error - ' . $EOkey . ' attribute not found on obj ' . json_encode($obj));
+                    if (! property_exists($obj, $EOkey)) {
+                        $msg = ('Error - '.$EOkey.' attribute not found on obj '.json_encode($obj));
                         (new Exception($msg) );
                     }
                     $embedObj->$EOkey = $obj->$EOkey;
@@ -244,7 +248,7 @@ trait MongoSyncTrait
         //Get counter for embeds many with level > 1
         $counter = getCounterForRelationships($method, $is_EO, $is_EM, $i);
         //Check for another Level of Relationship
-        $embedObj->processAllRelationships($request, $event, $method . "-", $counter, $options);
+        $embedObj->processAllRelationships($request, $event, $method.'-', $counter, $options);
 
         if ($is_EO) {
             $this->$method = $embedObj->attributes;
@@ -260,8 +264,8 @@ trait MongoSyncTrait
             //Init the Target Model
             $target_model = new $modelTarget;
 
-            if (!property_exists($obj, 'ref_id')) {
-                $msg = ('Error - ref_id attribute not found on obj ' . json_encode($obj));
+            if (! property_exists($obj, 'ref_id')) {
+                $msg = ('Error - ref_id attribute not found on obj '.json_encode($obj));
                 throw (new \Exception($msg) );
             }
 
@@ -273,14 +277,13 @@ trait MongoSyncTrait
 
             $modelToBeSync = new $modelTarget;
             $modelToBeSync = $modelToBeSync->find($target_id);
-            if (!is_null($modelToBeSync)) {
+            if (! is_null($modelToBeSync)) {
                 $modelToBeSync->updateRelationWithSync($requestToBeSync, $methodOnTarget, $modelOnTarget);
                 //TODO:Sync target on level > 1
                 //$modelToBeSync->processAllRelationships($request, $event, $methodOnTarget, $methodOnTarget . "-");
             }
         }
     }
-
 
     /**
      * @param Request $request
@@ -289,11 +292,11 @@ trait MongoSyncTrait
      * @return $this
      * @throws Exception
      */
-    public function updateWithSync(Request $request, array $additionalData = [], array $options)
+    public function updateWithSync(Request $request, array $additionalData, array $options)
     {
         $request = $request->merge($additionalData);
-        $this->storeEditAllItems($request, "update", $options);
-        $this->processAllRelationships($request, "update", "", "", $options);
+        $this->storeEditAllItems($request, 'update', $options);
+        $this->processAllRelationships($request, 'update', '', '', $options);
 
         //Dispatch the update event
         $this->fireModelEvent('updateWithSync');
@@ -311,7 +314,7 @@ trait MongoSyncTrait
     {
         if ($is_EO) {
             $embedObj = $this->$method;
-            if (!is_null($embedObj)) {
+            if (! is_null($embedObj)) {
                 $target_id = $embedObj->ref_id;
                 $this->handleSubTarget($target_id, $modelTarget, $methodOnTarget);
             }
@@ -332,7 +335,7 @@ trait MongoSyncTrait
         $id = $this->getId();
         $target = new $modelTarget;
         $target = $target->all()->where('id', $target_id)->first();
-        if (!is_null($target)) {
+        if (! is_null($target)) {
             $subTarget = $target->$methodOnTarget()->where('ref_id', $id)->first();
             $temps = $target->$methodOnTarget()->where('ref_id', '!=', $id);
             $target->$methodOnTarget()->delete($subTarget);
@@ -366,7 +369,6 @@ trait MongoSyncTrait
                 $is_HO = is_HO($type);
                 $is_HM = is_HM($type);
 
-
                 if ($is_EO || $is_EM) {//EmbedsOne Create - EmbedsMany Create
                     //Delete EmbedsMany or EmbedsOne on Target
                     $this->deleteTargetObj($method, $modelTarget, $methodOnTarget, $is_EO);
@@ -392,7 +394,8 @@ trait MongoSyncTrait
      * @param string $key
      * @return bool|mixed
      */
-    private function getOptionValue(array $options, string $key){
-        return array_key_exists('',  $options) ?   $options[$key] : false;
+    private function getOptionValue(array $options, string $key)
+    {
+        return array_key_exists('', $options) ? $options[$key] : false;
     }
 }
