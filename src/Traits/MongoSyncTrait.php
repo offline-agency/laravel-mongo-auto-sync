@@ -12,16 +12,16 @@ trait MongoSyncTrait
     /**
      * @param Request $request
      * @param array $additionalData
+     * @param array $options
      * @return $this
      * @throws Exception
      */
-    public function storeWithSync(Request $request, array $additionalData = [])
+    public function storeWithSync(Request $request, array $additionalData = [], array $options = [])
     {
         $request = $request->merge($additionalData);
-        //$request = prepareRequest($request,$additionalData);
 
-        $this->storeEditAllItems($request, "add");
-        $this->processAllRelationships($request, "add", "", "");
+        $this->storeEditAllItems($request, "add", $options);
+        $this->processAllRelationships($request, "add", "", "", $options);
 
         //Dispatch the creation event
         $this->fireModelEvent('storeWithSync');
@@ -30,19 +30,24 @@ trait MongoSyncTrait
     }
 
     /**
-     * @param $request
-     * @param $event
+     * @param Request $request
+     * @param string $event
+     * @param array $options
      * @throws Exception
      */
-    public function storeEditAllItems($request, $event)
+    public function storeEditAllItems(Request $request, string $event, array $options)
     {
         //Get the item name
         $items = $this->getItems();
+        $is_skippable = $this->getOptionValue($options, 'request_type');
         //Current Obj Create
         foreach ($items as $key => $item) {
             $is_ML = isML($item);
             $is_MD = isMD($item);
+
             $is_fillable = isFillable($item, $event);
+            if ( is_null($request->input($key)) && $is_skippable ) { continue; }//Skip with partial request type
+
             if ($is_fillable) {
                 if ($is_ML) {
                     if (is_null($this->$key)) {
@@ -52,9 +57,7 @@ trait MongoSyncTrait
                     }
                     $this->$key = ml($old_value, $request->input($key));
                 } elseif ($is_MD) {
-                    //  dd( new UTCDateTime(new DateTime($request->input($key))));
                     if ($request->input($key) == "" || $request->input($key) == null) {
-                        //dd('if');
                         $this->$key = null;
                     } else {
                         $this->$key = new UTCDateTime(new DateTime($request->input($key)));
@@ -64,17 +67,19 @@ trait MongoSyncTrait
                 }
             }
         }
+
         $this->save();
     }
 
     /**
      * @param Request $request
-     * @param $event
-     * @param $parent
-     * @param $counter
+     * @param string $event
+     * @param string $parent
+     * @param string $counter
+     * @param array $options
      * @throws Exception
      */
-    public function processAllRelationships(Request $request, $event, $parent, $counter)
+    public function processAllRelationships(Request $request, string $event, string $parent, string $counter, array $options)
     {
         //Get the relation info
         $relations = $this->getMongoRelation();
@@ -83,7 +88,6 @@ trait MongoSyncTrait
         foreach ($relations as $method => $relation) {
             //Get Relation Save Mode
             $type = $relation['type'];
-            $mode = $relation['mode'];
             $model = $relation['model'];
             $hasTarget = hasTarget($relation);
             if ($hasTarget) {
@@ -98,11 +102,11 @@ trait MongoSyncTrait
 
             $is_EO = is_EO($type);
             $is_EM = is_EM($type);
-            $is_HO = is_HO($type);
-            $is_HM = is_HM($type);
+            $is_skippable = $this->getOptionValue($options, 'request_type');
 
             $key = $parent . $method . $counter;
             $value = $request->input($key);
+            if ( is_null($value) && $is_skippable ) { continue; }//Skip with partial request type
 
             if (!is_null($value) && !($value == "") && !($value == "[]")) {
                 $objs = json_decode($value);
@@ -126,7 +130,20 @@ trait MongoSyncTrait
                 if (!empty($objs)) {
                     $i = 0;
                     foreach ($objs as $obj) {
-                        $this->processOneEmbededRelationship($request, $obj, $type, $model, $method, $modelTarget, $methodOnTarget, $modelOnTarget, $event, $hasTarget, $is_EO, $is_EM, $i);
+                        $this->processOneEmbededRelationship(
+                            $request,
+                            $obj,
+                            $type,
+                            $model,
+                            $method,
+                            $modelTarget,
+                            $methodOnTarget,
+                            $modelOnTarget, $event,
+                            $hasTarget,
+                            $is_EO,
+                            $is_EM,
+                            $i,
+                            $options);
                         $i++;
                     }
                 } else {
@@ -188,7 +205,7 @@ trait MongoSyncTrait
      * @param $i
      * @throws Exception
      */
-    public function processOneEmbededRelationship(Request $request, $obj, $type, $model, $method, $modelTarget, $methodOnTarget, $modelOnTarget, $event, $hasTarget, $is_EO, $is_EM, $i)
+    public function processOneEmbededRelationship(Request $request, $obj, $type, $model, $method, $modelTarget, $methodOnTarget, $modelOnTarget, $event, $hasTarget, $is_EO, $is_EM, $i, $options)
     {
         //Init the embedone model
         $embedObj = new $model;
@@ -206,7 +223,6 @@ trait MongoSyncTrait
                     $embedObj->$EOkey = now();
                 } elseif ($is_MD) {
                     if ($obj->$EOkey == "" ||  $obj->$EOkey == null) {
-                        //dd('if');
                         $embedObj->$EOkey = null;
                     } else {
                         $embedObj->$EOkey = new UTCDateTime(new DateTime($obj->$EOkey));
@@ -228,7 +244,7 @@ trait MongoSyncTrait
         //Get counter for embeds many with level > 1
         $counter = getCounterForRelationships($method, $is_EO, $is_EM, $i);
         //Check for another Level of Relationship
-        $embedObj->processAllRelationships($request, $event, $method . "-", $counter);
+        $embedObj->processAllRelationships($request, $event, $method . "-", $counter, $options);
 
         if ($is_EO) {
             $this->$method = $embedObj->attributes;
@@ -269,13 +285,15 @@ trait MongoSyncTrait
     /**
      * @param Request $request
      * @param array $additionalData
+     * @param array $options
      * @return $this
+     * @throws Exception
      */
-    public function updateWithSync(Request $request, array $additionalData = [])
+    public function updateWithSync(Request $request, array $additionalData = [], array $options)
     {
         $request = $request->merge($additionalData);
-        $this->storeEditAllItems($request, "update");
-        $this->processAllRelationships($request, "update", "", "");
+        $this->storeEditAllItems($request, "update", $options);
+        $this->processAllRelationships($request, "update", "", "", $options);
 
         //Dispatch the update event
         $this->fireModelEvent('updateWithSync');
@@ -367,5 +385,14 @@ trait MongoSyncTrait
         $this->fireModelEvent('destroyWithSync');
 
         return $this;
+    }
+
+    /**
+     * @param array $options
+     * @param string $key
+     * @return bool|mixed
+     */
+    private function getOptionValue(array $options, string $key){
+        return array_key_exists('',  $options) ?   $options[$key] : false;
     }
 }
