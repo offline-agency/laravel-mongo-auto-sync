@@ -1,4 +1,5 @@
 <?php
+
 namespace OfflineAgency\MongoAutoSync\Http\Models;
 
 use Jenssegers\Mongodb\Eloquent\Model as Eloquent;
@@ -13,7 +14,7 @@ class MDModel extends Eloquent
     protected $dates = [
         'deleted_at',
         'created_at',
-        'updated_at'
+        'updated_at',
     ];
 
     /**
@@ -33,7 +34,6 @@ class MDModel extends Eloquent
     }
 
     /**
-     *
      * @param int $size
      *
      * @return mixed

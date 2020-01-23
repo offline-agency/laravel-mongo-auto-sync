@@ -14,7 +14,7 @@ trait CreatesApplication
     protected function getPackageAliases($app)
     {
         return [
-            'Facade' => 'Package\Facade'
+            'Facade' => 'Package\Facade',
         ];
     }
 

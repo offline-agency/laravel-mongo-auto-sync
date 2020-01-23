@@ -12,21 +12,20 @@ class MongoCollection extends Collection
         $cl = cl();
 
         $out = $this->filter(function ($col) use ($category, $myslug, $cl) {
-            if ($col->slug[$cl] == $myslug && $col->status == "published" && $col->primarycategory->slug[$cl] == $category) {
+            if ($col->slug[$cl] == $myslug && $col->status == 'published' && $col->primarycategory->slug[$cl] == $category) {
                 return true;
             } else {
                 return false;
             }
         })->first();
-        if (!$out) {//Handler 404 Object Not Found
+        if (! $out) {//Handler 404 Object Not Found
             $obj_name = get_class($this->first());
-            $message = __('error.' . $obj_name);
+            $message = __('error.'.$obj_name);
             abort(404, $message);
         } else {
             return $out;
         }
     }
-
 
     /**
      * @param null $myslug
@@ -41,15 +40,14 @@ class MongoCollection extends Collection
                 return true;
             }
         })->first();
-        if (!$out) {//Handler 404 Object Not Found
+        if (! $out) {//Handler 404 Object Not Found
             $obj_name = get_class($this->first());
-            $message = __('error.' . $obj_name);
+            $message = __('error.'.$obj_name);
             abort(404, $message);
         } else {
             return $out;
         }
     }
-
 
     //Method to retrieve only not deleted item of a collection - Check on is_deleted custom property added on MDMODEL ovverriding init, delete
 
@@ -75,7 +73,7 @@ class MongoCollection extends Collection
     public function getPublished()
     {
         return $this->filter(function ($col) {
-            if ($col->status == "published") {
+            if ($col->status == 'published') {
                 return true;
             } else {
                 return false;
@@ -91,7 +89,7 @@ class MongoCollection extends Collection
     public function getPublic()
     {
         return $this->filter(function ($col) {
-            if ($col->visibility === "public") {
+            if ($col->visibility === 'public') {
                 return true;
             } else {
                 return false;
@@ -156,8 +154,6 @@ class MongoCollection extends Collection
         });
     }
 
-
-
     /**
      * @return bool
      */
@@ -171,20 +167,21 @@ class MongoCollection extends Collection
     }
 
     /**
-     * @param String $aid
+     * @param string $aid
      *
      * @return mixed
      */
-    public function findByAID(String $aid)
+    public function findByAID(string $aid)
     {
         return $this->filter(function ($col) use ($aid) {
             return $col->autoincrement_id == $aid;
         })->first();
     }
+
     /**
-       * @param $id
-       * @return bool
-       */
+     * @param $id
+     * @return bool
+     */
     public function hasPermission($id)
     {
         if (is_null($id)) {
@@ -196,7 +193,6 @@ class MongoCollection extends Collection
                 return true;
             }
         });
-
 
         if ($out->count() > 0) {
             return true;
@@ -221,7 +217,6 @@ class MongoCollection extends Collection
             }
         });
 
-
         if ($out->count() > 0) {
             return true;
         } else {
@@ -244,7 +239,6 @@ class MongoCollection extends Collection
                 return true;
             }
         });
-
 
         if ($out->count() > 0) {
             return true;

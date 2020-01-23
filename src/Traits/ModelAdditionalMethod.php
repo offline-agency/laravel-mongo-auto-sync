@@ -7,7 +7,7 @@ use OfflineAgency\MongoAutoSync\Extensions\MongoCollection;
 
 trait ModelAdditionalMethod
 {
-    public function newCollection(array $models = array())
+    public function newCollection(array $models = [])
     {
         return new MongoCollection($models);
     }
@@ -28,30 +28,29 @@ trait ModelAdditionalMethod
         if (! empty($this->mongoRelation)) {
             return $this->mongoRelation;
         } else {
-            return array();
+            return [];
         }
     }
-
 
     /**
      * @return array
      */
     public function getPageMetaTag()
     {
-        $collection_name  = $this->collection;
-        $meta_content     = [];
-        $meta_value       = [];
-        $meta_key         = [];
-        $title            = "";
-        $description      = "";
-        $meta_description = "";
+        $collection_name = $this->collection;
+        $meta_content = [];
+        $meta_value = [];
+        $meta_key = [];
+        $title = '';
+        $description = '';
+        $meta_description = '';
         $fb_id = env('FB_ID');
-        $img_url ="";
+        $img_url = '';
         $meta = [];
 
         switch ($collection_name) {
-            case($collection_name == "article"):
-                $meta_content     = [
+            case $collection_name == 'article':
+                $meta_content = [
                     'article',
                     $this->author,
                     $this->updated_at,
@@ -60,7 +59,7 @@ trait ModelAdditionalMethod
                     '920',
                     'secure_image.png',
                 ];
-                $meta_value       = [
+                $meta_value = [
                     'og:type',
                     'article:author',
                     'article:modified_time',
@@ -69,7 +68,7 @@ trait ModelAdditionalMethod
                     'og:image:width',
                     'og:image:secure_url',
                 ];
-                $meta_key         = [
+                $meta_key = [
                     'property',
                     'property',
                     'property',
@@ -78,40 +77,40 @@ trait ModelAdditionalMethod
                     'property',
                     'property',
                 ];
-                $title            = getTranslatedContent($this->title) . " | ";
-                $description      = getTranslatedContent($this->excerption);
-                $meta_description = "";
-                $img_url          = getFullUrlImgByKey($this->img_evidence_text);
+                $title = getTranslatedContent($this->title).' | ';
+                $description = getTranslatedContent($this->excerption);
+                $meta_description = '';
+                $img_url = getFullUrlImgByKey($this->img_evidence_text);
                 break;
 
-            case ($collection_name == "course"):
+            case $collection_name == 'course':
                 $meta_content = ['article'];
-                $meta_value = ['og:type',];
-                $meta_key = ['property',];
-                $title = getTranslatedContent($this->title) . " | ";
+                $meta_value = ['og:type'];
+                $meta_key = ['property'];
+                $title = getTranslatedContent($this->title).' | ';
                 $description = getTranslatedContent($this->shortDescription);
                 $meta_description = getTranslatedContent($this->shortDescription);
                 $img_url = getFullUrlImgByKey($this->img_evidence_text);
 
                 break;
 
-            case ($collection_name == "event"):
+            case $collection_name == 'event':
                 $meta_content = ['product'];
                 $meta_value = [];
                 $meta_key = [];
-                $title = getTranslatedContent($this->title) . " | ";
+                $title = getTranslatedContent($this->title).' | ';
                 $meta_description = getTranslatedContent($this->shortDescription);
                 $img_url = getFullUrlImgByKey($this->img_evidence_text);
 
                 break;
 
-            case ($collection_name == "page"):
+            case $collection_name == 'page':
                 $meta_content = [];
                 $meta_value = [];
                 $meta_key = [];
-                $title = getTranslatedContent($this->title) . " | ";
+                $title = getTranslatedContent($this->title).' | ';
                 $meta_description = getTranslatedContent($this->description);
-                $img_url = "";
+                $img_url = '';
                 break;
 
         }
@@ -120,7 +119,7 @@ trait ModelAdditionalMethod
         $obj_content = [
             $meta_description,
             env('APP_LOCALE'),
-            $title . getSiteGeneralValueByKey('company_name'),
+            $title.getSiteGeneralValueByKey('company_name'),
             $description,
             url()->current(),
             $img_url,
@@ -129,12 +128,12 @@ trait ModelAdditionalMethod
             $fb_id,
             '@informaz',
             '@informaz',
-            $title . getSiteGeneralValueByKey('company_name'),
+            $title.getSiteGeneralValueByKey('company_name'),
             $description,
             $img_url,
             'summary',
         ];
-        $obj_value   = [
+        $obj_value = [
             'description',
             'og:locale',
             'og:title',
@@ -151,7 +150,7 @@ trait ModelAdditionalMethod
             'twitter:image',
             'twitter:card',
         ];
-        $obj_key     = [
+        $obj_key = [
             'name',
             'property',
             'property',
@@ -169,15 +168,15 @@ trait ModelAdditionalMethod
             'name',
         ];
 
-        $obj_key     = array_merge($obj_key, $meta_key);
-        $obj_value   = array_merge($obj_value, $meta_value);
+        $obj_key = array_merge($obj_key, $meta_key);
+        $obj_value = array_merge($obj_value, $meta_value);
         $obj_content = array_merge($obj_content, $meta_content);
 
-        for ($i = 0; $i < count($obj_key); $i ++) {
+        for ($i = 0; $i < count($obj_key); $i++) {
             $obj = [
-                'key'     => $obj_key[ $i ],
-                'value'   => $obj_value[ $i ],
-                'content' => $obj_content[ $i ],
+                'key'     => $obj_key[$i],
+                'value'   => $obj_value[$i],
+                'content' => $obj_content[$i],
             ];
             //generate new sitegeneral to match obj_key number
             $meta[] = $obj;
@@ -185,8 +184,6 @@ trait ModelAdditionalMethod
 
         return $meta;
     }
-
-
 
     /**
      * @param int $numberOfRandomRow
@@ -198,9 +195,9 @@ trait ModelAdditionalMethod
     {
         $totalRow = $this->count();
         if ($numberOfRandomRow == 0 || $numberOfRandomRow < 0) {
-            throw new Exception("Invalid # of random record requested");
+            throw new Exception('Invalid # of random record requested');
         } elseif ($numberOfRandomRow > $totalRow) {
-            throw new Exception("You have requested a number of record bigger than the count collection record ( " . $totalRow . ")");
+            throw new Exception('You have requested a number of record bigger than the count collection record ( '.$totalRow.')');
         } elseif ($numberOfRandomRow == 1) {
             return $this->skip(rand(0, $totalRow - 1))->take($numberOfRandomRow)->first();
         } else {

@@ -5,7 +5,7 @@ namespace OfflineAgency\MongoAutoSync\Providers;
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
 
 /**
- * Service provider
+ * Service provider.
  */
 class ServiceProvider extends BaseServiceProvider
 {
