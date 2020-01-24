@@ -58,10 +58,10 @@ if (! function_exists('isML')) {
     function isML($value)
     {
         try {
-            if(getType($value) !== "array"){
-                throw new Exception($value . ' is not a valid array!');
+            if (gettype($value) !== 'array') {
+                throw new Exception($value.' is not a valid array!');
             }
-        }catch (Exception $exception){
+        } catch (Exception $exception) {
             echo $exception->getMessage();
         }
 
