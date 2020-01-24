@@ -441,8 +441,11 @@ trait MongoSyncTrait
     }
 
     //Abstract function used from other traits or from base model
-    public abstract function save();
-    public abstract function getItems();
-    public abstract function getMongoRelation();
-    public abstract function getId();
+    abstract public function save();
+
+    abstract public function getItems();
+
+    abstract public function getMongoRelation();
+
+    abstract public function getId();
 }
