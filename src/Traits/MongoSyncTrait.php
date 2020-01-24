@@ -439,4 +439,10 @@ trait MongoSyncTrait
             $exception->getMessage();
         }
     }
+
+    //Abstract function used from other traits or from base model
+    public abstract function save();
+    public abstract function getItems();
+    public abstract function getMongoRelation();
+    public abstract function getId();
 }
