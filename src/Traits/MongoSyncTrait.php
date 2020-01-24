@@ -39,16 +39,22 @@ trait MongoSyncTrait
     {
         //Get the item name
         $items = $this->getItems();
-        $is_skippable = $this->getOptionValue($options, 'request_type');
+        $is_skippable = $this->getIsSkippable($options);
         //Current Obj Create
         foreach ($items as $key => $item) {
             $is_ML = isML($item);
             $is_MD = isMD($item);
 
             $is_fillable = isFillable($item, $event);
-            if (is_null($request->input($key)) && $is_skippable) {
+
+            if ( is_null($request->input($key)) && $is_skippable ) {
                 continue;
-            }//Skip with partial request type
+            }else{
+                $this->checkRequestExistence(
+                    $request,
+                    $key
+                );
+            }
 
             if ($is_fillable) {
                 if ($is_ML) {
@@ -85,6 +91,7 @@ trait MongoSyncTrait
     {
         //Get the relation info
         $relations = $this->getMongoRelation();
+        $is_skippable = $this->getIsSkippable($options);
 
         //Process all relationships
         foreach ($relations as $method => $relation) {
@@ -104,7 +111,6 @@ trait MongoSyncTrait
 
             $is_EO = is_EO($type);
             $is_EM = is_EM($type);
-            $is_skippable = $this->getOptionValue($options, 'request_type');
 
             $key = $parent.$method.$counter;
             $value = $request->input($key);
@@ -207,6 +213,7 @@ trait MongoSyncTrait
      * @param $is_EO
      * @param $is_EM
      * @param $i
+     * @param $options
      * @throws Exception
      */
     public function processOneEmbededRelationship(Request $request, $obj, $type, $model, $method, $modelTarget, $methodOnTarget, $modelOnTarget, $event, $hasTarget, $is_EO, $is_EM, $i, $options)
@@ -232,10 +239,7 @@ trait MongoSyncTrait
                         $embedObj->$EOkey = new UTCDateTime(new DateTime($obj->$EOkey));
                     }
                 } else {
-                    if (! property_exists($obj, $EOkey)) {
-                        $msg = ('Error - '.$EOkey.' attribute not found on obj '.json_encode($obj));
-                        (new Exception($msg) );
-                    }
+                    $this->checkPropertyExistence($obj, $EOkey);
                     $embedObj->$EOkey = $obj->$EOkey;
                 }
             }
@@ -259,22 +263,15 @@ trait MongoSyncTrait
 
         //dd($embedObj, $this);
 
-        if ($hasTarget) {
-            //sync Permission to Permissiongroup
-            //Init the Target Model
-            $target_model = new $modelTarget;
-
-            if (! property_exists($obj, 'ref_id')) {
-                $msg = ('Error - ref_id attribute not found on obj '.json_encode($obj));
-                throw (new \Exception($msg) );
-            }
-
+        if ($hasTarget) {//sync Permission to Permissiongroup
+            $this->checkPropertyExistence($obj, 'ref_id');
             $target_id = $obj->ref_id;
 
             $ref_id = $this->getId();
 
             $requestToBeSync = getRequestToBeSync($ref_id, $modelOnTarget, $request, $methodOnTarget);
 
+            //Init the Target Model
             $modelToBeSync = new $modelTarget;
             $modelToBeSync = $modelToBeSync->find($target_id);
             if (! is_null($modelToBeSync)) {
@@ -292,7 +289,7 @@ trait MongoSyncTrait
      * @return $this
      * @throws Exception
      */
-    public function updateWithSync(Request $request, array $additionalData, array $options)
+    public function updateWithSync(Request $request, array $additionalData = [], array $options)
     {
         $request = $request->merge($additionalData);
         $this->storeEditAllItems($request, 'update', $options);
@@ -394,8 +391,48 @@ trait MongoSyncTrait
      * @param string $key
      * @return bool|mixed
      */
-    private function getOptionValue(array $options, string $key)
-    {
-        return array_key_exists('', $options) ? $options[$key] : false;
+    private function getOptionValue(array $options, string $key){
+        return array_key_exists($key,  $options) ? $options[$key] : '';
+    }
+
+    /**
+     * @param array $options
+     * @return bool
+     */
+    private function getIsSkippable(array $options){
+        return $this->getOptionValue(
+            $options,
+            'request_type'
+            ) == 'partial';
+    }
+
+    /**
+     * @param $obj
+     * @param string $EOkey
+     */
+    private function checkPropertyExistence($obj, string $EOkey){
+        try {
+            if (!property_exists($obj, $EOkey)) {
+                $msg = ('Error - ' . $EOkey . ' attribute not found on obj ' . json_encode($obj));
+                (new Exception($msg) );
+            }
+        }catch (Exception $exception){
+            $exception->getMessage();
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @param string $key
+     */
+    private function checkRequestExistence(Request $request, string $key){//Can be optimized
+        try {
+            if ( is_null($request->input($key)) ) {
+                $msg = ('Error - ' . $key . ' attribute not found in Request ' . json_encode($request));
+                (new Exception($msg) );
+            }
+        }catch (Exception $exception){
+            $exception->getMessage();
+        }
     }
 }
