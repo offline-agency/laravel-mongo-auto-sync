@@ -47,9 +47,9 @@ trait MongoSyncTrait
 
             $is_fillable = isFillable($item, $event);
 
-            if ( is_null($request->input($key)) && $is_skippable ) {
+            if (is_null($request->input($key)) && $is_skippable) {
                 continue;
-            }else{
+            } else {
                 $this->checkRequestExistence(
                     $request,
                     $key
@@ -289,7 +289,7 @@ trait MongoSyncTrait
      * @return $this
      * @throws Exception
      */
-    public function updateWithSync(Request $request, array $additionalData = [], array $options)
+    public function updateWithSync(Request $request, array $additionalData, array $options)
     {
         $request = $request->merge($additionalData);
         $this->storeEditAllItems($request, 'update', $options);
@@ -391,15 +391,17 @@ trait MongoSyncTrait
      * @param string $key
      * @return bool|mixed
      */
-    private function getOptionValue(array $options, string $key){
-        return array_key_exists($key,  $options) ? $options[$key] : '';
+    private function getOptionValue(array $options, string $key)
+    {
+        return array_key_exists($key, $options) ? $options[$key] : '';
     }
 
     /**
      * @param array $options
      * @return bool
      */
-    private function getIsSkippable(array $options){
+    private function getIsSkippable(array $options)
+    {
         return $this->getOptionValue(
             $options,
             'request_type'
@@ -410,13 +412,14 @@ trait MongoSyncTrait
      * @param $obj
      * @param string $EOkey
      */
-    private function checkPropertyExistence($obj, string $EOkey){
+    private function checkPropertyExistence($obj, string $EOkey)
+    {
         try {
-            if (!property_exists($obj, $EOkey)) {
-                $msg = ('Error - ' . $EOkey . ' attribute not found on obj ' . json_encode($obj));
+            if (! property_exists($obj, $EOkey)) {
+                $msg = ('Error - '.$EOkey.' attribute not found on obj '.json_encode($obj));
                 (new Exception($msg) );
             }
-        }catch (Exception $exception){
+        } catch (Exception $exception) {
             $exception->getMessage();
         }
     }
@@ -425,13 +428,14 @@ trait MongoSyncTrait
      * @param Request $request
      * @param string $key
      */
-    private function checkRequestExistence(Request $request, string $key){//Can be optimized
+    private function checkRequestExistence(Request $request, string $key)
+    {//Can be optimized
         try {
-            if ( is_null($request->input($key)) ) {
-                $msg = ('Error - ' . $key . ' attribute not found in Request ' . json_encode($request));
+            if (is_null($request->input($key))) {
+                $msg = ('Error - '.$key.' attribute not found in Request '.json_encode($request));
                 (new Exception($msg) );
             }
-        }catch (Exception $exception){
+        } catch (Exception $exception) {
             $exception->getMessage();
         }
     }
