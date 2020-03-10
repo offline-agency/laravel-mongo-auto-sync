@@ -289,7 +289,7 @@ trait MongoSyncTrait
      * @return $this
      * @throws Exception
      */
-    public function updateWithSync(Request $request, array $additionalData, array $options)
+    public function updateWithSync(Request $request, array $additionalData = [], array $options = [])
     {
         $request = $request->merge($additionalData);
         $this->storeEditAllItems($request, 'update', $options);
