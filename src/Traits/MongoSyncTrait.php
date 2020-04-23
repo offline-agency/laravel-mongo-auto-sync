@@ -129,9 +129,8 @@ trait MongoSyncTrait
                 $objs = getArrayWithEmptyObj($model, $is_EO, $is_EM);
             }
 
-
             if ($is_EO || $is_EM) {//EmbedsOne Create - EmbedsMany Create
-                if ($event == 'update' && !$is_skippable) {
+                if ($event == 'update' && ! $is_skippable) {
 
                     //Delete EmbedsMany or EmbedsOne on Target - TODO: check if it is necessary to run deleteTargetObj method
                     if ($hasTarget) {
@@ -143,7 +142,7 @@ trait MongoSyncTrait
                     }
                 }
 
-                if (!empty($objs)) {
+                if (! empty($objs)) {
                     $i = 0;
                     foreach ($objs as $obj) {
                         $this->processOneEmbededRelationship(
@@ -163,7 +162,7 @@ trait MongoSyncTrait
                             $options);
                         $i++;
                     }
-                }else {
+                } else {
                     $this->$method = [];
                     $this->save();
                 }
@@ -195,13 +194,13 @@ trait MongoSyncTrait
      * @param $is_EO
      * @param $is_EM
      * @param $i
-     * @param boolean $is_skippable
+     * @param bool $is_skippable
      * @param $options
      * @throws Exception
      */
     public function processOneEmbededRelationship(Request $request, $obj, $type, $model, $method, $modelTarget, $methodOnTarget, $modelOnTarget, $event, $hasTarget, $is_EO, $is_EM, $i, $is_skippable, $options)
     {
-        if(!$is_skippable){
+        if (! $is_skippable) {
             $this->processEmbedOnCurrentCollection($request, $obj, $type, $model, $method, $event, $is_EO, $is_EM, $i, $options);
         }
 
@@ -357,23 +356,23 @@ trait MongoSyncTrait
      */
     private function checkRequestExistence(Request $request, string $key)
     {
-        if (!$request->has($key)) {
-            $msg = ('Error - ' . $key . ' attribute not found in Request ' . json_encode($request->all()));
-            throw new Exception($msg) ;
+        if (! $request->has($key)) {
+            $msg = ('Error - '.$key.' attribute not found in Request '.json_encode($request->all()));
+            throw new Exception($msg);
         }
     }
 
     /**
-     * @param boolean $request_has_key
-     * @return boolean
+     * @param bool $request_has_key
+     * @return bool
      */
     public function getIsSkippable($request_has_key)
     {
-        return !$request_has_key && $this->getHasPartialRequest();
+        return ! $request_has_key && $this->getHasPartialRequest();
     }
 
     /**
-     * @return boolean
+     * @return bool
      */
     public function getHasPartialRequest()
     {
@@ -385,7 +384,7 @@ trait MongoSyncTrait
         $this->has_partial_request = $this->getOptionValue(
             $this->getOptions(),
             'request_type'
-        ) == 'partial';;
+        ) == 'partial';
     }
 
     /**
@@ -401,7 +400,8 @@ trait MongoSyncTrait
      * @param $options
      * @throws Exception
      */
-    private function processEmbedOnCurrentCollection(Request $request, $obj, $type, $model, $method, $event, $is_EO, $is_EM, $i, $options){
+    private function processEmbedOnCurrentCollection(Request $request, $obj, $type, $model, $method, $event, $is_EO, $is_EM, $i, $options)
+    {
         //Init the embedone model
         $embedObj = new $model;
 
@@ -446,7 +446,6 @@ trait MongoSyncTrait
         $this->save();
     }
 
-
     /**
      * @param $modelTarget
      * @param $obj
@@ -454,7 +453,8 @@ trait MongoSyncTrait
      * @param $modelOnTarget
      * @throws Exception
      */
-    private function processEmbedOnTargetCollection($modelTarget, $obj, $methodOnTarget, $modelOnTarget){
+    private function processEmbedOnTargetCollection($modelTarget, $obj, $methodOnTarget, $modelOnTarget)
+    {
         $this->checkPropertyExistence($obj, 'ref_id');
         $target_id = $obj->ref_id;
 
@@ -474,11 +474,13 @@ trait MongoSyncTrait
 
     /**
      * @param string $key
-     * @param boolean $is_skippable
+     * @param bool $is_skippable
      * @return mixed
      */
-    private function getRelationshipRequest(string $key, $is_skippable){
+    private function getRelationshipRequest(string $key, $is_skippable)
+    {
         $request = $is_skippable ? $this->getPartialGeneratedRequest() : $this->getRequest();
+
         return $request->input($key);
     }
 
