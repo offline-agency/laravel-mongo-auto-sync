@@ -5,10 +5,17 @@ namespace OfflineAgency\MongoAutoSync\Traits;
 use DateTime;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Log;
 use MongoDB\BSON\UTCDateTime;
 
 trait MongoSyncTrait
 {
+    protected $has_partial_request;
+    protected $request;
+    protected $partial_generated_request;
+    protected $options;
+
     /**
      * @param Request $request
      * @param array $additionalData
@@ -18,8 +25,7 @@ trait MongoSyncTrait
      */
     public function storeWithSync(Request $request, array $additionalData = [], array $options = [])
     {
-        $request = $request->merge($additionalData);
-
+        $this->initDataForSync($request, $additionalData, $options);
         $this->storeEditAllItems($request, 'add', $options);
         $this->processAllRelationships($request, 'add', '', '', $options);
 
@@ -39,15 +45,15 @@ trait MongoSyncTrait
     {
         //Get the item name
         $items = $this->getItems();
-        $is_skippable = $this->getIsSkippable($options);
+
         //Current Obj Create
         foreach ($items as $key => $item) {
             $is_ML = isML($item);
             $is_MD = isMD($item);
 
             $is_fillable = isFillable($item, $event);
-
-            if (is_null($request->input($key)) && $is_skippable) {
+            $is_skippable = $this->getIsSkippable($request->has($key));
+            if ($is_skippable) {
                 continue;
             } else {
                 $this->checkRequestExistence(
@@ -89,9 +95,10 @@ trait MongoSyncTrait
      */
     public function processAllRelationships(Request $request, string $event, string $parent, string $counter, array $options)
     {
+        $this->setMiniModels(); // For target Sync
+
         //Get the relation info
         $relations = $this->getMongoRelation();
-        $is_skippable = $this->getIsSkippable($options);
 
         //Process all relationships
         foreach ($relations as $method => $relation) {
@@ -113,10 +120,8 @@ trait MongoSyncTrait
             $is_EM = is_EM($type);
 
             $key = $parent.$method.$counter;
-            $value = $request->input($key);
-            if (is_null($value) && $is_skippable) {
-                continue;
-            }//Skip with partial request type
+            $is_skippable = $this->getIsSkippable($request->has($key));
+            $value = $this->getRelationshipRequest($key, $is_skippable);
 
             if (! is_null($value) && ! ($value == '') && ! ($value == '[]')) {
                 $objs = json_decode($value);
@@ -124,10 +129,11 @@ trait MongoSyncTrait
                 $objs = getArrayWithEmptyObj($model, $is_EO, $is_EM);
             }
 
-            if ($is_EO || $is_EM) {//EmbedsOne Create - EmbedsMany Create
-                if ($event == 'update') {
 
-                    //Delete EmbedsMany or EmbedsOne on Target
+            if ($is_EO || $is_EM) {//EmbedsOne Create - EmbedsMany Create
+                if ($event == 'update' && !$is_skippable) {
+
+                    //Delete EmbedsMany or EmbedsOne on Target - TODO: check if it is necessary to run deleteTargetObj method
                     if ($hasTarget) {
                         $this->deleteTargetObj($method, $modelTarget, $methodOnTarget, $is_EO);
                     }
@@ -137,7 +143,7 @@ trait MongoSyncTrait
                     }
                 }
 
-                if (! empty($objs)) {
+                if (!empty($objs)) {
                     $i = 0;
                     foreach ($objs as $obj) {
                         $this->processOneEmbededRelationship(
@@ -153,10 +159,11 @@ trait MongoSyncTrait
                             $is_EO,
                             $is_EM,
                             $i,
+                            $is_skippable,
                             $options);
                         $i++;
                     }
-                } else {
+                }else {
                     $this->$method = [];
                     $this->save();
                 }
@@ -165,37 +172,12 @@ trait MongoSyncTrait
     }
 
     /**
-     * @param Request $request
-     * @param $methodOnTarget
-     * @param $modelOnTarget
-     * @throws Exception
+     * @param $mini_model
+     * @param string $method_on_target
      */
-    public function updateRelationWithSync(Request $request, $methodOnTarget, $modelOnTarget)
+    public function updateRelationWithSync($mini_model, string $method_on_target)
     {
-        $embededModel = new $modelOnTarget;
-        //Get the item name
-        $items = $embededModel->getItems();
-        $embededObj = $request->input($methodOnTarget);
-        $embededObj = json_decode($embededObj);
-
-        //Current Obj Create
-        foreach ($items as $key => $item) {
-            $is_ML = isML($item);
-            $is_MD = isMD($item);
-
-            if ($is_ML) {
-                $embededModel->$key = ml([], $embededObj->$key);
-            } elseif ($is_MD) {
-                if ($embededObj->$key == '' || $embededObj->$key == null) {
-                    $embededModel->$key = null;
-                } else {
-                    $embededModel->$key = new UTCDateTime(new DateTime($embededObj->$key));
-                }
-            } else {
-                $embededModel->$key = $embededObj->$key;
-            }
-        }
-        $this->$methodOnTarget()->associate($embededModel);
+        $this->$method_on_target()->associate($mini_model);
         $this->save();
     }
 
@@ -213,72 +195,18 @@ trait MongoSyncTrait
      * @param $is_EO
      * @param $is_EM
      * @param $i
+     * @param boolean $is_skippable
      * @param $options
      * @throws Exception
      */
-    public function processOneEmbededRelationship(Request $request, $obj, $type, $model, $method, $modelTarget, $methodOnTarget, $modelOnTarget, $event, $hasTarget, $is_EO, $is_EM, $i, $options)
+    public function processOneEmbededRelationship(Request $request, $obj, $type, $model, $method, $modelTarget, $methodOnTarget, $modelOnTarget, $event, $hasTarget, $is_EO, $is_EM, $i, $is_skippable, $options)
     {
-        //Init the embedone model
-        $embedObj = new $model;
-
-        $EOitems = $embedObj->getItems();
-        //Current Obj Create
-        foreach ($EOitems as $EOkey => $item) {
-            if (! is_null($obj)) {
-                $is_ML = isML($item);
-                $is_MD = isMD($item);
-
-                if ($is_ML) {
-                    $embedObj->$EOkey = ml([], $obj->$EOkey);
-                } elseif ($EOkey == 'updated_at' || $EOkey == 'created_at') {
-                    $embedObj->$EOkey = now();
-                } elseif ($is_MD) {
-                    if ($obj->$EOkey == '' || $obj->$EOkey == null) {
-                        $embedObj->$EOkey = null;
-                    } else {
-                        $embedObj->$EOkey = new UTCDateTime(new DateTime($obj->$EOkey));
-                    }
-                } else {
-                    $this->checkPropertyExistence($obj, $EOkey);
-                    $embedObj->$EOkey = $obj->$EOkey;
-                }
-            }
+        if(!$is_skippable){
+            $this->processEmbedOnCurrentCollection($request, $obj, $type, $model, $method, $event, $is_EO, $is_EM, $i, $options);
         }
 
-        //else if($is_EM){//To be implemented}
-        //else if($is_HM){//To be implemented}
-        //else if($is_HO){//To be implemented}
-
-        //Get counter for embeds many with level > 1
-        $counter = getCounterForRelationships($method, $is_EO, $is_EM, $i);
-        //Check for another Level of Relationship
-        $embedObj->processAllRelationships($request, $event, $method.'-', $counter, $options);
-
-        if ($is_EO) {
-            $this->$method = $embedObj->attributes;
-        } else {
-            $this->$method()->associate($embedObj);
-        }
-        $this->save();
-
-        //dd($embedObj, $this);
-
-        if ($hasTarget) {//sync Permission to Permissiongroup
-            $this->checkPropertyExistence($obj, 'ref_id');
-            $target_id = $obj->ref_id;
-
-            $ref_id = $this->getId();
-
-            $requestToBeSync = getRequestToBeSync($ref_id, $modelOnTarget, $request, $methodOnTarget);
-
-            //Init the Target Model
-            $modelToBeSync = new $modelTarget;
-            $modelToBeSync = $modelToBeSync->find($target_id);
-            if (! is_null($modelToBeSync)) {
-                $modelToBeSync->updateRelationWithSync($requestToBeSync, $methodOnTarget, $modelOnTarget);
-                //TODO:Sync target on level > 1
-                //$modelToBeSync->processAllRelationships($request, $event, $methodOnTarget, $methodOnTarget . "-");
-            }
+        if ($hasTarget) {
+            $this->processEmbedOnTargetCollection($modelTarget, $obj, $methodOnTarget, $modelOnTarget);
         }
     }
 
@@ -291,7 +219,7 @@ trait MongoSyncTrait
      */
     public function updateWithSync(Request $request, array $additionalData = [], array $options = [])
     {
-        $request = $request->merge($additionalData);
+        $this->initDataForSync($request, $additionalData, $options);
         $this->storeEditAllItems($request, 'update', $options);
         $this->processAllRelationships($request, 'update', '', '', $options);
 
@@ -305,7 +233,7 @@ trait MongoSyncTrait
      * @param $method
      * @param $modelTarget
      * @param $methodOnTarget
-     * @param $id
+     * @param $is_EO
      */
     public function deleteTargetObj($method, $modelTarget, $methodOnTarget, $is_EO)
     {
@@ -393,50 +321,229 @@ trait MongoSyncTrait
      */
     private function getOptionValue(array $options, string $key)
     {
-        return array_key_exists($key, $options) ? $options[$key] : '';
-    }
-
-    /**
-     * @param array $options
-     * @return bool
-     */
-    private function getIsSkippable(array $options)
-    {
-        return $this->getOptionValue(
-            $options,
-            'request_type'
-            ) == 'partial';
+        return Arr::has($options, $key) ? $options[$key] : '';
     }
 
     /**
      * @param $obj
      * @param string $EOkey
+     * @throws Exception
      */
-    private function checkPropertyExistence($obj, string $EOkey)
+    public function checkPropertyExistence($obj, string $EOkey)
     {
-        try {
-            if (! property_exists($obj, $EOkey)) {
-                $msg = ('Error - '.$EOkey.' attribute not found on obj '.json_encode($obj));
-                (new Exception($msg) );
-            }
-        } catch (Exception $exception) {
-            $exception->getMessage();
+        if (! property_exists($obj, $EOkey)) {
+            $msg = ('Error - '.$EOkey.' attribute not found on obj '.json_encode($obj));
+            throw new Exception($msg);
+        }
+    }
+
+    /**
+     * @param $arr
+     * @param string $key
+     * @throws Exception
+     */
+    public function checkArrayExistence($arr, string $key)
+    {
+        if (! Arr::has($arr, $key)) {
+            $msg = ('Error - '.$key.' attribute not found on obj '.json_encode($arr));
+            throw new Exception($msg);
         }
     }
 
     /**
      * @param Request $request
      * @param string $key
+     * @throws Exception
      */
     private function checkRequestExistence(Request $request, string $key)
-    {//Can be optimized
-        try {
-            if (is_null($request->input($key))) {
-                $msg = ('Error - '.$key.' attribute not found in Request '.json_encode($request));
-                (new Exception($msg) );
-            }
-        } catch (Exception $exception) {
-            $exception->getMessage();
+    {
+        if (!$request->has($key)) {
+            $msg = ('Error - ' . $key . ' attribute not found in Request ' . json_encode($request->all()));
+            throw new Exception($msg) ;
         }
+    }
+
+    /**
+     * @param boolean $request_has_key
+     * @return boolean
+     */
+    public function getIsSkippable($request_has_key)
+    {
+        return !$request_has_key && $this->getHasPartialRequest();
+    }
+
+    /**
+     * @return boolean
+     */
+    public function getHasPartialRequest()
+    {
+        return $this->has_partial_request;
+    }
+
+    public function setHasPartialRequest(): void
+    {
+        $this->has_partial_request = $this->getOptionValue(
+            $this->getOptions(),
+            'request_type'
+        ) == 'partial';;
+    }
+
+    /**
+     * @param Request $request
+     * @param $obj
+     * @param $type
+     * @param $model
+     * @param $method
+     * @param $event
+     * @param $is_EO
+     * @param $is_EM
+     * @param $i
+     * @param $options
+     * @throws Exception
+     */
+    private function processEmbedOnCurrentCollection(Request $request, $obj, $type, $model, $method, $event, $is_EO, $is_EM, $i, $options){
+        //Init the embedone model
+        $embedObj = new $model;
+
+        $EOitems = $embedObj->getItems();
+        //Current Obj Create
+        foreach ($EOitems as $EOkey => $item) {
+            if (! is_null($obj)) {
+                $is_ML = isML($item);
+                $is_MD = isMD($item);
+
+                if ($is_ML) {
+                    $embedObj->$EOkey = ml([], $obj->$EOkey);
+                } elseif ($EOkey == 'updated_at' || $EOkey == 'created_at') {
+                    $embedObj->$EOkey = now();
+                } elseif ($is_MD) {
+                    if ($obj->$EOkey == '' || $obj->$EOkey == null) {
+                        $embedObj->$EOkey = null;
+                    } else {
+                        $embedObj->$EOkey = new UTCDateTime(new DateTime($obj->$EOkey));
+                    }
+                } else {
+                    $this->checkPropertyExistence($obj, $EOkey);
+                    $embedObj->$EOkey = $obj->$EOkey;
+                }
+            }
+        }
+
+        //else if($is_EM){//To be implemented}
+        //else if($is_HM){//To be implemented}
+        //else if($is_HO){//To be implemented}
+
+        //Get counter for embeds many with level > 1
+        $counter = getCounterForRelationships($method, $is_EO, $is_EM, $i);
+        //Check for another Level of Relationship
+        $embedObj->processAllRelationships($request, $event, $method.'-', $counter, $options);
+
+        if ($is_EO) {
+            $this->$method = $embedObj->attributes;
+        } else {
+            $this->$method()->associate($embedObj);
+        }
+        $this->save();
+    }
+
+
+    /**
+     * @param $modelTarget
+     * @param $obj
+     * @param $methodOnTarget
+     * @param $modelOnTarget
+     * @throws Exception
+     */
+    private function processEmbedOnTargetCollection($modelTarget, $obj, $methodOnTarget, $modelOnTarget){
+        $this->checkPropertyExistence($obj, 'ref_id');
+        $target_id = $obj->ref_id;
+
+        //Init the Target Model
+        $modelToBeSync = new $modelTarget;
+        $modelToBeSync = $modelToBeSync->find($target_id);
+        if (! is_null($modelToBeSync)) {
+            $miniModel = $this->getEmbedModel($modelOnTarget);
+            //Log::channel('single')->info(json_encode($miniModel));
+            //Log::channel('single')->info(json_encode($target_id));
+            //Log::channel('single')->info(json_encode($methodOnTarget));
+            $modelToBeSync->updateRelationWithSync($miniModel, $methodOnTarget);
+            //TODO:Sync target on level > 1
+            //$modelToBeSync->processAllRelationships($request, $event, $methodOnTarget, $methodOnTarget . "-");
+        }
+    }
+
+    /**
+     * @param string $key
+     * @param boolean $is_skippable
+     * @return mixed
+     */
+    private function getRelationshipRequest(string $key, $is_skippable){
+        $request = $is_skippable ? $this->getPartialGeneratedRequest() : $this->getRequest();
+        return $request->input($key);
+    }
+
+    /**
+     * @return Request
+     */
+    public function getRequest()
+    {
+        return $this->request;
+    }
+
+    /**
+     * @param Request $request
+     * @param array $additionalData
+     */
+    public function setRequest(Request $request, array $additionalData): void
+    {
+        $request = $request->merge($additionalData);
+        $this->request = $request;
+    }
+
+    /**
+     * @return Request
+     */
+    public function getPartialGeneratedRequest()
+    {
+        return $this->partial_generated_request;
+    }
+
+    /**
+     * @param array $arr
+     */
+    public function setPartialGeneratedRequest(array $arr): void
+    {
+        $partial_generated_request = new Request;
+        $partial_generated_request->merge($arr);
+
+        $this->partial_generated_request = $partial_generated_request;
+    }
+
+    /**
+     * @return array
+     */
+    public function getOptions()
+    {
+        return $this->options;
+    }
+
+    /**
+     * @param array $options
+     */
+    public function setOptions(array $options): void
+    {
+        $this->options = $options;
+    }
+
+    /**
+     * @param Request $request
+     * @param array $additionalData
+     * @param array $options
+     */
+    public function initDataForSync(Request $request, array $additionalData, array $options)
+    {
+        $this->setRequest($request, $additionalData);
+        $this->setOptions($options);
+        $this->setHasPartialRequest();
     }
 }
