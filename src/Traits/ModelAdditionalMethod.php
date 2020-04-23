@@ -5,7 +5,6 @@ namespace OfflineAgency\MongoAutoSync\Traits;
 use DateTime;
 use Exception;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Log;
 use MongoDB\BSON\UTCDateTime;
 use OfflineAgency\MongoAutoSync\Extensions\MongoCollection;
 use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
@@ -278,10 +277,7 @@ trait ModelAdditionalMethod
     {
         $embededModel = $this->getModelInstanceFromPath($mini_model_path);
         $items = $embededModel->getItems();
-        foreach ($items as $key => $item) {
-            if ($key == 'ref_id') {
-                Log::channel('single')->info(json_encode($embededModel));
-            }
+        foreach ($items as $key => $item){
             $embededModel->$key = $this->castValueToBeSaved($key, $item);
         }
 
@@ -386,7 +382,6 @@ trait ModelAdditionalMethod
         } else {
             throw new Exception('Relationship '.$method.' type '.$type.' is not valid! Possibile values are: EmbedsMany and EmbedsOne');
         }
-
         return json_encode($objs);
     }
 }

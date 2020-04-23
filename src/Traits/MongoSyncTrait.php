@@ -6,7 +6,6 @@ use DateTime;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Log;
 use MongoDB\BSON\UTCDateTime;
 
 trait MongoSyncTrait
