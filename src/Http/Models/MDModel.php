@@ -2,8 +2,8 @@
 
 namespace OfflineAgency\MongoAutoSync\Http\Models;
 
-use OfflineAgency\MongoAutoSync\Traits\Helper;
 use Jenssegers\Mongodb\Eloquent\Model as Eloquent;
+use OfflineAgency\MongoAutoSync\Traits\Helper;
 use OfflineAgency\MongoAutoSync\Traits\ModelAdditionalMethod;
 use OfflineAgency\MongoAutoSync\Traits\MongoSyncTrait;
 

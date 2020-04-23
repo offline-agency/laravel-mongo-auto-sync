@@ -4,7 +4,6 @@ namespace OfflineAgency\MongoAutoSync\Traits;
 
 use DateTime;
 use Exception;
-use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
 use MongoDB\BSON\UTCDateTime;
@@ -218,7 +217,8 @@ trait ModelAdditionalMethod
      * @return void
      * @throws Exception
      */
-    public function setMiniModels(){
+    public function setMiniModels()
+    {
         $miniModelList = $this->getUniqueMiniModelList();
         $this->mini_models = $this->populateMiniModels($miniModelList);
     }
@@ -235,21 +235,22 @@ trait ModelAdditionalMethod
      * @return array
      * @throws Exception
      */
-    public function getUniqueMiniModelList(){
+    public function getUniqueMiniModelList()
+    {
         $relationships = $this->getMongoRelation();
 
         $models = [];
         $embedded_object = [];
 
-        foreach ($relationships as $method => $relationship){
-            $relationshipsContainsTarget = Arr::has($relationship,'modelOnTarget');
-            if ($relationshipsContainsTarget){
-                $models[] = Arr::get($relationship,'modelOnTarget');
+        foreach ($relationships as $method => $relationship) {
+            $relationshipsContainsTarget = Arr::has($relationship, 'modelOnTarget');
+            if ($relationshipsContainsTarget) {
+                $models[] = Arr::get($relationship, 'modelOnTarget');
                 $embedded_object[$method] = $this->getObjWithRefId($method, $relationship);
             }
-
         }
         $this->setPartialGeneratedRequest($embedded_object);
+
         return collect($models)->unique()->toArray();
     }
 
@@ -258,14 +259,15 @@ trait ModelAdditionalMethod
      * @return mixed
      * @throws Exception
      */
-    public function populateMiniModels(array $miniModelList){
+    public function populateMiniModels(array $miniModelList)
+    {
         $miniModels = [];
-       foreach ($miniModelList as $miniModel){
-           $miniModels[$miniModel] = $this->getFreshMiniModel($miniModel);
-       }
+        foreach ($miniModelList as $miniModel) {
+            $miniModels[$miniModel] = $this->getFreshMiniModel($miniModel);
+        }
+
         return $miniModels;
     }
-
 
     /**
      * @param string $mini_model_path
@@ -276,14 +278,15 @@ trait ModelAdditionalMethod
     {
         $embededModel = $this->getModelInstanceFromPath($mini_model_path);
         $items = $embededModel->getItems();
-        foreach ($items as $key => $item){
-            if ($key == 'ref_id') Log::channel('single')->info(json_encode($embededModel));
+        foreach ($items as $key => $item) {
+            if ($key == 'ref_id') {
+                Log::channel('single')->info(json_encode($embededModel));
+            }
             $embededModel->$key = $this->castValueToBeSaved($key, $item);
         }
 
         return $embededModel;
     }
-
 
     /**
      * @param $key
@@ -291,24 +294,25 @@ trait ModelAdditionalMethod
      * @return array|mixed|UTCDateTime|null
      * @throws Exception
      */
-    public function castValueToBeSaved($key, $item){
+    public function castValueToBeSaved($key, $item)
+    {
         $is_ML = isML($item);
         $is_MD = isMD($item);
         $is_array = $this->isArray($item);
         $is_carbon_date = $this->isCarbonDate($item);
 
-        $value = $this->getObjValueToBeSaved($key );
+        $value = $this->getObjValueToBeSaved($key);
         if ($is_ML) {
             return ml([], getTranslatedContent($value));
         } elseif ($is_MD) {
             if ($value == '' || is_null($value)) {
-                return null;
+                return;
             } else {
                 return new UTCDateTime(new DateTime($value));
             }
-        }else if($is_carbon_date){
+        } elseif ($is_carbon_date) {
             return new UTCDateTime($value);
-        }else if($is_array){
+        } elseif ($is_array) {
             return $value->getAttributes();
         } else {
             return $value;
@@ -326,13 +330,14 @@ trait ModelAdditionalMethod
 
     /**
      * @param string $key
-     * @param boolean $rewrite_ref_id_key
+     * @param bool $rewrite_ref_id_key
      * @return mixed
      */
     public function getObjValueToBeSaved(string $key, $rewrite_ref_id_key = true)
     {
-        $key = $key ===  'ref_id' && $rewrite_ref_id_key ? '_id' : $key;
+        $key = $key === 'ref_id' && $rewrite_ref_id_key ? '_id' : $key;
         $request = $this->getRequest();
+
         return $request->has($key) ? $request->input($key) : $this->$key;
     }
 
@@ -341,13 +346,14 @@ trait ModelAdditionalMethod
      * @return array
      * @throws Exception
      */
-    public function getEmbedModel(string $key){
+    public function getEmbedModel(string $key)
+    {
         $embedModels = $this->getMiniModels();
 
-        if (Arr::has($embedModels, $key)){
+        if (Arr::has($embedModels, $key)) {
             return Arr::get($embedModels, $key);
-        }else{
-            throw new Exception('I cannot find an embedded model with key: ' . $key. ". Check on your model configuration");
+        } else {
+            throw new Exception('I cannot find an embedded model with key: '.$key.'. Check on your model configuration');
         }
     }
 
@@ -357,32 +363,30 @@ trait ModelAdditionalMethod
      * @return false|string
      * @throws Exception
      */
-    public function getObjWithRefId(string $method, array $relationship){
+    public function getObjWithRefId(string $method, array $relationship)
+    {
         $objs = [];
         $type = $relationship['type'];
 
         $is_EO = is_EO($type);
         $is_EM = is_EM($type);
 
-        if($is_EO){
+        if ($is_EO) {
             $obj = new stdClass;
 
             $obj->ref_id = $this->getObjValueToBeSaved($method, false);
             $objs[] = $obj;
-        }else if($is_EM){
-            foreach ($this->$method as $value){
+        } elseif ($is_EM) {
+            foreach ($this->$method as $value) {
                 $obj = new stdClass;
                 $obj->ref_id = $value->ref_id;
 
                 $objs[] = $obj;
             }
-        }else{
-            throw new Exception('Relationship ' . $method  . ' type ' . $type . ' is not valid! Possibile values are: EmbedsMany and EmbedsOne');
+        } else {
+            throw new Exception('Relationship '.$method.' type '.$type.' is not valid! Possibile values are: EmbedsMany and EmbedsOne');
         }
 
         return json_encode($objs);
     }
-
-
-
 }
