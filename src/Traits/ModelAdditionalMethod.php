@@ -277,7 +277,7 @@ trait ModelAdditionalMethod
     {
         $embededModel = $this->getModelInstanceFromPath($mini_model_path);
         $items = $embededModel->getItems();
-        foreach ($items as $key => $item){
+        foreach ($items as $key => $item) {
             $embededModel->$key = $this->castValueToBeSaved($key, $item);
         }
 
@@ -382,6 +382,7 @@ trait ModelAdditionalMethod
         } else {
             throw new Exception('Relationship '.$method.' type '.$type.' is not valid! Possibile values are: EmbedsMany and EmbedsOne');
         }
+
         return json_encode($objs);
     }
 }
