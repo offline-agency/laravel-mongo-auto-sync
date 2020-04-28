@@ -303,7 +303,7 @@ trait ModelAdditionalMethod
             return ml([], getTranslatedContent($value));
         } elseif ($is_MD) {
             if ($value == '' || is_null($value)) {
-                return null;
+                return;
             } else {
                 return new UTCDateTime(new DateTime($value));
             }
@@ -337,7 +337,7 @@ trait ModelAdditionalMethod
         $target_additional_data = $this->getTargetAdditionalData();
         $request = $this->getRequest();
 
-        return Arr::has($target_additional_data, $mini_model_path . '.' . $key ) ? Arr::get($target_additional_data, $mini_model_path . '.' . $key ) : // Search on target_additional_data [] 4th parameter of updateWithSync() / storeWithSync()
+        return Arr::has($target_additional_data, $mini_model_path.'.'.$key) ? Arr::get($target_additional_data, $mini_model_path.'.'.$key) : // Search on target_additional_data [] 4th parameter of updateWithSync() / storeWithSync()
             ($request->has($key) ? $request->input($key) : $this->$key); // Search on Main Request 1st parameter of updateWithSync() / storeWithSync() or directly on database
         //TODO: Add default value from Item Model
     }
@@ -374,7 +374,7 @@ trait ModelAdditionalMethod
 
         if ($is_EO) {
             $obj = new stdClass;
-            $obj->ref_id = $this->getObjValueToBeSaved($method,'', false);
+            $obj->ref_id = $this->getObjValueToBeSaved($method, '', false);
             $objs[] = $obj;
         } elseif ($is_EM) {
             foreach ($this->$method as $value) {
