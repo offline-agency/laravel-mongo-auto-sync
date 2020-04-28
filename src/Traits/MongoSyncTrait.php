@@ -6,12 +6,14 @@ use DateTime;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Log;
 use MongoDB\BSON\UTCDateTime;
 
 trait MongoSyncTrait
 {
     protected $has_partial_request;
     protected $request;
+    protected $target_additional_data;
     protected $partial_generated_request;
     protected $options;
 
@@ -19,12 +21,13 @@ trait MongoSyncTrait
      * @param Request $request
      * @param array $additionalData
      * @param array $options
+     * @param array $target_additional_data
      * @return $this
      * @throws Exception
      */
-    public function storeWithSync(Request $request, array $additionalData = [], array $options = [])
+    public function storeWithSync(Request $request, array $additionalData = [], array $options = [], array $target_additional_data = [])
     {
-        $this->initDataForSync($request, $additionalData, $options);
+        $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
         $this->storeEditAllItems($request, 'add', $options);
         $this->processAllRelationships($request, 'add', '', '', $options);
 
@@ -95,7 +98,7 @@ trait MongoSyncTrait
     public function processAllRelationships(Request $request, string $event, string $parent, string $counter, array $options)
     {
         $this->setMiniModels(); // For target Sync
-
+        Log::channel('single')->info(json_encode($this->getMiniModels()));
         //Get the relation info
         $relations = $this->getMongoRelation();
 
@@ -212,12 +215,13 @@ trait MongoSyncTrait
      * @param Request $request
      * @param array $additionalData
      * @param array $options
+     * @param array $target_additional_data
      * @return $this
      * @throws Exception
      */
-    public function updateWithSync(Request $request, array $additionalData = [], array $options = [])
+    public function updateWithSync(Request $request, array $additionalData = [], array $options = [], array $target_additional_data = [])
     {
-        $this->initDataForSync($request, $additionalData, $options);
+        $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
         $this->storeEditAllItems($request, 'update', $options);
         $this->processAllRelationships($request, 'update', '', '', $options);
 
@@ -537,13 +541,31 @@ trait MongoSyncTrait
     }
 
     /**
+     * @return array
+     */
+    public function getTargetAdditionalData()
+    {
+        return $this->target_additional_data;
+    }
+
+    /**
+     * @param array $target_additional_data
+     */
+    public function setTargetAdditionalData($target_additional_data): void
+    {
+        $this->target_additional_data = $target_additional_data;
+    }
+
+    /**
      * @param Request $request
      * @param array $additionalData
      * @param array $options
+     * @param array $target_additional_data
      */
-    public function initDataForSync(Request $request, array $additionalData, array $options)
+    public function initDataForSync(Request $request, array $additionalData, array $options, array $target_additional_data)
     {
         $this->setRequest($request, $additionalData);
+        $this->setTargetAdditionalData($target_additional_data);
         $this->setOptions($options);
         $this->setHasPartialRequest();
     }

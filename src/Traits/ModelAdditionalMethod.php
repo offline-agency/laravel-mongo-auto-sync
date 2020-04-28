@@ -278,38 +278,39 @@ trait ModelAdditionalMethod
         $embededModel = $this->getModelInstanceFromPath($mini_model_path);
         $items = $embededModel->getItems();
         foreach ($items as $key => $item) {
-            $embededModel->$key = $this->castValueToBeSaved($key, $item);
+            $embededModel->$key = $this->castValueToBeSaved($key, $item, $mini_model_path);
         }
 
         return $embededModel;
     }
 
     /**
-     * @param $key
+     * @param string $key
      * @param $item
+     * @param string $mini_model_path
      * @return array|mixed|UTCDateTime|null
      * @throws Exception
      */
-    public function castValueToBeSaved($key, $item)
+    public function castValueToBeSaved(string $key, $item, string $mini_model_path)
     {
         $is_ML = isML($item);
         $is_MD = isMD($item);
         $is_array = $this->isArray($item);
         $is_carbon_date = $this->isCarbonDate($item);
 
-        $value = $this->getObjValueToBeSaved($key);
+        $value = $this->getObjValueToBeSaved($key, $mini_model_path);
         if ($is_ML) {
             return ml([], getTranslatedContent($value));
         } elseif ($is_MD) {
             if ($value == '' || is_null($value)) {
-                return;
+                return null;
             } else {
                 return new UTCDateTime(new DateTime($value));
             }
         } elseif ($is_carbon_date) {
             return new UTCDateTime($value);
         } elseif ($is_array) {
-            return $value->getAttributes();
+            return is_array($value) ? $value : $value->getAttributes();
         } else {
             return $value;
         }
@@ -326,15 +327,19 @@ trait ModelAdditionalMethod
 
     /**
      * @param string $key
+     * @param string $mini_model_path
      * @param bool $rewrite_ref_id_key
      * @return mixed
      */
-    public function getObjValueToBeSaved(string $key, $rewrite_ref_id_key = true)
+    public function getObjValueToBeSaved(string $key, string $mini_model_path, $rewrite_ref_id_key = true)
     {
         $key = $key === 'ref_id' && $rewrite_ref_id_key ? '_id' : $key;
+        $target_additional_data = $this->getTargetAdditionalData();
         $request = $this->getRequest();
 
-        return $request->has($key) ? $request->input($key) : $this->$key;
+        return Arr::has($target_additional_data, $mini_model_path . '.' . $key ) ? Arr::get($target_additional_data, $mini_model_path . '.' . $key ) : // Search on target_additional_data [] 4th parameter of updateWithSync() / storeWithSync()
+            ($request->has($key) ? $request->input($key) : $this->$key); // Search on Main Request 1st parameter of updateWithSync() / storeWithSync() or directly on database
+        //TODO: Add default value from Item Model
     }
 
     /**
@@ -369,18 +374,16 @@ trait ModelAdditionalMethod
 
         if ($is_EO) {
             $obj = new stdClass;
-
-            $obj->ref_id = $this->getObjValueToBeSaved($method, false);
+            $obj->ref_id = $this->getObjValueToBeSaved($method,'', false);
             $objs[] = $obj;
         } elseif ($is_EM) {
             foreach ($this->$method as $value) {
                 $obj = new stdClass;
                 $obj->ref_id = $value->ref_id;
-
                 $objs[] = $obj;
             }
         } else {
-            throw new Exception('Relationship '.$method.' type '.$type.' is not valid! Possibile values are: EmbedsMany and EmbedsOne');
+            throw new Exception('Relationship '.$method.' type '.$type.' is not valid! Possible values are: EmbedsMany and EmbedsOne');
         }
 
         return json_encode($objs);
