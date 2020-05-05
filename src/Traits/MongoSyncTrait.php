@@ -6,8 +6,9 @@ use DateTime;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Log;
 use MongoDB\BSON\UTCDateTime;
+use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
+use stdClass;
 
 trait MongoSyncTrait
 {
@@ -34,7 +35,7 @@ trait MongoSyncTrait
         //Dispatch the creation event
         $this->fireModelEvent('storeWithSync');
 
-        return $this;
+        return $this->fresh();
     }
 
     /**
@@ -55,6 +56,7 @@ trait MongoSyncTrait
 
             $is_fillable = isFillable($item, $event);
             $is_skippable = $this->getIsSkippable($request->has($key));
+
             if ($is_skippable) {
                 continue;
             } else {
@@ -98,7 +100,7 @@ trait MongoSyncTrait
     public function processAllRelationships(Request $request, string $event, string $parent, string $counter, array $options)
     {
         $this->setMiniModels(); // For target Sync
-        Log::channel('single')->info(json_encode($this->getMiniModels()));
+
         //Get the relation info
         $relations = $this->getMongoRelation();
 
@@ -122,8 +124,16 @@ trait MongoSyncTrait
             $is_EM = is_EM($type);
 
             $key = $parent.$method.$counter;
-            $is_skippable = $this->getIsSkippable($request->has($key));
-            $value = $this->getRelationshipRequest($key, $is_skippable);
+            $is_skippable = $this->getIsSkippable($request->has($key), $hasTarget);
+
+            if ($is_skippable) {
+                continue;
+            }
+            $current_request = $request->has($key) ? $request : $this->getPartialGeneratedRequest();
+
+            $value = $this->getRelationshipRequest($key, $current_request);
+
+            $is_embeds_has_to_be_updated = $request->has($key);
 
             if (! is_null($value) && ! ($value == '') && ! ($value == '[]')) {
                 $objs = json_decode($value);
@@ -132,7 +142,7 @@ trait MongoSyncTrait
             }
 
             if ($is_EO || $is_EM) {//EmbedsOne Create - EmbedsMany Create
-                if ($event == 'update' && ! $is_skippable) {
+                if ($event == 'update' && $is_embeds_has_to_be_updated) {
 
                     //Delete EmbedsMany or EmbedsOne on Target - TODO: check if it is necessary to run deleteTargetObj method
                     if ($hasTarget) {
@@ -160,7 +170,7 @@ trait MongoSyncTrait
                             $is_EO,
                             $is_EM,
                             $i,
-                            $is_skippable,
+                            $is_embeds_has_to_be_updated,
                             $options);
                         $i++;
                     }
@@ -196,13 +206,13 @@ trait MongoSyncTrait
      * @param $is_EO
      * @param $is_EM
      * @param $i
-     * @param bool $is_skippable
+     * @param bool $is_embeds_has_to_be_updated
      * @param $options
      * @throws Exception
      */
-    public function processOneEmbededRelationship(Request $request, $obj, $type, $model, $method, $modelTarget, $methodOnTarget, $modelOnTarget, $event, $hasTarget, $is_EO, $is_EM, $i, $is_skippable, $options)
+    public function processOneEmbededRelationship(Request $request, $obj, $type, $model, $method, $modelTarget, $methodOnTarget, $modelOnTarget, $event, $hasTarget, $is_EO, $is_EM, $i, $is_embeds_has_to_be_updated, $options)
     {
-        if (! $is_skippable) {
+        if ($is_embeds_has_to_be_updated) {
             $this->processEmbedOnCurrentCollection($request, $obj, $type, $model, $method, $event, $is_EO, $is_EM, $i, $options);
         }
 
@@ -228,7 +238,7 @@ trait MongoSyncTrait
         //Dispatch the update event
         $this->fireModelEvent('updateWithSync');
 
-        return $this;
+        return $this->fresh();
     }
 
     /**
@@ -329,12 +339,14 @@ trait MongoSyncTrait
     /**
      * @param $obj
      * @param string $EOkey
+     * @param string $method
+     * @param string $model
      * @throws Exception
      */
-    public function checkPropertyExistence($obj, string $EOkey)
+    public function checkPropertyExistence($obj, string $EOkey, $method = '', $model = '')
     {
         if (! property_exists($obj, $EOkey)) {
-            $msg = ('Error - '.$EOkey.' attribute not found on obj '.json_encode($obj));
+            $msg = 'Error - '. $EOkey . ' attribute not found on obj ' . json_encode($obj) . ' during save of model: ' . $model . ' and attribute: ' . $method;
             throw new Exception($msg);
         }
     }
@@ -367,11 +379,12 @@ trait MongoSyncTrait
 
     /**
      * @param bool $request_has_key
+     * @param bool $hasTarget
      * @return bool
      */
-    public function getIsSkippable($request_has_key)
+    public function getIsSkippable($request_has_key, $hasTarget = false)
     {
-        return ! $request_has_key && $this->getHasPartialRequest();
+        return ! $request_has_key && $this->getHasPartialRequest() && ! $hasTarget;
     }
 
     /**
@@ -405,7 +418,7 @@ trait MongoSyncTrait
      */
     private function processEmbedOnCurrentCollection(Request $request, $obj, $type, $model, $method, $event, $is_EO, $is_EM, $i, $options)
     {
-        //Init the embedone model
+        //Init the embed one model
         $embedObj = new $model;
 
         $EOitems = $embedObj->getItems();
@@ -414,6 +427,7 @@ trait MongoSyncTrait
             if (! is_null($obj)) {
                 $is_ML = isML($item);
                 $is_MD = isMD($item);
+                $this->checkPropertyExistence($obj, $EOkey, $method, $model);
 
                 if ($is_ML) {
                     $embedObj->$EOkey = ml([], $obj->$EOkey);
@@ -426,7 +440,6 @@ trait MongoSyncTrait
                         $embedObj->$EOkey = new UTCDateTime(new DateTime($obj->$EOkey));
                     }
                 } else {
-                    $this->checkPropertyExistence($obj, $EOkey);
                     $embedObj->$EOkey = $obj->$EOkey;
                 }
             }
@@ -458,17 +471,9 @@ trait MongoSyncTrait
      */
     private function processEmbedOnTargetCollection($modelTarget, $obj, $methodOnTarget, $modelOnTarget)
     {
-        $this->checkPropertyExistence($obj, 'ref_id');
-        $target_id = $obj->ref_id;
-
-        //Init the Target Model
-        $modelToBeSync = new $modelTarget;
-        $modelToBeSync = $modelToBeSync->find($target_id);
+        $modelToBeSync = $this->getModelTobeSync($modelTarget, $obj);
         if (! is_null($modelToBeSync)) {
             $miniModel = $this->getEmbedModel($modelOnTarget);
-            //Log::channel('single')->info(json_encode($miniModel));
-            //Log::channel('single')->info(json_encode($target_id));
-            //Log::channel('single')->info(json_encode($methodOnTarget));
             $modelToBeSync->updateRelationWithSync($miniModel, $methodOnTarget);
             //TODO:Sync target on level > 1
             //$modelToBeSync->processAllRelationships($request, $event, $methodOnTarget, $methodOnTarget . "-");
@@ -476,14 +481,33 @@ trait MongoSyncTrait
     }
 
     /**
-     * @param string $key
-     * @param bool $is_skippable
-     * @return mixed
+     * @param string $modelTarget
+     * @param stdClass $obj
+     * @return MDModel
+     * @throws Exception
      */
-    private function getRelationshipRequest(string $key, $is_skippable)
+    private function getModelTobeSync(string $modelTarget, stdClass $obj)
     {
-        $request = $is_skippable ? $this->getPartialGeneratedRequest() : $this->getRequest();
+        $this->checkPropertyExistence($obj, 'ref_id');
+        $target_id = $obj->ref_id;
 
+        //Init the Target Model
+        $modelToBeSync = new $modelTarget;
+        return $modelToBeSync->find($target_id);
+    }
+
+    /**
+     * @param string $key
+     * @param Request $request
+     * @return mixed
+     * @throws Exception
+     */
+    private function getRelationshipRequest(string $key, Request $request)
+    {
+        $this->checkRequestExistence(
+            $request,
+            $key
+        );
         return $request->input($key);
     }
 
