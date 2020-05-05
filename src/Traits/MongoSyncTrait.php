@@ -346,7 +346,7 @@ trait MongoSyncTrait
     public function checkPropertyExistence($obj, string $EOkey, $method = '', $model = '')
     {
         if (! property_exists($obj, $EOkey)) {
-            $msg = 'Error - '. $EOkey . ' attribute not found on obj ' . json_encode($obj) . ' during save of model: ' . $model . ' and attribute: ' . $method;
+            $msg = 'Error - '.$EOkey.' attribute not found on obj '.json_encode($obj).' during save of model: '.$model.' and attribute: '.$method;
             throw new Exception($msg);
         }
     }
@@ -493,6 +493,7 @@ trait MongoSyncTrait
 
         //Init the Target Model
         $modelToBeSync = new $modelTarget;
+
         return $modelToBeSync->find($target_id);
     }
 
@@ -508,6 +509,7 @@ trait MongoSyncTrait
             $request,
             $key
         );
+
         return $request->input($key);
     }
 
