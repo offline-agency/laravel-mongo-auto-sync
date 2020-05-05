@@ -243,13 +243,13 @@ trait ModelAdditionalMethod
 
         foreach ($relationships as $method => $relationship) {
             $hasTarget = hasTarget($relationship);
-            if ($hasTarget){
+            if ($hasTarget) {
                 $relationshipsContainsTarget = Arr::has($relationship, 'modelOnTarget');
                 if ($relationshipsContainsTarget) {
                     $models[] = Arr::get($relationship, 'modelOnTarget');
                     $embedded_object[$method] = $this->getObjWithRefId($method, $relationship);
-                }else{
-                    throw new Exception('modelOnTarget not found on relationship ' . $method . ' array. Check your Model configuration ' . get_class($this));
+                } else {
+                    throw new Exception('modelOnTarget not found on relationship '.$method.' array. Check your Model configuration '.get_class($this));
                 }
             }
         }
@@ -353,7 +353,7 @@ trait ModelAdditionalMethod
      * @param string $key
      * @return mixed
      */
-    private function getDbValue( string $key)
+    private function getDbValue(string $key)
     {
         return $this->$key;
     }
@@ -393,8 +393,7 @@ trait ModelAdditionalMethod
             $obj->ref_id = $this->getObjValueToBeSaved($method, '', false);
             $objs[] = $obj;
         } elseif ($is_EM) {
-
-            if (!is_null($this->$method) > 0){
+            if (! is_null($this->$method) > 0) {
                 foreach ($this->$method as $value) {
                     $obj = new stdClass;
                     $obj->ref_id = $value->ref_id;
