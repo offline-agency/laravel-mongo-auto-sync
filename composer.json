@@ -38,7 +38,12 @@
     "autoload-dev": {
         "psr-4": {
             "Tests\\": "tests/"
-        }
+        },
+        "classmap": [
+            "tests/TestCase.php",
+            "tests/models",
+            "tests/factories"
+        ]
     },
     "scripts": {
         "test": "vendor/bin/phpunit"
