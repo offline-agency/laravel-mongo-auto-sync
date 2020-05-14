@@ -20,8 +20,8 @@ class GenerateModelDocumentationTest extends TestCase
 
     public function test_exception_model_not_found()
     {
-        $this->expectExceptionMessage('Error ModelDoesNotExist Model not found');
-        $this->artisan('model-doc:generate', ['collection_name' => 'ModelDoesNotExist'])
+        $this->expectExceptionMessage('Error ModelThatDoesNotExist Model not found');
+        $this->artisan('model-doc:generate', ['collection_name' => 'ModelThatDoesNotExist'])
             ->assertExitCode(0);
     }
 }
