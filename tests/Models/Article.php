@@ -2,9 +2,9 @@
 
 namespace Tests\Models;
 
-use Jenssegers\Mongodb\Helpers\EloquentBuilder;
+use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 
-class Article extends EloquentBuilder
+class Article extends MDModel
 {
     protected $collection = 'article';
 

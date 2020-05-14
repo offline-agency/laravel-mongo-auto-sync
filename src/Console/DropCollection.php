@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands;
+namespace OfflineAgency\MongoAutoSync\Console;
 
 use Illuminate\Console\Command;
 

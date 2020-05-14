@@ -1,8 +1,11 @@
 <?php
 
-namespace src\Console\GenerateModelDocumentation;
+namespace OfflineAgency\MongoAutoSync\Console;
 
+use Exception;
 use Illuminate\Console\Command;
+use Illuminate\Support\Str;
+use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 
 class GenerateModelDocumentation extends Command
 {
@@ -30,55 +33,67 @@ class GenerateModelDocumentation extends Command
         parent::__construct();
     }
 
+
     /**
-     * Execute the console command.
-     *
-     * @return mixed
+     * @return |null
+     * @throws Exception
      */
     public function handle()
     {
-        $collection_name = $this->argument( 'collection_name' );
+        $collection_name = $this->argument('collection_name');
 
         $modelPath = $this->getModelPathByName($collection_name);
-        $model = new $modelPath;
 
-        if(!is_null($model)){
-            $items = $model->getItems();
-            $relations = $model->getMongoRelation();
+        $model = $this->getModel($modelPath);
 
-            echo "\n\n\n\n/**\n*\n* Plain Fields\n* \n";
-            echo "* @property string \$id\n";
+        $items = $model->getItems();
+        $relations = $model->getMongoRelation();
 
-            foreach ($items as $key => $item){
-                if(isML($item)){
-                    echo "* @property array \$" . $key . "\n";
-                }else{
-                    echo "* @property string \$" . $key . "\n";
-                }
+        $output = "\n\n\n\n/**\n*\n* Plain Fields\n* \n";
+        $output .=  "* @property string \$id\n";
+
+        foreach ($items as $key => $item) {
+            if (isML($item)) {
+                $output .= "* @property array \$" . $key . "\n";
+            } else {
+                $output .= "* @property string \$" . $key . "\n";
             }
-            echo "*\n*\n*";
-            if(sizeof($relations) > 0){
-                echo " Relationships\n*\n";
-                foreach ($relations as $key => $relation){
-
-                    $modelTarget = str_replace("App\Models\\","",$relation['model']);
-
-                    echo "* @property " . $modelTarget . " \$" . $key . "\n";
-                }
-                echo "*\n**/ \n\n\n\n\n";
-            }
-        }else{
-            $this->error('Error Model not found \n');
         }
+
+        $output .= "*\n*\n*";
+
+        if (sizeof($relations) > 0) {
+            $output .= " Relationships\n*\n";
+            foreach ($relations as $key => $relation) {
+
+                $modelTarget = str_replace("App\Models\\", "", $relation['model']);
+
+                $output .= "* @property " . $modelTarget . " \$" . $key . "\n";
+            }
+            $output .= "*\n**/ \n\n\n\n\n";
+        }
+
+        $this->info($output);
+
+        return null;
     }
 
+    /**
+     * @param $collection_name
+     * @return string
+     */
     public function getModelPathByName($collection_name)
     {
-        $path = app_path() . "/Models";
+        $path = config('laravel-mongo-auto-sync.model_path');
 
         return $this->checkOaModels($path, $collection_name);
     }
 
+    /**
+     * @param $path
+     * @param $collection_name
+     * @return string
+     */
     public function checkOaModels($path, $collection_name)
     {
         $out = "";
@@ -91,12 +106,28 @@ class GenerateModelDocumentation extends Command
             if (is_dir($filename)) {
                 $out = $this->checkOaModels($filename, $collection_name);
             } else if (strtolower(substr($result, 0, -4)) == strtolower($collection_name)) {
-                return 'App\Models\\' . substr($result, 0, -4);
+                return config('laravel-mongo-auto-sync.model_namespace') . "\\" . substr($result, 0, -4);
             }
         }
-        if (strtolower($collection_name) == "user") {
-            $out = 'App\Models\\' . "Auth\User\User";
+        foreach (config('laravel-mongo-auto-sync.other_models') as $key => $values) {
+            if (strtolower($collection_name) == $key) {
+                return $values['model_namespace'] . '\\' . Str::ucfirst($key);
+            }
         }
         return $out;
+    }
+
+    /**
+     * @param string $modelPath
+     * @return MDModel
+     * @throws Exception
+     */
+    private function getModel(string $modelPath)
+    {
+        if (class_exists($modelPath)) {
+            return new $modelPath;
+        } else {
+            throw new Exception('Error ' . $this->argument('collection_name') . ' Model not found');
+        }
     }
 }
