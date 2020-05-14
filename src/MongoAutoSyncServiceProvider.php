@@ -3,6 +3,7 @@
 namespace OfflineAgency\MongoAutoSync;
 
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
+use OfflineAgency\MongoAutoSync\Console\DropCollection;
 use OfflineAgency\MongoAutoSync\Console\GenerateModelDocumentation;
 
 /**
@@ -18,10 +19,15 @@ class MongoAutoSyncServiceProvider extends BaseServiceProvider
     public function boot()
     {
         $this->app->bind('command.model-doc:generate', GenerateModelDocumentation::class);
+        $this->app->bind('command.drop:collection', DropCollection::class);
 
         $this->commands([
             'command.model-doc:generate'
-            ]);
+        ]);
+
+        $this->commands([
+            'command.drop:collection'
+        ]);
     }
 
     /**
