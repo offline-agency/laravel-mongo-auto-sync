@@ -315,7 +315,7 @@ trait ModelAdditionalMethod
         } elseif ($is_carbon_date) {
             return new UTCDateTime($value);
         } elseif ($is_array) {
-            return is_null($value) ? []  : (is_array($value) ? $value : $value->getAttributes());
+            return is_null($value) ? [] : (is_array($value) ? $value : $value->getAttributes());
         } else {
             return $value;
         }
