@@ -10,7 +10,7 @@ abstract class TestCase extends BaseTestCase
 {
     use CreatesApplication, MockeryPHPUnitIntegration;
 
-    protected function setUp() : void
+    protected function setUp(): void
     {
         parent::setUp();
     }
@@ -18,7 +18,7 @@ abstract class TestCase extends BaseTestCase
     protected function getPackageProviders($app)
     {
         return [
-            MongoAutoSyncServiceProvider::class
+            MongoAutoSyncServiceProvider::class,
         ];
     }
 

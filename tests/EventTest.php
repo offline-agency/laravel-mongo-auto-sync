@@ -40,7 +40,7 @@ class EventTest extends TestCase
         $article = new Article;
         $request = new Request;
         $arr = [
-            'title' => 'ArticleTitle'
+            'title' => 'ArticleTitle',
         ];
 
         $article->storeWithSync($request, $arr);
@@ -55,7 +55,7 @@ class EventTest extends TestCase
         $request = new Request;
 
         $updateArr = [
-            'title' => 'UpdatedArticleTitle'
+            'title' => 'UpdatedArticleTitle',
         ];
 
         $article->updateWithSync($request, $updateArr);

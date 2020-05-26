@@ -25,4 +25,3 @@ class GenerateModelDocumentationTest extends TestCase
             ->assertExitCode(0);
     }
 }
-

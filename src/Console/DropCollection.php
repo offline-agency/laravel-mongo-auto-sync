@@ -45,8 +45,7 @@ class DropCollection extends Command
 
         $model = $this->getModel($modelPath);
 
-        if (!is_null($model)) {
-
+        if (! is_null($model)) {
             $model = $model->all();
 
             $count = $model->count();
@@ -56,16 +55,14 @@ class DropCollection extends Command
                 for ($i = 0; $i <= $count - 1; $i++) {
                     $bar->advance();
                     $model[$i]->destroyWithSync();
-                    $this->line(' _Destroy row #' . ($i + 1));
+                    $this->line(' _Destroy row #'.($i + 1));
                 }
             } else {
-                $this->warn('No record found on collection ' . strtolower($collection_name));
+                $this->warn('No record found on collection '.strtolower($collection_name));
             }
         } else {
             $this->error('Error Model not found \n');
         }
-
-        return null;
     }
 
     /**
@@ -86,24 +83,24 @@ class DropCollection extends Command
      */
     public function checkOaModels($path, $collection_name)
     {
-        $out = "";
+        $out = '';
         $results = scandir($path);
 
         foreach ($results as $result) {
             if ($result === '.' or $result === '..') {
                 continue;
             }
-            $filename = $path . '/' . $result;
+            $filename = $path.'/'.$result;
             if (is_dir($filename)) {
                 $out = $this->checkOaModels($filename, $collection_name);
-            } else if (strtolower(substr($result, 0, -4)) == strtolower($collection_name)) {
-                return config('laravel-mongo-auto-sync.model_namespace') . "\\" . substr($result, 0, -4);
+            } elseif (strtolower(substr($result, 0, -4)) == strtolower($collection_name)) {
+                return config('laravel-mongo-auto-sync.model_namespace').'\\'.substr($result, 0, -4);
             }
         }
 
         foreach (config('laravel-mongo-auto-sync.other_models') as $key => $values) {
             if (strtolower($collection_name) == $key) {
-                return $values['model_namespace'] . '\\' . Str::ucfirst($key);
+                return $values['model_namespace'].'\\'.Str::ucfirst($key);
             }
         }
 
@@ -120,7 +117,7 @@ class DropCollection extends Command
         if (class_exists($modelPath)) {
             return new $modelPath;
         } else {
-            throw new Exception('Error ' . $this->argument('collection_name') . ' Model not found');
+            throw new Exception('Error '.$this->argument('collection_name').' Model not found');
         }
     }
 }

@@ -32,7 +32,7 @@ class DropCollectionTest extends TestCase
             $article = new Article;
             $request = new Request;
             $arr = [
-                'title' => 'Article #' . $i
+                'title' => 'Article #'.$i,
             ];
 
             $article->storeWithSync($request, $arr);
@@ -52,4 +52,3 @@ class DropCollectionTest extends TestCase
         }
     }
 }
-
