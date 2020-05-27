@@ -17,6 +17,7 @@ trait MongoSyncTrait
     protected $target_additional_data;
     protected $partial_generated_request;
     protected $options;
+    protected $tempEM;
 
     /**
      * @param Request $request
@@ -155,6 +156,11 @@ trait MongoSyncTrait
                 }
 
                 if (! empty($objs)) {
+
+                    if ($is_EM){
+                        $this->tempEM  = [];
+                    }
+
                     $i = 0;
                     foreach ($objs as $obj) {
                         $this->processOneEmbededRelationship(
@@ -174,6 +180,12 @@ trait MongoSyncTrait
                             $options);
                         $i++;
                     }
+
+                    if ($is_EM){
+                        $this->$method = $this->tempEM;
+                    }
+
+                    $this->save();
                 } else {
                     $this->$method = [];
                     $this->save();
@@ -312,9 +324,9 @@ trait MongoSyncTrait
                 }
 
                 //TODO: Need to be implemented
-               /* elseif ($is_HM) {//HasMany
-                } elseif ($is_HO) {//HasOne Create
-                }*/
+                /* elseif ($is_HM) {//HasMany
+                 } elseif ($is_HO) {//HasOne Create
+                 }*/
             }
         }
         //Delete current object
@@ -398,9 +410,9 @@ trait MongoSyncTrait
     public function setHasPartialRequest(): void
     {
         $this->has_partial_request = $this->getOptionValue(
-            $this->getOptions(),
-            'request_type'
-        ) == 'partial';
+                $this->getOptions(),
+                'request_type'
+            ) == 'partial';
     }
 
     /**
@@ -457,9 +469,8 @@ trait MongoSyncTrait
         if ($is_EO) {
             $this->$method = $embedObj->attributes;
         } else {
-            $this->$method()->associate($embedObj);
+            $this->tempEM[] = $embedObj->attributes;
         }
-        $this->save();
     }
 
     /**
