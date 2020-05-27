@@ -156,9 +156,8 @@ trait MongoSyncTrait
                 }
 
                 if (! empty($objs)) {
-
-                    if ($is_EM){
-                        $this->tempEM  = [];
+                    if ($is_EM) {
+                        $this->tempEM = [];
                     }
 
                     $i = 0;
@@ -181,7 +180,7 @@ trait MongoSyncTrait
                         $i++;
                     }
 
-                    if ($is_EM){
+                    if ($is_EM) {
                         $this->$method = $this->tempEM;
                     }
 
