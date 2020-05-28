@@ -151,7 +151,8 @@ trait MongoSyncTrait
                     }
                     //Delete EmbedsMany or EmbedsOne on current object
                     if ($is_EM) {
-                        $this->$method()->delete();
+                        $this->$method = [];
+                        $this->save();
                     }
                 }
 
@@ -183,12 +184,10 @@ trait MongoSyncTrait
                     if ($is_EM) {
                         $this->$method = $this->tempEM;
                     }
-
-                    $this->save();
                 } else {
                     $this->$method = [];
-                    $this->save();
                 }
+                $this->save();
             }
         }
     }
