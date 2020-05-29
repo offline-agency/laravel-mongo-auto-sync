@@ -6,6 +6,7 @@ use DateTime;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Log;
 use MongoDB\BSON\UTCDateTime;
 use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 use stdClass;
@@ -198,9 +199,12 @@ trait MongoSyncTrait
      */
     public function updateRelationWithSync($mini_model, string $method_on_target)
     {
-        $current_value = $this->$method_on_target;
-        $current_value[] = $mini_model->attributes;
-        $this->$method_on_target = $current_value;
+        $new_values = [];
+        foreach ($this->$method_on_target as $temp) {
+            $new_values[] = $temp->attributes;
+        }
+        $new_values[] = $mini_model->attributes;
+        $this->$method_on_target = $new_values;
         $this->save();
     }
 
@@ -285,12 +289,12 @@ trait MongoSyncTrait
         $target = new $modelTarget;
         $target = $target->all()->where('id', $target_id)->first();
         if (! is_null($target)) {
-            $subTarget = $target->$methodOnTarget()->where('ref_id', $id)->first();
-            $temps = $target->$methodOnTarget()->where('ref_id', '!=', $id);
-            $target->$methodOnTarget()->delete($subTarget);
             $new_values = [];
-            foreach ($temps as $temp) {
-                $new_values[] = $temp->attributes;
+            foreach ($target->$methodOnTarget as $temp) {
+                if ($temp->ref_id !== $id){
+                    $new_values[] = $temp->attributes;
+                }
+
             }
             $target->$methodOnTarget = $new_values;
             $target->save();
