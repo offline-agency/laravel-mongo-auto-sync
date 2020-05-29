@@ -198,7 +198,9 @@ trait MongoSyncTrait
      */
     public function updateRelationWithSync($mini_model, string $method_on_target)
     {
-        $this->$method_on_target()->associate($mini_model);
+        $current_value = $this->$method_on_target;
+        $current_value[] = $mini_model->attributes;
+        $this->$method_on_target = $current_value;
         $this->save();
     }
 
@@ -286,10 +288,12 @@ trait MongoSyncTrait
             $subTarget = $target->$methodOnTarget()->where('ref_id', $id)->first();
             $temps = $target->$methodOnTarget()->where('ref_id', '!=', $id);
             $target->$methodOnTarget()->delete($subTarget);
+            $new_values = [];
             foreach ($temps as $temp) {
-                $target->$methodOnTarget()->associate($temp);
-                $target->save();
+                $new_values[] = $temp->attributes;
             }
+            $target->$methodOnTarget = $new_values;
+            $target->save();
         }
     }
 
