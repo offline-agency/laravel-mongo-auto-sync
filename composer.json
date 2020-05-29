@@ -11,7 +11,7 @@
         "illuminate/container": "^5.8|^6.0",
         "illuminate/database": "^5.8|^6.0",
         "illuminate/events": "^5.8|^6.0",
-        "jenssegers/mongodb": "^3.3"
+        "jenssegers/mongodb": "3.6.4"
     },
     "require-dev": {
         "phpunit/phpunit": "^6.0|^7.0|^8.0",
