@@ -6,7 +6,6 @@ use DateTime;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Log;
 use MongoDB\BSON\UTCDateTime;
 use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 use stdClass;
@@ -291,10 +290,9 @@ trait MongoSyncTrait
         if (! is_null($target)) {
             $new_values = [];
             foreach ($target->$methodOnTarget as $temp) {
-                if ($temp->ref_id !== $id){
+                if ($temp->ref_id !== $id) {
                     $new_values[] = $temp->attributes;
                 }
-
             }
             $target->$methodOnTarget = $new_values;
             $target->save();
