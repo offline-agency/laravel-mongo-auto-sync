@@ -4,7 +4,7 @@
     "type": "library",
     "keywords": ["laravel","database","mongodb","eloquent"],
     "require": {
-        "php": ">=7.0",
+        "php": ">=7.1",
         "ext-json": "*",
         "ext-mongodb": "*",
         "illuminate/support": "^5.8|^6.0",
