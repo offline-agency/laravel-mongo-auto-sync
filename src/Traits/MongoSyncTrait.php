@@ -17,6 +17,7 @@ trait MongoSyncTrait
     protected $target_additional_data;
     protected $partial_generated_request;
     protected $options;
+    protected $tempEM;
 
     /**
      * @param Request $request
@@ -150,11 +151,16 @@ trait MongoSyncTrait
                     }
                     //Delete EmbedsMany or EmbedsOne on current object
                     if ($is_EM) {
-                        $this->$method()->delete();
+                        $this->$method = [];
+                        $this->save();
                     }
                 }
 
                 if (! empty($objs)) {
+                    if ($is_EM) {
+                        $this->tempEM = [];
+                    }
+
                     $i = 0;
                     foreach ($objs as $obj) {
                         $this->processOneEmbededRelationship(
@@ -174,10 +180,14 @@ trait MongoSyncTrait
                             $options);
                         $i++;
                     }
+
+                    if ($is_EM) {
+                        $this->$method = $this->tempEM;
+                    }
                 } else {
                     $this->$method = [];
-                    $this->save();
                 }
+                $this->save();
             }
         }
     }
@@ -188,7 +198,12 @@ trait MongoSyncTrait
      */
     public function updateRelationWithSync($mini_model, string $method_on_target)
     {
-        $this->$method_on_target()->associate($mini_model);
+        $new_values = [];
+        foreach ($this->$method_on_target as $temp) {
+            $new_values[] = $temp->attributes;
+        }
+        $new_values[] = $mini_model->attributes;
+        $this->$method_on_target = $new_values;
         $this->save();
     }
 
@@ -273,13 +288,14 @@ trait MongoSyncTrait
         $target = new $modelTarget;
         $target = $target->all()->where('id', $target_id)->first();
         if (! is_null($target)) {
-            $subTarget = $target->$methodOnTarget()->where('ref_id', $id)->first();
-            $temps = $target->$methodOnTarget()->where('ref_id', '!=', $id);
-            $target->$methodOnTarget()->delete($subTarget);
-            foreach ($temps as $temp) {
-                $target->$methodOnTarget()->associate($temp);
-                $target->save();
+            $new_values = [];
+            foreach ($target->$methodOnTarget as $temp) {
+                if ($temp->ref_id !== $id) {
+                    $new_values[] = $temp->attributes;
+                }
             }
+            $target->$methodOnTarget = $new_values;
+            $target->save();
         }
     }
 
@@ -312,9 +328,9 @@ trait MongoSyncTrait
                 }
 
                 //TODO: Need to be implemented
-               /* elseif ($is_HM) {//HasMany
-                } elseif ($is_HO) {//HasOne Create
-                }*/
+                /* elseif ($is_HM) {//HasMany
+                 } elseif ($is_HO) {//HasOne Create
+                 }*/
             }
         }
         //Delete current object
@@ -398,9 +414,9 @@ trait MongoSyncTrait
     public function setHasPartialRequest(): void
     {
         $this->has_partial_request = $this->getOptionValue(
-            $this->getOptions(),
-            'request_type'
-        ) == 'partial';
+                $this->getOptions(),
+                'request_type'
+            ) == 'partial';
     }
 
     /**
@@ -457,9 +473,8 @@ trait MongoSyncTrait
         if ($is_EO) {
             $this->$method = $embedObj->attributes;
         } else {
-            $this->$method()->associate($embedObj);
+            $this->tempEM[] = $embedObj->attributes;
         }
-        $this->save();
     }
 
     /**
