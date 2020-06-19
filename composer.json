@@ -1,10 +1,10 @@
 {
     "name": "offline-agency/laravel-mongo-auto-sync",
-    "description": "A package that allows to sync changes between collections on MongoDB project.",
+    "description": "This package provides a better support for MongoDB relationships in Laravel Projects.",
     "type": "library",
-    "keywords": ["laravel","database","mongodb","eloquent"],
+    "keywords": ["laravel","database","mongodb","eloquent", "relationships"],
     "require": {
-        "php": ">=7.0",
+        "php": ">=7.1",
         "ext-json": "*",
         "ext-mongodb": "*",
         "illuminate/support": "^5.8|^6.0",
