@@ -12,7 +12,7 @@ services:
         depends_on:
           - mongodb
     mongodb:
-        container_name: mongodb
+        container_name: mongodb_
         image: mongo
         ports:
             - 27017:27017

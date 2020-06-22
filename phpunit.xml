@@ -19,11 +19,11 @@
         </whitelist>
     </filter>
     <php>
-        <env name="APP_ENV" value="testing"/>
-        <env name="CACHE_DRIVER" value="array"/>
-        <env name="SESSION_DRIVER" value="array"/>
-        <env name="QUEUE_DRIVER" value="sync"/>
-        <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
+        <env name="DB_CONNECTION" value="mongodb"/>
+        <env name="MONGO_HOST" value="localhost"/>
+        <env name="MONGO_DRIVER" value="mongodb"/>
+        <env name="MONGO_DATABASE" value="unittest"/>
+        <env name="MONGO_PORT" value="27017"/>
+        <env name="QUEUE_CONNECTION" value="sync"/>
     </php>
 </phpunit>
