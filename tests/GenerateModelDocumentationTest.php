@@ -32,7 +32,7 @@ class GenerateModelDocumentationTest extends TestCase
 
     private function getOutput()
     {
-        return "
+        return '
 
 
 
@@ -41,11 +41,10 @@ class GenerateModelDocumentationTest extends TestCase
 *
 * Plain Fields
 *
-* @property string \$id
-* @property string \$title
+* @property string $id
+* @property string $title
 *
 *
-*";
+*';
     }
 }
-

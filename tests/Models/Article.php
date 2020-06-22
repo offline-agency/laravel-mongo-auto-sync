@@ -9,6 +9,6 @@ class Article extends MDModel
     protected $collection = 'article';
 
     protected $items = [
-        'title' => []
+        'title' => [],
     ];
 }
