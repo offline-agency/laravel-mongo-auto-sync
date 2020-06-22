@@ -33,7 +33,6 @@ class GenerateModelDocumentation extends Command
         parent::__construct();
     }
 
-
     /**
      * @return |null
      * @throws Exception
@@ -50,32 +49,29 @@ class GenerateModelDocumentation extends Command
         $relations = $model->getMongoRelation();
 
         $output = "\n\n\n\n/**\n*\n* Plain Fields\n* \n";
-        $output .=  "* @property string \$id\n";
+        $output .= "* @property string \$id\n";
 
         foreach ($items as $key => $item) {
             if (isML($item)) {
-                $output .= "* @property array \$" . $key . "\n";
+                $output .= '* @property array $'.$key."\n";
             } else {
-                $output .= "* @property string \$" . $key . "\n";
+                $output .= '* @property string $'.$key."\n";
             }
         }
 
         $output .= "*\n*\n*";
 
-        if (sizeof($relations) > 0) {
+        if (count($relations) > 0) {
             $output .= " Relationships\n*\n";
             foreach ($relations as $key => $relation) {
+                $modelTarget = str_replace("App\Models\\", '', $relation['model']);
 
-                $modelTarget = str_replace("App\Models\\", "", $relation['model']);
-
-                $output .= "* @property " . $modelTarget . " \$" . $key . "\n";
+                $output .= '* @property '.$modelTarget.' $'.$key."\n";
             }
             $output .= "*\n**/ \n\n\n\n\n";
         }
 
         $this->info($output);
-
-        return null;
     }
 
     /**
@@ -96,24 +92,25 @@ class GenerateModelDocumentation extends Command
      */
     public function checkOaModels($path, $collection_name)
     {
-        $out = "";
+        $out = '';
         $results = scandir($path);
         foreach ($results as $result) {
             if ($result === '.' or $result === '..') {
                 continue;
             }
-            $filename = $path . '/' . $result;
+            $filename = $path.'/'.$result;
             if (is_dir($filename)) {
                 $out = $this->checkOaModels($filename, $collection_name);
-            } else if (strtolower(substr($result, 0, -4)) == strtolower($collection_name)) {
-                return config('laravel-mongo-auto-sync.model_namespace') . "\\" . substr($result, 0, -4);
+            } elseif (strtolower(substr($result, 0, -4)) == strtolower($collection_name)) {
+                return config('laravel-mongo-auto-sync.model_namespace').'\\'.substr($result, 0, -4);
             }
         }
         foreach (config('laravel-mongo-auto-sync.other_models') as $key => $values) {
             if (strtolower($collection_name) == $key) {
-                return $values['model_namespace'] . '\\' . Str::ucfirst($key);
+                return $values['model_namespace'].'\\'.Str::ucfirst($key);
             }
         }
+
         return $out;
     }
 
@@ -127,7 +124,7 @@ class GenerateModelDocumentation extends Command
         if (class_exists($modelPath)) {
             return new $modelPath;
         } else {
-            throw new Exception('Error ' . $this->argument('collection_name') . ' Model not found');
+            throw new Exception('Error '.$this->argument('collection_name').' Model not found');
         }
     }
 }

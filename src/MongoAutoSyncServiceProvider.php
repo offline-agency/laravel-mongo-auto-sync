@@ -22,11 +22,11 @@ class MongoAutoSyncServiceProvider extends BaseServiceProvider
         $this->app->bind('command.drop:collection', DropCollection::class);
 
         $this->commands([
-            'command.model-doc:generate'
+            'command.model-doc:generate',
         ]);
 
         $this->commands([
-            'command.drop:collection'
+            'command.drop:collection',
         ]);
     }
 
@@ -49,6 +49,6 @@ class MongoAutoSyncServiceProvider extends BaseServiceProvider
      */
     private function packagePath($path)
     {
-        return __DIR__ . '/../' .  $path;
+        return __DIR__.'/../'.$path;
     }
 }
