@@ -55,7 +55,7 @@ class DropCollection extends Command
                 for ($i = 0; $i <= $count - 1; $i++) {
                     $bar->advance();
                     $model[$i]->destroyWithSync();
-                    $this->line($i + 1 . ') Destroy item document with id #'.$model[$i]->getId());
+                    $this->line($i + 1 .') Destroy item document with id #'.$model[$i]->getId());
                 }
             } else {
                 $this->warn('No record found on collection '.strtolower($collection_name));
@@ -89,8 +89,8 @@ class DropCollection extends Command
 
         try {
             $results = scandir($path);
-        }catch (Exception $e){
-            throw new Exception('Error directory ' . config('laravel-mongo-auto-sync.model_path') . ' not found');
+        } catch (Exception $e) {
+            throw new Exception('Error directory '.config('laravel-mongo-auto-sync.model_path').' not found');
         }
 
         foreach ($results as $result) {
