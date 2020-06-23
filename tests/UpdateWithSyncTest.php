@@ -2,13 +2,13 @@
 
 namespace Tests\Feature;
 
-use Tests\Models\MiniNavigation;
-use Tests\Models\Navigation;
-use Tests\Models\SubItem;
 use Faker\Factory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use OfflineAgency\MongoAutoSync\Extensions\MongoCollection;
+use Tests\Models\MiniNavigation;
+use Tests\Models\Navigation;
+use Tests\Models\SubItem;
 use Tests\SyncTestCase;
 
 class UpdateWithSyncTest extends SyncTestCase
@@ -20,7 +20,7 @@ class UpdateWithSyncTest extends SyncTestCase
             [
                 'text' => 'example sub item test',
                 'code' => 'HFGRT12345',
-                'href' => 'https://google.com'
+                'href' => 'https://google.com',
             ]
         );
         $this->assertEquals('example sub item test', getTranslatedContent($sub_item->text));
@@ -30,17 +30,16 @@ class UpdateWithSyncTest extends SyncTestCase
         //Navigation Test
         $sub_items = json_encode(
             [
-                (object)[
+                (object) [
                     'ref_id' => $sub_item->id,
                     'text' => getTranslatedContent($sub_item->text),
                     'code' => $sub_item->code,
-                    'href' => $sub_item->href
-                ]
+                    'href' => $sub_item->href,
+                ],
             ]
         );
 
         $navigation = new Navigation;
-
 
         $date = Date::now();
 
@@ -52,13 +51,12 @@ class UpdateWithSyncTest extends SyncTestCase
                 'date' => $date,
                 'target' => '_blank',
                 'title' => 'Random title',
-                'sub_items' => $sub_items
+                'sub_items' => $sub_items,
             ]
         );
 
         $this->assertTrue($this->isNavigationCreated($navigation));
         $this->assertIsString($navigation->text);
-
 
         $this->assertEquals('example navigation text', $navigation->text);
         $this->assertEquals('1234ABHFGRT5', $navigation->code);
@@ -103,7 +101,7 @@ class UpdateWithSyncTest extends SyncTestCase
             'date' => $date,
             'target' => $target,
             'title' => $title,
-            'sub_items' => $items
+            'sub_items' => $items,
         ];
         $request = new Request;
         $navigation = $navigation->storeWithSync($request, $arr);
@@ -114,23 +112,21 @@ class UpdateWithSyncTest extends SyncTestCase
         $this->assertEquals($text, $navigation->text);
         $this->assertEquals($code, $navigation->code);
         $this->assertEquals($href, $navigation->href);
-       // $this->assertEquals($date, $navigation->date); TODO: Precision to be fixed
+        // $this->assertEquals($date, $navigation->date); TODO: Precision to be fixed
         $this->assertEquals($target, $navigation->target);
         $this->assertEquals($title, getTranslatedContent($navigation->title));
         $this->assertInstanceOf(MongoCollection::class, $navigation->sub_items);
 
-
-
         $mini_navigation = $this->getMiniNavigation($navigation->id);
 
         $data = [
-            'navigation' => $mini_navigation
+            'navigation' => $mini_navigation,
         ];
 
         $sub_item = $this->createSubItems($data);
 
         $this->assertEquals($navigation->id, $sub_item->navigation->ref_id);
-        $this->assertInstanceOf(MiniNavigation::class,$sub_item->navigation);
+        $this->assertInstanceOf(MiniNavigation::class, $sub_item->navigation);
 
         //Check target
         $navigation = Navigation::find($navigation->id);
@@ -142,34 +138,33 @@ class UpdateWithSyncTest extends SyncTestCase
         $this->assertEquals($sub_item->code, $sub_item_mini->code);
         $this->assertEquals($sub_item->title, $sub_item_mini->title);
 
-
         //Add more sub items and restart test
         $navigation->sub_items = [
             [
                 'ref_id' => $faker->uuid,
                 'text' => $faker->text,
                 'code' => $faker->name,
-                'href' => $faker->url
+                'href' => $faker->url,
             ],
             [
                 'ref_id' => $faker->uuid,
                 'text' => $faker->text,
                 'code' => $faker->name,
-                'href' => $faker->url
+                'href' => $faker->url,
             ],
             [
                 'ref_id' => $faker->uuid,
                 'text' => $faker->text,
                 'code' => $faker->name,
-                'href' => $faker->url
-            ]
+                'href' => $faker->url,
+            ],
         ];
 
         $navigation->save();
 
         $mini_navigation = $this->getMiniNavigation($navigation->id);
         $data = [
-            'navigation' => $mini_navigation
+            'navigation' => $mini_navigation,
         ];
 
         $sub_item = $this->createSubItems($data);
@@ -195,7 +190,7 @@ class UpdateWithSyncTest extends SyncTestCase
         $sub_item = $this->createSubItems();
         $mini_sub_item = $this->getMiniSubItem($sub_item);
         $data = [
-            'sub_items' => $mini_sub_item
+            'sub_items' => $mini_sub_item,
         ];
 
         $navigation = $this->createNavigation($data);

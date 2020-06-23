@@ -2,15 +2,15 @@
 
 namespace Tests;
 
-use Illuminate\Support\Str;
-use Tests\Models\Item;
-use Tests\Models\Navigation;
-use Tests\Models\SubItem;
 use Exception;
 use Faker\Factory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Str;
+use Tests\Models\Item;
+use Tests\Models\Navigation;
+use Tests\Models\SubItem;
 
 class SyncTestCase extends TestCase
 {
@@ -26,7 +26,7 @@ class SyncTestCase extends TestCase
         $request = new Request;
 
         $text = Arr::has($data, 'text') ? Arr::get($data, 'text') : $faker->text(50);
-        $code = Arr::has($data, 'code') ? Arr::get($data, 'code') : $faker->creditCardNumber ;
+        $code = Arr::has($data, 'code') ? Arr::get($data, 'code') : $faker->creditCardNumber;
         $href = Arr::has($data, 'href') ? Arr::get($data, 'href') : $faker->url;
         $navigation = Arr::has($data, 'navigation') ? Arr::get($data, 'navigation') : json_encode([]);
 
@@ -34,7 +34,7 @@ class SyncTestCase extends TestCase
             'text' => $text,
             'code' => $code,
             'href' => $href,
-            'navigation' => $navigation
+            'navigation' => $navigation,
         ];
 
         return $sub_item->storeWithSync($request, $arr);
@@ -52,7 +52,7 @@ class SyncTestCase extends TestCase
         $request = new Request;
 
         $text = Arr::has($data, 'text') ? Arr::get($data, 'text') : $faker->text(50);
-        $code = Arr::has($data, 'code') ? Arr::get($data, 'code') : $faker->creditCardNumber ;
+        $code = Arr::has($data, 'code') ? Arr::get($data, 'code') : $faker->creditCardNumber;
         $href = Arr::has($data, 'href') ? Arr::get($data, 'href') : $faker->url;
         $navigation = Arr::has($data, 'navigation') ? Arr::get($data, 'navigation') : json_encode([]);
 
@@ -60,7 +60,7 @@ class SyncTestCase extends TestCase
             'text' => $text,
             'code' => $code,
             'href' => $href,
-            'navigation' => $navigation
+            'navigation' => $navigation,
         ];
 
         return $sub_item->storeWithSync($request, $arr);
@@ -73,19 +73,18 @@ class SyncTestCase extends TestCase
      */
     public function createNavigation(
         array $data = []
-    )
-    {
+    ) {
         $faker = Factory::create();
         $request = new Request;
 
         $navigation = new Navigation;
 
-        $text = Arr::has($data, 'text') ? Arr::get($data, 'text') : $faker->text(50) ;
-        $code = Arr::has($data, 'code') ? Arr::get($data, 'code') : $faker->creditCardNumber ;
-        $href = Arr::has($data, 'href') ? Arr::get($data, 'href') : $faker->url ;
-        $date = Arr::has($data, 'date') ? Arr::get($data, 'date') : Date::now() ;
+        $text = Arr::has($data, 'text') ? Arr::get($data, 'text') : $faker->text(50);
+        $code = Arr::has($data, 'code') ? Arr::get($data, 'code') : $faker->creditCardNumber;
+        $href = Arr::has($data, 'href') ? Arr::get($data, 'href') : $faker->url;
+        $date = Arr::has($data, 'date') ? Arr::get($data, 'date') : Date::now();
         $target = Arr::has($data, 'target') ? Arr::get($data, 'target') : $faker->text(50);
-        $title = Arr::has($data, 'title') ? Arr::get($data, 'title') : $faker->title ;
+        $title = Arr::has($data, 'title') ? Arr::get($data, 'title') : $faker->title;
 
         $sub_items = Arr::has($data, 'sub_items') ? Arr::get($data, 'sub_items') : json_encode([]);
 
@@ -96,7 +95,7 @@ class SyncTestCase extends TestCase
             'date' => $date,
             'target' => $target,
             'title' => $title,
-            'sub_items' => $sub_items
+            'sub_items' => $sub_items,
         ];
 
         return $navigation->storeWithSync($request, $arr);
@@ -106,17 +105,17 @@ class SyncTestCase extends TestCase
     {
         $navigation = Navigation::find($navigation_id);
 
-        if (is_null($navigation)){
+        if (is_null($navigation)) {
             return json_encode([]);
-        }else{
+        } else {
             return json_encode(
                 [
-                    (object)[
+                    (object) [
                         'ref_id' => $navigation->id,
                         'text' => $navigation->text,
                         'code' => $navigation->code,
                         'title' => getTranslatedContent($navigation->title),
-                    ]
+                    ],
                 ]
             );
         }
@@ -128,7 +127,7 @@ class SyncTestCase extends TestCase
      */
     public function isNavigationCreated($navigation)
     {
-        return !is_null( Navigation::find($navigation->id));
+        return ! is_null(Navigation::find($navigation->id));
     }
 
     /**
@@ -137,7 +136,7 @@ class SyncTestCase extends TestCase
      */
     public function isItemCreated($item)
     {
-        return !is_null(Item::find($item->id));
+        return ! is_null(Item::find($item->id));
     }
 
     /**
@@ -214,5 +213,4 @@ class SyncTestCase extends TestCase
 
         return json_encode($arr);
     }
-
 }

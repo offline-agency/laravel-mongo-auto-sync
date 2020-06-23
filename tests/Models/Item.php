@@ -6,32 +6,32 @@ use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 
 class Item extends MDModel
 {
-    protected $items = array(
-        'name' => array(),
-        'code' => array(),
-        'price' => array(),
-        'quantity' => array(),
-        'discount' => array(),
-        'taxable_price' => array(),
-        'partial_vat' => array(),
-        'total_price' => array(),
-        'vat_code' => array(),
-        'vat_value' => array(),
-        'vat_label' => array(),
-        'collection_type' => array(),
-        'navigation_code' => array()
-    );
+    protected $items = [
+        'name' => [],
+        'code' => [],
+        'price' => [],
+        'quantity' => [],
+        'discount' => [],
+        'taxable_price' => [],
+        'partial_vat' => [],
+        'total_price' => [],
+        'vat_code' => [],
+        'vat_value' => [],
+        'vat_label' => [],
+        'collection_type' => [],
+        'navigation_code' => [],
+    ];
 
-    protected $mongoRelation = array(
+    protected $mongoRelation = [
         'navigation' => [
             'type' => 'EmbedsOne',
             'mode' => 'classic',
             'model' => 'Tests\Models\MiniNavigation',
             'modelTarget' => 'Tests\Models\Navigation',
             'methodOnTarget' => 'items',
-            'modelOnTarget' => 'Tests\Models\MiniItem'
+            'modelOnTarget' => 'Tests\Models\MiniItem',
         ],
-    );
+    ];
 
     public function navigation()
     {

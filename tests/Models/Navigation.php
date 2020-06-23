@@ -6,8 +6,7 @@ use OfflineAgency\MongoAutoSync\Extensions\MongoCollection;
 use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 
 /**
- *
- * Plain Fields
+ * Plain Fields.
  *
  * @property string $id
  * @property string $text
@@ -23,7 +22,6 @@ use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
  * @property MongoCollection $sub_items
  *
  **/
-
 class Navigation extends MDModel
 {
     protected $collection = 'navigation';
@@ -35,24 +33,24 @@ class Navigation extends MDModel
         'code' => [],
         'href' => [],
         'date' => [
-            'is-carbon-date' => true
+            'is-carbon-date' => true,
         ],
         'target' => [],
         'title' => [
-            'is-ml' => true
-        ]
+            'is-ml' => true,
+        ],
     ];
 
-    protected $mongoRelation = array(
+    protected $mongoRelation = [
         'sub_items' => [
             'type' => 'EmbedsMany',
             'mode' => 'classic',
             'model' => 'Tests\Models\MiniSubItem',
             'modelTarget' => 'Tests\Models\SubItem',
             'methodOnTarget' => 'navigation',
-            'modelOnTarget' => 'Tests\Models\MiniNavigation'
-        ]
-    );
+            'modelOnTarget' => 'Tests\Models\MiniNavigation',
+        ],
+    ];
 
     public function sub_items()
     {
