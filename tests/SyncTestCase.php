@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Str;
+use stdClass;
 use Tests\Models\Item;
 use Tests\Models\Navigation;
 use Tests\Models\SubItem;

@@ -34,7 +34,7 @@ class DropCollection extends Command
     }
 
     /**
-     * @return |null
+     * @return void |null
      * @throws Exception
      */
     public function handle()
@@ -55,7 +55,7 @@ class DropCollection extends Command
                 for ($i = 0; $i <= $count - 1; $i++) {
                     $bar->advance();
                     $model[$i]->destroyWithSync();
-                    $this->line(' _Destroy row #'.($i + 1));
+                    $this->line($i + 1 . ') Destroy item document with id #'.$model[$i]->getId());
                 }
             } else {
                 $this->warn('No record found on collection '.strtolower($collection_name));
@@ -68,6 +68,7 @@ class DropCollection extends Command
     /**
      * @param $collection_name
      * @return string
+     * @throws Exception
      */
     public function getModelPathByName($collection_name)
     {
@@ -80,11 +81,17 @@ class DropCollection extends Command
      * @param $path
      * @param $collection_name
      * @return string
+     * @throws Exception
      */
     public function checkOaModels($path, $collection_name)
     {
         $out = '';
-        $results = scandir($path);
+
+        try {
+            $results = scandir($path);
+        }catch (Exception $e){
+            throw new Exception('Error directory ' . config('laravel-mongo-auto-sync.model_path') . ' not found');
+        }
 
         foreach ($results as $result) {
             if ($result === '.' or $result === '..') {

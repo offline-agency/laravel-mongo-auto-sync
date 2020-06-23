@@ -28,7 +28,7 @@ abstract class TestCase extends BaseTestCase
 
     protected function getEnvironmentSetUp($app)
     {
-        $app['config']->set('laravel-mongo-auto-sync.model_path', 'tests/Models');
+        $app['config']->set('laravel-mongo-auto-sync.model_path', './tests/Models');
         $app['config']->set('laravel-mongo-auto-sync.model_namespace', 'Tests\Models');
 
         $config = require 'config/database.php';

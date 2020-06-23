@@ -77,6 +77,7 @@ class GenerateModelDocumentation extends Command
     /**
      * @param $collection_name
      * @return string
+     * @throws Exception
      */
     public function getModelPathByName($collection_name)
     {
@@ -89,11 +90,18 @@ class GenerateModelDocumentation extends Command
      * @param $path
      * @param $collection_name
      * @return string
+     * @throws Exception
      */
     public function checkOaModels($path, $collection_name)
     {
         $out = '';
-        $results = scandir($path);
+
+        try {
+            $results = scandir($path);
+        }catch (Exception $e){
+            throw new Exception('Error directory ' . config('laravel-mongo-auto-sync.model_path') . ' not found');
+        }
+
         foreach ($results as $result) {
             if ($result === '.' or $result === '..') {
                 continue;

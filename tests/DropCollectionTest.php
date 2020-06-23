@@ -24,6 +24,14 @@ class DropCollectionTest extends TestCase
             ->assertExitCode(0);
     }
 
+    public function test_exception_path_not_found()
+    {
+        config()->set('laravel-mongo-auto-sync.model_path', 'path_that_does_not_exist');
+        $this->expectExceptionMessage('Error directory path_that_does_not_exist not found');
+        $this->artisan('model-doc:generate', ['collection_name' => 'ModelThatDoesNotExist'])
+            ->assertExitCode(0);
+    }
+
     public function createArticle()
     {
         $articles = [];
