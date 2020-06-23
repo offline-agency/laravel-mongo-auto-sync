@@ -28,7 +28,7 @@ class Item extends MDModel
             'mode' => 'classic',
             'model' => 'Tests\Models\MiniNavigation',
             'modelTarget' => 'Tests\Models\Navigation',
-            'methodOnTarget' => 'items',
+            'methodOnTarget' => 'sub_items',
             'modelOnTarget' => 'Tests\Models\MiniItem',
         ],
     ];

@@ -231,9 +231,10 @@ class MongoSyncTraitTest extends SyncTestCase
         ];
 
         $item = $item->storeWithSync($request, $arr);
+        $mini_items = Navigation::where('sub_items.ref_id', $item->getId())->first()->sub_items;
 
         $this->assertTrue($this->isItemCreated($item));
-        $this->assertTrue($this->isItemAddedInNavigationCollection($item->navigation['ref_id'], $item->id));
+        $this->assertNotNull($mini_items);
     }
 
     public function test_update_navigation_with_items()
@@ -289,5 +290,9 @@ class MongoSyncTraitTest extends SyncTestCase
         $item->updateWithSync($request, $arr, $options);
 
         $this->assertStringContainsString('Updated', $item->name);
+    }
+
+    private function createItem()
+    {
     }
 }
