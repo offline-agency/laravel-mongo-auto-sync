@@ -98,8 +98,8 @@ class GenerateModelDocumentation extends Command
 
         try {
             $results = scandir($path);
-        }catch (Exception $e){
-            throw new Exception('Error directory ' . config('laravel-mongo-auto-sync.model_path') . ' not found');
+        } catch (Exception $e) {
+            throw new Exception('Error directory '.config('laravel-mongo-auto-sync.model_path').' not found');
         }
 
         foreach ($results as $result) {
