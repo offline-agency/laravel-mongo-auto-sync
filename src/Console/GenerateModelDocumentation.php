@@ -34,7 +34,7 @@ class GenerateModelDocumentation extends Command
     }
 
     /**
-     * @return |null
+     * @return void |null
      * @throws Exception
      */
     public function handle()
