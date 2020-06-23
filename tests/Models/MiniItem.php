@@ -6,9 +6,9 @@ use OfflineAgency\MongoAutoSync\Http\Models\DefaultMini;
 
 class MiniItem extends DefaultMini
 {
-    protected $items = array(
-        'ref_id' => array(),
-        'name' => array(),
-        'code' => array(),
-    );
+    protected $items = [
+        'ref_id' => [],
+        'name' => [],
+        'code' => [],
+    ];
 }

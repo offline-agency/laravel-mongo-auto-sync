@@ -2,12 +2,12 @@
 
 namespace Tests;
 
-use Tests\Models\Navigation;
-use Tests\Models\SubItem;
 use Faker\Factory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use OfflineAgency\MongoAutoSync\Extensions\MongoCollection;
+use Tests\Models\Navigation;
+use Tests\Models\SubItem;
 
 class StoreWIthSyncTest extends SyncTestCase
 {
@@ -18,7 +18,7 @@ class StoreWIthSyncTest extends SyncTestCase
             [
                 'text' => 'example sub item test',
                 'code' => 'HFGRT12345',
-                'href' => 'https://google.com'
+                'href' => 'https://google.com',
             ]
         );
 
@@ -29,12 +29,12 @@ class StoreWIthSyncTest extends SyncTestCase
         //Create a mini Sub Item to associate to the new navigation
         $sub_items = json_encode(
             [
-                (object)[
+                (object) [
                     'ref_id' => $sub_item->id,
                     'text' => getTranslatedContent($sub_item->text),
                     'code' => $sub_item->code,
-                    'href' => $sub_item->href
-                ]
+                    'href' => $sub_item->href,
+                ],
             ]
         );
 
@@ -49,14 +49,13 @@ class StoreWIthSyncTest extends SyncTestCase
                 'date' => $date,
                 'target' => '_blank',
                 'title' => 'Random title',
-                'sub_items' => $sub_items
+                'sub_items' => $sub_items,
             ]
         );
 
         $this->assertTrue($this->isNavigationCreated($navigation));
         $this->assertIsString($navigation->text);
         $this->assertIsArray($navigation->title);
-
 
         $this->assertEquals('example navigation text', $navigation->text);
         $this->assertEquals('1234ABHFGRT5', $navigation->code);
@@ -87,12 +86,11 @@ class StoreWIthSyncTest extends SyncTestCase
         $this->assertTrue($this->isNavigationCreated($navigation));
         $this->assertInstanceOf(MongoCollection::class, $navigation->sub_items);
 
-
         $sub_item = $this->createSubItems(
             [
                 'text' => 'example sub item test',
                 'code' => 'HFGRT12345',
-                'href' => 'https://google.com'
+                'href' => 'https://google.com',
             ]
         );
 
@@ -117,20 +115,20 @@ class StoreWIthSyncTest extends SyncTestCase
                 'ref_id' => $faker->uuid,
                 'text' => $faker->text,
                 'code' => $faker->name,
-                'href' => $faker->url
+                'href' => $faker->url,
             ],
             [
                 'ref_id' => $faker->uuid,
                 'text' => $faker->text,
                 'code' => $faker->name,
-                'href' => $faker->url
+                'href' => $faker->url,
             ],
             [
                 'ref_id' => $faker->uuid,
                 'text' => $faker->text,
                 'code' => $faker->name,
-                'href' => $faker->url
-            ]
+                'href' => $faker->url,
+            ],
         ];
 
         $navigation->save();
@@ -138,7 +136,7 @@ class StoreWIthSyncTest extends SyncTestCase
         $sub_item = $this->storeSubItem($navigation);
         $navigation = Navigation::find($navigation->id);
 
-        echo "\n Navigation id: " . $navigation->id ;
+        echo "\n Navigation id: ".$navigation->id;
         $this->assertTrue($navigation->sub_items->count() == 4);
 
         $sub_item_mini = $navigation->sub_items->where('ref_id', $sub_item->id)->first();
@@ -164,14 +162,14 @@ class StoreWIthSyncTest extends SyncTestCase
             'href' => 'eeee',
             'navigation' => json_encode(
                 [
-                    (object)[
+                    (object) [
                         'ref_id' => $navigation->id,
                         'text' => $navigation->text,
                         'code' => $navigation->code,
                         'title' => getTranslatedContent($navigation->title),
-                    ]
+                    ],
                 ]
-            )
+            ),
         ];
 
         return $sub_item->storeWithSync($request, $arr);

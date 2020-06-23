@@ -5,8 +5,7 @@ namespace Tests\Models;
 use OfflineAgency\MongoAutoSync\Http\Models\DefaultMini;
 
 /**
- *
- * Plain Fields
+ * Plain Fields.
  *
  * @property string $id
  * @property string $ref_id
@@ -15,15 +14,14 @@ use OfflineAgency\MongoAutoSync\Http\Models\DefaultMini;
  * @property string $href
  *
  * */
-
 class MiniSubItem extends DefaultMini
 {
     protected $items = [
         'ref_id' => [],
         'text' => [
-            'is-ml' => true
+            'is-ml' => true,
         ],
         'code' => [],
-        'href' => []
+        'href' => [],
     ];
 }

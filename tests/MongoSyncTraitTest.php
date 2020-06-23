@@ -1,37 +1,32 @@
 <?php
 
-
 namespace Tests;
 
 use DateTime;
 use Faker\Factory;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use MongoDB\BSON\UTCDateTime;
-use stdClass;
 use Tests\Models\Item;
 use Tests\Models\Navigation;
-use Tests\Models\SubItem;
 
-class MongoSyncTraitTest  extends SyncTestCase
+class MongoSyncTraitTest extends SyncTestCase
 {
-
-    public function test_null_value_saved(){
+    public function test_null_value_saved()
+    {
         $request = new Request;
 
         $navigation = $this->createNavigation();
 
         $arr = [
-            'text' => null
+            'text' => null,
         ];
         $options = [
-            'request_type' => 'partial'
+            'request_type' => 'partial',
         ];
 
         $navigation->updateWithSync($request, $arr, $options);
 
         $this->assertNull($navigation->text);
-
     }
 
     public function test_store_with_sync()
@@ -48,9 +43,9 @@ class MongoSyncTraitTest  extends SyncTestCase
             'href' => $faker->url,
             'title' => $faker->text(30),
             'date' => new UTCDateTime(new DateTime()),
-            'target' => (object)[
+            'target' => (object) [
                 'name' => $faker->text(20),
-                'code' => $faker->slug(2)
+                'code' => $faker->slug(2),
             ],
         ];
 
@@ -73,7 +68,7 @@ class MongoSyncTraitTest  extends SyncTestCase
             'href' => null,
             'title' => $faker->text(30),
             'date' => new UTCDateTime(new DateTime()),
-            'target' => (object)[],
+            'target' => (object) [],
         ];
 
         $navigation->storeWithSync($request, $arr);
@@ -94,7 +89,7 @@ class MongoSyncTraitTest  extends SyncTestCase
         $navigation = Navigation::all()->last();
 
         $options = [
-            'request_type' => 'partial'
+            'request_type' => 'partial',
         ];
 
         $arr = [
@@ -103,7 +98,7 @@ class MongoSyncTraitTest  extends SyncTestCase
             'href' => $faker->imageUrl(),
             'title' => $faker->text(30),
             'date' => null,
-            'target' => (object)[],
+            'target' => (object) [],
         ];
 
         $navigation->updateWithSync($request, $arr, $options);
@@ -120,7 +115,7 @@ class MongoSyncTraitTest  extends SyncTestCase
         $navigation = Navigation::all()->last();
 
         $options = [
-            'request_type' => 'partial'
+            'request_type' => 'partial',
         ];
 
         $arr = [
@@ -129,7 +124,7 @@ class MongoSyncTraitTest  extends SyncTestCase
             'href' => $faker->imageUrl(),
             'title' => $faker->text(30),
             'date' => null,
-            'target' => (object)[],
+            'target' => (object) [],
         ];
 
         $navigation->updateWithSync($request, $arr, $options);
@@ -146,7 +141,7 @@ class MongoSyncTraitTest  extends SyncTestCase
         $navigation = Navigation::all()->last();
 
         $options = [
-            'request_type' => 'partial'
+            'request_type' => 'partial',
         ];
 
         $arr = [
@@ -155,7 +150,7 @@ class MongoSyncTraitTest  extends SyncTestCase
             'href' => $faker->text(50),
             'title' => $faker->text(30),
             'date' => new UTCDateTime(new DateTime()),
-            'target' => (object)[],
+            'target' => (object) [],
         ];
 
         $navigation->updateWithSync($request, $arr, $options);
@@ -175,7 +170,7 @@ class MongoSyncTraitTest  extends SyncTestCase
         $navigation = Navigation::all()->last();
 
         $options = [
-            'request_type' => 'partial'
+            'request_type' => 'partial',
         ];
 
         $arr = [
@@ -205,34 +200,34 @@ class MongoSyncTraitTest  extends SyncTestCase
         $item = new Item;
 
         $arr = [
-            'name' => $faker->firstName . ' ' . $faker->lastName,
+            'name' => $faker->firstName.' '.$faker->lastName,
             'code' => $faker->creditCardNumber,
-            'price' => $faker->numberBetween(1,100),
-            'quantity' => $faker->numberBetween(1,10),
-            'discount' => $faker->randomElement(array(10,20,50)),
-            'taxable_price' => $faker->numberBetween(10,500),
-            'partial_vat' => $faker->numberBetween(20,50),
-            'total_price' => $faker->numberBetween(20,600),
-            'vat_code' => $faker->randomElement(array(
+            'price' => $faker->numberBetween(1, 100),
+            'quantity' => $faker->numberBetween(1, 10),
+            'discount' => $faker->randomElement([10, 20, 50]),
+            'taxable_price' => $faker->numberBetween(10, 500),
+            'partial_vat' => $faker->numberBetween(20, 50),
+            'total_price' => $faker->numberBetween(20, 600),
+            'vat_code' => $faker->randomElement([
                 '0',
                 '3',
-                '4'
-            )),
-            'vat_value' => $faker->randomElement(array(
+                '4',
+            ]),
+            'vat_value' => $faker->randomElement([
                 22,
                 10,
-                4
-            )),
-            'vat_label' => $faker->randomElement(array(
+                4,
+            ]),
+            'vat_label' => $faker->randomElement([
                 'Iva 22%',
                 'Iva 10%',
-                'Iva 4%'
-            )),
+                'Iva 4%',
+            ]),
             'collection_type' => null,
             'navigation_code' => $navigation->code,
 
             //Relation
-            'navigation' => $this->getNavigation($navigation->code)
+            'navigation' => $this->getNavigation($navigation->code),
         ];
 
         $item = $item->storeWithSync($request, $arr);
@@ -243,16 +238,16 @@ class MongoSyncTraitTest  extends SyncTestCase
 
     public function test_update_navigation_with_items()
     {
-       $navigation = $this->createNavigation();
+        $navigation = $this->createNavigation();
 
         $request = new Request;
 
         $options = [
-            'request_type' => 'partial'
+            'request_type' => 'partial',
         ];
 
         $arr = [
-            'text' => $navigation->text . ' Aggiornato',
+            'text' => $navigation->text.' Aggiornato',
             'code' => $navigation->code,
             'href' => $navigation->href,
             'title' => $navigation->title[cl()],
@@ -272,11 +267,11 @@ class MongoSyncTraitTest  extends SyncTestCase
         $request = new Request;
 
         $options = [
-            'request_type' => 'partial'
+            'request_type' => 'partial',
         ];
 
         $arr = [
-            'name' => $item->name . 'Updated',
+            'name' => $item->name.'Updated',
             'code' => $item->code,
             'price' => $item->price,
             'quantity' => $item->quantity,
@@ -288,7 +283,7 @@ class MongoSyncTraitTest  extends SyncTestCase
             'vat_value' => $item->vat_value,
             'vat_label' => $item->vat_label,
             'collection_type' => $item->collection_type,
-            'navigation_code' => $item->navigation_code
+            'navigation_code' => $item->navigation_code,
         ];
 
         $item->updateWithSync($request, $arr, $options);
