@@ -102,24 +102,34 @@ class SyncTestCase extends TestCase
         return $navigation->storeWithSync($request, $arr);
     }
 
-    public function getMiniNavigation($navigation_id)
+    /**
+     * @param string $navigation_id
+     * @return false|string
+     * @throws Exception
+     */
+    public function getMiniNavigation(string $navigation_id = "")
     {
-        $navigation = Navigation::find($navigation_id);
-
-        if (is_null($navigation)) {
-            return json_encode([]);
-        } else {
-            return json_encode(
-                [
-                    (object) [
-                        'ref_id' => $navigation->id,
-                        'text' => $navigation->text,
-                        'code' => $navigation->code,
-                        'title' => getTranslatedContent($navigation->title),
-                    ],
-                ]
-            );
+        if ($navigation_id == "" || is_null($navigation_id)){
+            $navigation = $this->createNavigation();
+        }else{
+            $navigation = Navigation::find($navigation_id);
+            if (is_null($navigation)){
+                return json_encode(
+                    []
+                );
+            }
         }
+
+        return json_encode(
+            [
+                (object)[
+                    'ref_id' => $navigation->id,
+                    'text' => $navigation->text,
+                    'code' => $navigation->code,
+                    'title' => getTranslatedContent($navigation->title)
+                ]
+            ]
+        );
     }
 
     /**
@@ -143,6 +153,7 @@ class SyncTestCase extends TestCase
     /**
      * @param Navigation $navigation
      * @param SubItem $sub_item
+     * @throws Exception
      */
     public function cleanUp(Navigation $navigation, SubItem $sub_item)
     {

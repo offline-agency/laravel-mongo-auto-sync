@@ -19,7 +19,7 @@ class Item extends MDModel
         'vat_value' => [],
         'vat_label' => [],
         'collection_type' => [],
-        'navigation_code' => [],
+        'navigation_code' => []
     ];
 
     protected $mongoRelation = [

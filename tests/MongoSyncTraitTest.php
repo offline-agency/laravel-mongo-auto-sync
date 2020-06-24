@@ -291,8 +291,4 @@ class MongoSyncTraitTest extends SyncTestCase
 
         $this->assertStringContainsString('Updated', $item->name);
     }
-
-    private function createItem()
-    {
-    }
 }

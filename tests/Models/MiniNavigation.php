@@ -19,9 +19,9 @@ class MiniNavigation extends DefaultMini
     protected $items = [
         'ref_id' => [],
         'code' => [],
-        'title' => [],
-        'text' => [
-            'is-ml' => true,
+        'text' => [],
+        'title' => [
+            'is-ml' => true
         ],
     ];
 }
