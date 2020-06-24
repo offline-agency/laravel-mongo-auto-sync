@@ -21,7 +21,7 @@ class MiniNavigation extends DefaultMini
         'code' => [],
         'text' => [],
         'title' => [
-            'is-ml' => true
+            'is-ml' => true,
         ],
     ];
 }

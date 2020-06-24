@@ -190,11 +190,11 @@ class UpdateWithSyncTest extends SyncTestCase
         $sub_item_original = $this->createSubItems();
 
         $data = [
-            'text' => 'updated'
+            'text' => 'updated',
         ];
 
         $options = [
-            'request_type' => 'partial'
+            'request_type' => 'partial',
         ];
         $request = new Request;
         $sub_item_new = $sub_item_original->updateWithSync($request, $data, $options);
@@ -216,11 +216,11 @@ class UpdateWithSyncTest extends SyncTestCase
         $mini_navigation = $this->getMiniNavigation($navigation->id);
 
         $data = [
-            'navigation' => $mini_navigation
+            'navigation' => $mini_navigation,
         ];
 
         $options = [
-            'request_type' => 'partial'
+            'request_type' => 'partial',
         ];
         $request = new Request;
         $sub_item_new = $sub_item_original->updateWithSync($request, $data, $options);
