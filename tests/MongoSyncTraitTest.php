@@ -260,35 +260,4 @@ class MongoSyncTraitTest extends SyncTestCase
 
         $this->assertTrue($this->isNavigationUpdatedCorrectly($navigation));
     }
-
-    public function test_update_item_with_navigation()
-    {
-        $item = $this->createItem();
-
-        $request = new Request;
-
-        $options = [
-            'request_type' => 'partial',
-        ];
-
-        $arr = [
-            'name' => $item->name.'Updated',
-            'code' => $item->code,
-            'price' => $item->price,
-            'quantity' => $item->quantity,
-            'discount' => $item->discount,
-            'taxable_price' => $item->taxable_price,
-            'partial_vat' => $item->partial_vat,
-            'total_price' => $item->total_price,
-            'vat_code' => $item->vat_code,
-            'vat_value' => $item->vat_value,
-            'vat_label' => $item->vat_label,
-            'collection_type' => $item->collection_type,
-            'navigation_code' => $item->navigation_code,
-        ];
-
-        $item->updateWithSync($request, $arr, $options);
-
-        $this->assertStringContainsString('Updated', $item->name);
-    }
 }

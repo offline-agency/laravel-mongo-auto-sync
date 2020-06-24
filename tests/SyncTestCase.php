@@ -59,6 +59,7 @@ class SyncTestCase extends TestCase
 
         $arr = [
             'text' => $text,
+            'name' => $text,
             'code' => $code,
             'href' => $href,
             'navigation' => $navigation,
