@@ -3,7 +3,6 @@
 namespace Tests;
 
 use Faker\Factory;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use OfflineAgency\MongoAutoSync\Extensions\MongoCollection;
 use Tests\Models\Navigation;
@@ -142,7 +141,7 @@ class StoreWIthSyncTest extends SyncTestCase
 
         $mini_navigation = $this->getMiniNavigation($navigation->id);
         $data = [
-            'navigation' => $mini_navigation
+            'navigation' => $mini_navigation,
         ];
 
         $sub_item = $this->createSubItems($data);
