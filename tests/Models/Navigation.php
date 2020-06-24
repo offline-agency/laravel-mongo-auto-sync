@@ -49,7 +49,7 @@ class Navigation extends MDModel
             'modelTarget' => 'Tests\Models\SubItem',
             'methodOnTarget' => 'navigation',
             'modelOnTarget' => 'Tests\Models\MiniNavigation',
-            'typeOnTarget' => 'EmbedsOne'
+            'typeOnTarget' => 'EmbedsOne',
         ],
     ];
 
