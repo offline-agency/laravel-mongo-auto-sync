@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\Date;
 use OfflineAgency\MongoAutoSync\Extensions\MongoCollection;
 use Tests\Models\MiniNavigation;
 use Tests\Models\Navigation;
-use Tests\Models\SubItem;
 use Tests\SyncTestCase;
 
 class UpdateWithSyncTest extends SyncTestCase
