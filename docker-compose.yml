@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+    tests:
+        container_name: tests
+        build:
+            context: .
+            dockerfile: Dockerfile
+        volumes:
+            - .:/code
+        working_dir: /code
+        depends_on:
+          - mongodb
+    mongodb:
+        container_name: mongodb_
+        image: mongo
+        ports:
+            - 27017:27017
+        logging:
+            driver: none

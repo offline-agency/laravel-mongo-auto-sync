@@ -31,14 +31,15 @@
         "psr-4": {
             "OfflineAgency\\MongoAutoSync\\": "src/"
         },
-        "files": [
-            "src/syncUtils.php"
-        ]
+        "files": []
     },
     "autoload-dev": {
         "psr-4": {
             "Tests\\": "tests/"
-        }
+        },
+        "files": [
+            "src/syncUtils.php"
+        ]
     },
     "scripts": {
         "test": "vendor/bin/phpunit"
@@ -51,7 +52,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "OfflineAgency\\MongoAutoSync\\Providers\\ServiceProvider"
+                "OfflineAgency\\MongoAutoSync\\MongoAutoSyncServiceProvider"
             ]
         }
     }

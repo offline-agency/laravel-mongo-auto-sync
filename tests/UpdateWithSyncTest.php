@@ -1,0 +1,173 @@
+<?php
+
+namespace Tests\Feature;
+
+use Faker\Factory;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Date;
+use OfflineAgency\MongoAutoSync\Extensions\MongoCollection;
+use Tests\Models\MiniNavigation;
+use Tests\Models\Navigation;
+use Tests\SyncTestCase;
+
+class UpdateWithSyncTest extends SyncTestCase
+{
+    public function test_update_with_embeds_many_on_target()
+    {
+        $faker = Factory::create();
+
+        $navigation = new Navigation;
+
+        $text = $faker->text(50);
+        $code = $faker->creditCardNumber;
+        $href = $faker->url;
+        $date = Date::now();
+        $target = $faker->text(50);
+        $title = null;
+        $items = json_encode([]);
+
+        $arr = [
+            'text' => $text,
+            'code' => $code,
+            'href' => $href,
+            'date' => $date,
+            'target' => $target,
+            'title' => $title,
+            'sub_items' => $items,
+        ];
+        $request = new Request;
+        $navigation = $navigation->storeWithSync($request, $arr);
+
+        $this->assertTrue($this->isNavigationCreated($navigation));
+        $this->assertEquals($text, $navigation->text);
+
+        $this->assertEquals($text, $navigation->text);
+        $this->assertEquals($code, $navigation->code);
+        $this->assertEquals($href, $navigation->href);
+        // $this->assertEquals($date, $navigation->date); TODO: Precision to be fixed
+        $this->assertEquals($target, $navigation->target);
+        $this->assertEquals($title, getTranslatedContent($navigation->title));
+        $this->assertInstanceOf(MongoCollection::class, $navigation->sub_items);
+
+        $mini_navigation = $this->getMiniNavigation($navigation->id);
+
+        $data = [
+            'navigation' => $mini_navigation,
+        ];
+
+        $sub_item = $this->createSubItems($data);
+
+        $this->assertEquals($navigation->id, $sub_item->navigation->ref_id);
+        $this->assertInstanceOf(MiniNavigation::class, $sub_item->navigation);
+
+        //Check target
+        $navigation = Navigation::find($navigation->id);
+        $sub_item_mini = $navigation->sub_items[0];
+
+        $this->assertNotEmpty($navigation->sub_items);
+        $this->assertEquals($sub_item->id, $sub_item_mini->ref_id);
+        $this->assertEquals($sub_item->text, $sub_item_mini->text);
+        $this->assertEquals($sub_item->code, $sub_item_mini->code);
+        $this->assertEquals($sub_item->title, $sub_item_mini->title);
+
+        //Add more sub items and restart test
+        $navigation->sub_items = [
+            [
+                'ref_id' => $faker->uuid,
+                'text' => $faker->text,
+                'code' => $faker->name,
+                'href' => $faker->url,
+            ],
+            [
+                'ref_id' => $faker->uuid,
+                'text' => $faker->text,
+                'code' => $faker->name,
+                'href' => $faker->url,
+            ],
+            [
+                'ref_id' => $faker->uuid,
+                'text' => $faker->text,
+                'code' => $faker->name,
+                'href' => $faker->url,
+            ],
+        ];
+
+        $navigation->save();
+
+        $mini_navigation = $this->getMiniNavigation($navigation->id);
+        $data = [
+            'navigation' => $mini_navigation,
+        ];
+
+        $sub_item = $this->createSubItems($data);
+        $navigation = Navigation::find($navigation->id);
+
+        $this->assertTrue($navigation->sub_items->count() == 4);
+
+        $sub_item_mini = $navigation->sub_items->where('ref_id', $sub_item->id)->first();
+
+        $this->assertEquals($sub_item->id, $sub_item_mini->ref_id);
+        $this->assertEquals($sub_item->text, $sub_item_mini->text);
+        $this->assertEquals($sub_item->code, $sub_item_mini->code);
+        $this->assertEquals($sub_item->title, $sub_item_mini->title);
+
+        //clean data
+        $navigation->delete();
+        $sub_item->delete();
+    }
+
+    public function test_update_with_partial_request_plain_field()
+    {
+        //Create a navigation and associated to the sub item on creation
+        $sub_item_original = $this->createSubItems();
+
+        $data = [
+            'text' => 'updated',
+        ];
+
+        $options = [
+            'request_type' => 'partial',
+        ];
+        $request = new Request;
+        $sub_item_new = $sub_item_original->updateWithSync($request, $data, $options);
+
+        //text has been updated?
+        $this->assertEquals('updated', $sub_item_new->text[cl()]);
+
+        //all the other fields has not been updated?
+        $this->assertEquals($sub_item_original->navigation->getAttributes(), $sub_item_new->navigation->getAttributes());
+        $this->assertEquals($sub_item_original->code, $sub_item_new->code);
+        $this->assertEquals($sub_item_original->href, $sub_item_new->href);
+    }
+
+    public function test_update_with_partial_request_relationship_field()
+    {
+        //Create a navigation and associated to the sub item on creation
+        $sub_item_original = $this->createSubItems();
+        $navigation = $this->createNavigation();
+        $mini_navigation = $this->getMiniNavigation($navigation->id);
+
+        $data = [
+            'navigation' => $mini_navigation,
+        ];
+
+        $options = [
+            'request_type' => 'partial',
+        ];
+        $request = new Request;
+        $sub_item_new = $sub_item_original->updateWithSync($request, $data, $options);
+
+        //navigation has been updated?
+        $this->assertNotEquals($sub_item_original->navigation->getAttributes(), $sub_item_new->navigation->getAttributes());
+
+        $this->assertEquals($navigation->id, $sub_item_new->navigation->ref_id);
+        $this->assertEquals($navigation->text, $sub_item_new->navigation->text);
+        $this->assertEquals($navigation->code, $sub_item_new->navigation->code);
+        $this->assertEquals($navigation->title[cl()], $sub_item_new->navigation->title[cl()]);
+
+        //all the other fields has not been updated?
+        $this->assertEquals($sub_item_original->text[cl()], $sub_item_new->text[cl()]);
+        $this->assertEquals($sub_item_original->code, $sub_item_new->code);
+        $this->assertEquals($sub_item_original->href, $sub_item_new->href);
+    }
+}
