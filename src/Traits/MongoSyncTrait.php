@@ -115,14 +115,19 @@ trait MongoSyncTrait
                 $modelTarget = $relation['modelTarget'];
                 $methodOnTarget = $relation['methodOnTarget'];
                 $modelOnTarget = $relation['modelOnTarget'];
+                $typeOnTarget = $relation['typeOnTarget'];
             } else {
                 $modelTarget = '';
                 $methodOnTarget = '';
                 $modelOnTarget = '';
+                $typeOnTarget = 'EmbedsMany';
             }
 
             $is_EO = is_EO($type);
             $is_EM = is_EM($type);
+
+            $is_EM_target = is_EM($typeOnTarget);
+            $is_EO_target = is_EO($typeOnTarget);
 
             $key = $parent.$method.$counter;
             $is_skippable = $this->getIsSkippable($request->has($key), $hasTarget);
@@ -147,7 +152,7 @@ trait MongoSyncTrait
 
                     //Delete EmbedsMany or EmbedsOne on Target - TODO: check if it is necessary to run deleteTargetObj method
                     if ($hasTarget) {
-                        $this->deleteTargetObj($method, $modelTarget, $methodOnTarget, $is_EO);
+                        $this->deleteTargetObj($method, $modelTarget, $methodOnTarget, $is_EO, $is_EO_target, $is_EM_target);
                     }
                     //Delete EmbedsMany or EmbedsOne on current object
                     if ($is_EM) {
@@ -199,9 +204,13 @@ trait MongoSyncTrait
     public function updateRelationWithSync($mini_model, string $method_on_target)
     {
         $new_values = [];
-        foreach ($this->$method_on_target as $temp) {
-            $new_values[] = $temp->attributes;
+
+        if($this->$method_on_target->count() > 0){
+            foreach ($this->$method_on_target as $temp) {
+                $new_values[] = $temp->attributes;
+            }
         }
+
         $new_values[] = $mini_model->attributes;
         $this->$method_on_target = $new_values;
         $this->save();
@@ -260,9 +269,11 @@ trait MongoSyncTrait
      * @param $method
      * @param $modelTarget
      * @param $methodOnTarget
-     * @param $is_EO
+     * @param boolean $is_EO
+     * @param boolean $is_EO_target
+     * @param boolean $is_EM_target
      */
-    public function deleteTargetObj($method, $modelTarget, $methodOnTarget, $is_EO)
+    public function deleteTargetObj($method, $modelTarget, $methodOnTarget, $is_EO, $is_EO_target, $is_EO_target)
     {
         if ($is_EO) {
             $embedObj = $this->$method;
@@ -282,15 +293,14 @@ trait MongoSyncTrait
      * @param $modelTarget
      * @param $methodOnTarget
      */
-    public function handleSubTarget($target_id, $modelTarget, $methodOnTarget)
+    public function handleSubTarget($target_id, $modelTarget, $methodOnTarget, $)
     {
-        $id = $this->getId();
         $target = new $modelTarget;
         $target = $target->all()->where('id', $target_id)->first();
         if (! is_null($target)) {
             $new_values = [];
             foreach ($target->$methodOnTarget as $temp) {
-                if ($temp->ref_id !== $id) {
+                if ($temp->ref_id !== $this->getId()) {
                     $new_values[] = $temp->attributes;
                 }
             }
