@@ -31,7 +31,7 @@ If you discover any security-related issues, please email support@offlineagency.
 ## Credits
 - [Giacomo Fabbian](https://github.com/Giacomo92)
 
-- [All Contributors](https://github.com/offline-agency/laravel-mongodb-blog/graphs/contributors)
+- [All Contributors](https://github.com/offline-agency/laravel-mongo-auto-sync/graphs/contributors)
 
 ## About us
 Offline Agency is a web design agency based in Padua, Italy. You'll find an overview of our projects [on our website](https://offlineagency.it/#home).
