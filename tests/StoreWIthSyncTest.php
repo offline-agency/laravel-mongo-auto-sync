@@ -3,10 +3,8 @@
 namespace Tests;
 
 use Faker\Factory;
-use Illuminate\Support\Facades\Date;
 use OfflineAgency\MongoAutoSync\Extensions\MongoCollection;
 use Tests\Models\Navigation;
-use Tests\Models\SubItem;
 
 class StoreWIthSyncTest extends SyncTestCase
 {
