@@ -2,9 +2,8 @@ build:
   environment:
     php:
       version: 7.3
-      pecl_extensions:
-        - mongodb
     memcached: true
+    mongodb: true
 
   nodes:
     my-node:
