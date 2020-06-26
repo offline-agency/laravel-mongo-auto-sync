@@ -8,10 +8,79 @@ use Illuminate\Support\Facades\Date;
 use OfflineAgency\MongoAutoSync\Extensions\MongoCollection;
 use Tests\Models\MiniNavigation;
 use Tests\Models\Navigation;
+use Tests\Models\SubItem;
 use Tests\SyncTestCase;
 
 class UpdateWithSyncTest extends SyncTestCase
 {
+    public function test_update_with_embeds_one_on_target()
+    {
+        //Sub Item Test
+        $sub_item = $this->createSubItems(
+            [
+                'text' => 'example sub item test',
+                'code' => 'HFGRT12345',
+                'href' => 'https://google.com',
+            ]
+        );
+        $this->assertEquals('example sub item test', getTranslatedContent($sub_item->text));
+        $this->assertEquals('HFGRT12345', $sub_item->code);
+        $this->assertEquals('https://google.com', $sub_item->href);
+
+        //Navigation Test
+        $sub_items = json_encode(
+            [
+                (object) [
+                    'ref_id' => $sub_item->id,
+                    'text' => getTranslatedContent($sub_item->text),
+                    'code' => $sub_item->code,
+                    'href' => $sub_item->href,
+                ],
+            ]
+        );
+
+        $navigation = new Navigation;
+
+        $date = Date::now();
+
+        $navigation = $this->createNavigation(
+            [
+                'text' => 'example navigation text',
+                'code' => '1234ABHFGRT5',
+                'href' => 'https://www.netflix.com/browse',
+                'date' => $date,
+                'target' => '_blank',
+                'title' => 'Random title',
+                'sub_items' => $sub_items,
+            ]
+        );
+
+        $this->assertTrue($this->isNavigationCreated($navigation));
+        $this->assertIsString($navigation->text);
+
+        $this->assertEquals('example navigation text', $navigation->text);
+        $this->assertEquals('1234ABHFGRT5', $navigation->code);
+        $this->assertEquals('https://www.netflix.com/browse', $navigation->href);
+        //$this->assertEquals($date, $navigation->date); TODO: Precision to be fixed
+        $this->assertEquals('_blank', $navigation->target);
+        $this->assertEquals('Random title', getTranslatedContent($navigation->title));
+        $this->assertInstanceOf(MongoCollection::class, $navigation->sub_items);
+
+        //Check target
+        $sub_item = SubItem::find($sub_item->id);
+        $mini_navigation = $sub_item->navigation;
+        $this->assertNotNull($mini_navigation);
+
+        $this->assertEquals($navigation->id, $mini_navigation->ref_id);
+        $this->assertEquals('1234ABHFGRT5', $mini_navigation->code);
+        $this->assertEquals('Random title', getTranslatedContent($mini_navigation->title));
+        $this->assertEquals('example navigation text', $navigation->text);
+
+        //clean data
+        $navigation->delete();
+        $sub_item->delete();
+    }
+
     public function test_update_with_embeds_many_on_target()
     {
         $faker = Factory::create();
@@ -62,6 +131,7 @@ class UpdateWithSyncTest extends SyncTestCase
 
         //Check target
         $navigation = Navigation::find($navigation->id);
+
         $sub_item_mini = $navigation->sub_items[0];
 
         $this->assertNotEmpty($navigation->sub_items);
