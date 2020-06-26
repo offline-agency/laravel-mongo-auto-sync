@@ -18,11 +18,6 @@ build:
         override:
           - php-scrutinizer-run
           - command: 'vendor/bin/phpunit --dump-xdebug-filter xdebug-filter.php'
-          -
-            command: 'vendor/bin/phpunit --prepend xdebug-filter.php --coverage-clover=some-file'
-            coverage:
-              file: 'some-file'
-              format: 'clover'
 checks:
 
   php:
