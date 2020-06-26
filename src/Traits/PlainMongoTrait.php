@@ -1,8 +1,6 @@
 <?php
 
-
 namespace OfflineAgency\MongoAutoSync\Traits;
-
 
 use Exception;
 use Illuminate\Http\Request;
@@ -60,5 +58,4 @@ trait PlainMongoTrait
 
         $this->save();
     }
-
 }
