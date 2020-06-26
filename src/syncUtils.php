@@ -240,7 +240,8 @@ if (! function_exists('processList')) {
     function processList($array)
     {
         $final = [];
-        for ($i = 0; $i < count($array); $i++) {
+        $n = count($array);
+        for ($i = 0; $i < $n; $i++) {
             $obj = [];
             if ($array[$i] !== null) {
                 $obj = ['label' => $array[$i], 'key' => $i];
