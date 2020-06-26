@@ -10,7 +10,6 @@ use Tests\Models\SubItem;
 
 class StoreWIthSyncTest extends SyncTestCase
 {
-
     public function test_store_with_embeds_one_on_target()
     {
         //Create a SubItem and test if the data is store correctly
@@ -138,7 +137,7 @@ class StoreWIthSyncTest extends SyncTestCase
 
         $mini_navigation = $this->getMiniNavigation($navigation->id);
         $data = [
-            'navigation' => $mini_navigation
+            'navigation' => $mini_navigation,
         ];
 
         $sub_item = $this->createSubItems($data);
