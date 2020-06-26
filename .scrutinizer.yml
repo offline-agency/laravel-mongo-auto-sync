@@ -3,11 +3,14 @@ build:
     php:
       version: 7.2
       pecl_extensions:
-        - memcached
         - mongodb
     memcached: true
 
   nodes:
+    my-node:
+      services:
+        # For available tags, see https://hub.docker.com/_/mongo/
+        mongo: 4
     analysis:
       project_setup:
         override: true
@@ -20,10 +23,6 @@ build:
             coverage:
               file: 'some-file'
               format: 'clover'
-
-filter:
-  excluded_paths: [docs/*, resources/*, tests/*, database/*, config/*]
-
 checks:
 
   php:
