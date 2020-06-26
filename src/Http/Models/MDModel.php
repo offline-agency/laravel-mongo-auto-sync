@@ -4,12 +4,14 @@ namespace OfflineAgency\MongoAutoSync\Http\Models;
 
 use Jenssegers\Mongodb\Eloquent\Model as Eloquent;
 use OfflineAgency\MongoAutoSync\Traits\Helper;
+use OfflineAgency\MongoAutoSync\Traits\MainMongoTrait;
 use OfflineAgency\MongoAutoSync\Traits\ModelAdditionalMethod;
-use OfflineAgency\MongoAutoSync\Traits\MongoSyncTrait;
+use OfflineAgency\MongoAutoSync\Traits\PlainMongoTrait;
+use OfflineAgency\MongoAutoSync\Traits\RelationshipMongoTrait;
 
 class MDModel extends Eloquent
 {
-    use MongoSyncTrait, ModelAdditionalMethod, Helper;
+    use MainMongoTrait, ModelAdditionalMethod, Helper, PlainMongoTrait, RelationshipMongoTrait;
 
     protected $connection = 'mongodb';
     protected $dates = [
