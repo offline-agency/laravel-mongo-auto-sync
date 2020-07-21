@@ -48,7 +48,7 @@ trait RelationshipMongoTrait
             $is_EM_target = is_EM($typeOnTarget);
             $is_EO_target = is_EO($typeOnTarget);
 
-            $key = $parent.$method.$counter;
+            $key = $parent . $method . $counter;
             $is_skippable = $this->getIsSkippable($request->has($key), $hasTarget);
 
             if ($is_skippable) {
@@ -60,7 +60,7 @@ trait RelationshipMongoTrait
 
             $is_embeds_has_to_be_updated = $request->has($key);
 
-            if (! is_null($value) && ! ($value == '') && ! ($value == '[]')) {
+            if (!is_null($value) && !($value == '') && !($value == '[]')) {
                 $objs = json_decode($value);
             } else {
                 $objs = getArrayWithEmptyObj($model, $is_EO, $is_EM);
@@ -80,7 +80,7 @@ trait RelationshipMongoTrait
                     }
                 }
 
-                if (! empty($objs)) {
+                if (!empty($objs)) {
                     if ($is_EM) {
                         $this->tempEM = [];
                     }
@@ -127,22 +127,21 @@ trait RelationshipMongoTrait
      */
     public function updateRelationWithSync($mini_model, string $method_on_target, $is_EO_target, $is_EM_target)
     {
-        if(is_null($this->$method_on_target)){
+        if (is_null($this->$method_on_target)) {
             throw new Exception('Method on target for ' . $method_on_target . ' doesn\'t exist');
-        } else {
-            if ($is_EM_target) {
-                $new_values = [];
-                foreach ($this->$method_on_target as $temp) {
-                    $new_values[] = $temp->attributes;
-                }
-                $new_values[] = $mini_model->attributes;
-            } else {
-                $new_values = $mini_model->attributes;
-            }
-
-            $this->$method_on_target = $new_values;
-            $this->save();
         }
+        if ($is_EM_target) {
+            $new_values = [];
+            foreach ($this->$method_on_target as $temp) {
+                $new_values[] = $temp->attributes;
+            }
+            $new_values[] = $mini_model->attributes;
+        } else {
+            $new_values = $mini_model->attributes;
+        }
+
+        $this->$method_on_target = $new_values;
+        $this->save();
     }
 
     /**
@@ -188,7 +187,7 @@ trait RelationshipMongoTrait
     {
         if ($is_EO) {
             $embedObj = $this->$method;
-            if (! is_null($embedObj)) {
+            if (!is_null($embedObj)) {
                 $target_id = $embedObj->ref_id;
                 $this->handleSubTarget($target_id, $modelTarget, $methodOnTarget, $is_EO_target, $is_EM_target);
             }
@@ -211,7 +210,7 @@ trait RelationshipMongoTrait
         if ($is_EM_target) {
             $target = new $modelTarget;
             $target = $target->all()->where('id', $target_id)->first();
-            if (! is_null($target)) {
+            if (!is_null($target)) {
                 $new_values = [];
                 foreach ($target->$methodOnTarget as $temp) {
                     if ($temp->ref_id !== $this->getId()) {
@@ -245,7 +244,7 @@ trait RelationshipMongoTrait
         $EOitems = $embedObj->getItems();
         //Current Obj Create
         foreach ($EOitems as $EOkey => $item) {
-            if (! is_null($obj)) {
+            if (!is_null($obj)) {
                 $is_ML = isML($item);
                 $is_MD = isMD($item);
                 $this->checkPropertyExistence($obj, $EOkey, $method, $model);
@@ -273,7 +272,7 @@ trait RelationshipMongoTrait
         //Get counter for embeds many with level > 1
         $counter = getCounterForRelationships($method, $is_EO, $is_EM, $i);
         //Check for another Level of Relationship
-        $embedObj->processAllRelationships($request, $event, $method.'-', $counter, $options);
+        $embedObj->processAllRelationships($request, $event, $method . '-', $counter, $options);
 
         if ($is_EO) {
             $this->$method = $embedObj->attributes;
@@ -294,7 +293,7 @@ trait RelationshipMongoTrait
     private function processEmbedOnTargetCollection($modelTarget, $obj, $methodOnTarget, $modelOnTarget, $is_EO_target, $is_EM_target)
     {
         $modelToBeSync = $this->getModelTobeSync($modelTarget, $obj);
-        if (! is_null($modelToBeSync)) {
+        if (!is_null($modelToBeSync)) {
             $miniModel = $this->getEmbedModel($modelOnTarget);
             $modelToBeSync->updateRelationWithSync($miniModel, $methodOnTarget, $is_EO_target, $is_EM_target);
             //TODO:Sync target on level > 1
