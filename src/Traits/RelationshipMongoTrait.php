@@ -127,8 +127,8 @@ trait RelationshipMongoTrait
      */
     public function updateRelationWithSync($mini_model, string $method_on_target, $is_EO_target, $is_EM_target)
     {
-        if(is_null($this->$method_on_target)){
-            throw new Exception('Method on target for ' . $method_on_target . ' doesn\'t exist');
+        if (is_null($this->$method_on_target)) {
+            throw new Exception('Method on target for '.$method_on_target.' doesn\'t exist');
         } else {
             if ($is_EM_target) {
                 $new_values = [];
