@@ -2,6 +2,7 @@
 
 namespace OfflineAgency\MongoAutoSync\Traits;
 
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use MongoDB\BSON\UTCDateTime;
@@ -122,21 +123,26 @@ trait RelationshipMongoTrait
      * @param string $method_on_target
      * @param bool $is_EO_target
      * @param bool $is_EM_target
+     * @throws Exception
      */
     public function updateRelationWithSync($mini_model, string $method_on_target, $is_EO_target, $is_EM_target)
     {
-        if ($is_EM_target) {
-            $new_values = [];
-            foreach ($this->$method_on_target as $temp) {
-                $new_values[] = $temp->attributes;
-            }
-            $new_values[] = $mini_model->attributes;
+        if(is_null($this->$method_on_target)){
+            throw new Exception('Method on target for ' . $method_on_target . ' doesn\'t exist');
         } else {
-            $new_values = $mini_model->attributes;
-        }
+            if ($is_EM_target) {
+                $new_values = [];
+                foreach ($this->$method_on_target as $temp) {
+                    $new_values[] = $temp->attributes;
+                }
+                $new_values[] = $mini_model->attributes;
+            } else {
+                $new_values = $mini_model->attributes;
+            }
 
-        $this->$method_on_target = $new_values;
-        $this->save();
+            $this->$method_on_target = $new_values;
+            $this->save();
+        }
     }
 
     /**
