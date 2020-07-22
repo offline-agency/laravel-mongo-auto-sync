@@ -130,12 +130,8 @@ trait RelationshipMongoTrait
     {
         if ($is_EM_target) {
             $new_values = [];
-            if ($this->$method_on_target->count() <= 0) {
-                throw new Exception('Method on target for ' . $method_on_target . ' doesn\'t exist');
-            } else {
-                foreach ($this->$method_on_target as $temp) {
-                    $new_values[] = $temp->attributes;
-                }
+            foreach ($this->$method_on_target as $temp) {
+                $new_values[] = $temp->attributes;
             }
             $new_values[] = $mini_model->attributes;
         } else {
