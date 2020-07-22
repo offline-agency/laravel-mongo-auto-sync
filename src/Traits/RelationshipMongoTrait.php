@@ -5,6 +5,7 @@ namespace OfflineAgency\MongoAutoSync\Traits;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Log;
 use MongoDB\BSON\UTCDateTime;
 
 trait RelationshipMongoTrait
@@ -127,13 +128,14 @@ trait RelationshipMongoTrait
      */
     public function updateRelationWithSync($mini_model, string $method_on_target, $is_EO_target, $is_EM_target)
     {
-        if (is_null($this->$method_on_target)) {
-            throw new Exception('Method on target for ' . $method_on_target . ' doesn\'t exist');
-        }
         if ($is_EM_target) {
             $new_values = [];
-            foreach ($this->$method_on_target as $temp) {
-                $new_values[] = $temp->attributes;
+            if ($this->$method_on_target->count() <= 0) {
+                throw new Exception('Method on target for ' . $method_on_target . ' doesn\'t exist');
+            } else {
+                foreach ($this->$method_on_target as $temp) {
+                    $new_values[] = $temp->attributes;
+                }
             }
             $new_values[] = $mini_model->attributes;
         } else {
@@ -296,6 +298,7 @@ trait RelationshipMongoTrait
         if (!is_null($modelToBeSync)) {
             $miniModel = $this->getEmbedModel($modelOnTarget);
             $modelToBeSync->updateRelationWithSync($miniModel, $methodOnTarget, $is_EO_target, $is_EM_target);
+
             //TODO:Sync target on level > 1
             //$modelToBeSync->processAllRelationships($request, $event, $methodOnTarget, $methodOnTarget . "-");
         }

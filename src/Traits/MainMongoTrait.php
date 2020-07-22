@@ -5,6 +5,7 @@ namespace OfflineAgency\MongoAutoSync\Traits;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 use stdClass;
 
 trait MainMongoTrait
