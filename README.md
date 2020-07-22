@@ -89,6 +89,13 @@ You can see the new article on the category page because the package synchronize
 ```bash
 composer require offlineagency/laravel-mongo-auto-sync
 ```
+### Laravel version Compatibility
+
+| Laravel     | Package     |
+| ----------- | ----------- |
+| 5.8.x       | 1.x         |
+| 6.x         | 1.x         |
+| 7.x         | <Badge text="TO BE TEST" type="warning"/> 2.0-alpha.1 (Pre-release)         |
 
 ## Documentation
 You can find the documentation [here](https://docs.offlineagency.com/laravel-mongo-auto-sync/)
