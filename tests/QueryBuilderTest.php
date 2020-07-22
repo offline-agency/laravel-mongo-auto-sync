@@ -24,6 +24,9 @@ class QueryBuilderTest extends TestCase
 
     public function testDeleteWithId()
     {
+        DB::collection('users')->truncate();
+        DB::collection('items')->truncate();
+
         $user = DB::collection('users')->insertGetId([
             ['name' => 'Jane Doe', 'age' => 20],
         ]);
@@ -41,7 +44,8 @@ class QueryBuilderTest extends TestCase
 
         $pid = (string) ($product['_id']);
 
-        DB::collection('items')->where('user_id', $user_id)->delete($pid);
+
+        $result = DB::collection('items')->where('user_id', $user_id)->delete($pid);
 
         $this->assertEquals(3, DB::collection('items')->count());
 
