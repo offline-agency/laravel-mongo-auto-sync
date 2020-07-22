@@ -55,7 +55,7 @@ abstract class EmbedsOneOrMany extends Relation
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function addConstraints()
     {
@@ -65,7 +65,7 @@ abstract class EmbedsOneOrMany extends Relation
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function addEagerConstraints(array $models)
     {
@@ -73,7 +73,7 @@ abstract class EmbedsOneOrMany extends Relation
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function match(array $models, Collection $results, $relation)
     {
@@ -179,7 +179,7 @@ abstract class EmbedsOneOrMany extends Relation
             $ids = $ids->all();
         }
 
-        if (!is_array($ids)) {
+        if (! is_array($ids)) {
             $ids = [$ids];
         }
 
@@ -193,7 +193,7 @@ abstract class EmbedsOneOrMany extends Relation
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function getEmbedded()
     {
@@ -207,7 +207,7 @@ abstract class EmbedsOneOrMany extends Relation
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function setEmbedded($records)
     {
@@ -295,7 +295,7 @@ abstract class EmbedsOneOrMany extends Relation
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function getQuery()
     {
@@ -305,7 +305,7 @@ abstract class EmbedsOneOrMany extends Relation
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function getBaseQuery()
     {
@@ -331,19 +331,19 @@ abstract class EmbedsOneOrMany extends Relation
     protected function getPathHierarchy($glue = '.')
     {
         if ($parentRelation = $this->getParentRelation()) {
-            return $parentRelation->getPathHierarchy($glue) . $glue . $this->localKey;
+            return $parentRelation->getPathHierarchy($glue).$glue.$this->localKey;
         }
 
         return $this->localKey;
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function getQualifiedParentKeyName()
     {
         if ($parentRelation = $this->getParentRelation()) {
-            return $parentRelation->getPathHierarchy() . '.' . $this->parent->getKeyName();
+            return $parentRelation->getPathHierarchy().'.'.$this->parent->getKeyName();
         }
 
         return $this->parent->getKeyName();
@@ -359,7 +359,7 @@ abstract class EmbedsOneOrMany extends Relation
     }
 
     /**
-     * Return update values
+     * Return update values.
      * @param $array
      * @param string $prepend
      * @return array
@@ -369,7 +369,7 @@ abstract class EmbedsOneOrMany extends Relation
         $results = [];
 
         foreach ($array as $key => $value) {
-            $results[$prepend . $key] = $value;
+            $results[$prepend.$key] = $value;
         }
 
         return $results;

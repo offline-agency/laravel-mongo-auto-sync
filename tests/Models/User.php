@@ -34,7 +34,7 @@ class User extends MDModel implements AuthenticatableContract, CanResetPasswordC
 
     public function father()
     {
-        return $this->embedsOne(User::class);
+        return $this->embedsOne(self::class);
     }
 
     public function getDateFormat()

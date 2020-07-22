@@ -2,8 +2,8 @@
 
 namespace Tests\Models;
 
-use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 use Jenssegers\Mongodb\Eloquent\SoftDeletes;
+use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 
 /**
  * Class Soft.

@@ -11,6 +11,6 @@ class Address extends MDModel
 
     public function addresses()
     {
-        return $this->embedsMany(Address::class);
+        return $this->embedsMany(self::class);
     }
 }

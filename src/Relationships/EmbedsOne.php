@@ -9,7 +9,7 @@ use MongoDB\BSON\ObjectID;
 class EmbedsOne extends EmbedsOneOrMany
 {
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function initRelation(array $models, $relation)
     {
@@ -21,7 +21,7 @@ class EmbedsOne extends EmbedsOneOrMany
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function getResults()
     {
@@ -36,13 +36,14 @@ class EmbedsOne extends EmbedsOneOrMany
     public function performInsert(Model $model)
     {
         // Generate a new key if needed.
-        if ($model->getKeyName() == '_id' && !$model->getKey()) {
+        if ($model->getKeyName() == '_id' && ! $model->getKey()) {
             $model->setAttribute('_id', new ObjectID);
         }
 
         // For deeply nested documents, let the parent handle the changes.
         if ($this->isNested()) {
             $this->associate($model);
+
             return $this->parent->save() ? $model : false;
         }
 
@@ -69,7 +70,7 @@ class EmbedsOne extends EmbedsOneOrMany
             return $this->parent->save();
         }
 
-        $values = $this->getUpdateValues($model->getDirty(), $this->localKey . '.');
+        $values = $this->getUpdateValues($model->getDirty(), $this->localKey.'.');
 
         $result = $this->getBaseQuery()->update($values);
 
@@ -90,6 +91,7 @@ class EmbedsOne extends EmbedsOneOrMany
         // For deeply nested documents, let the parent handle the changes.
         if ($this->isNested()) {
             $this->dissociate();
+
             return $this->parent->save();
         }
 

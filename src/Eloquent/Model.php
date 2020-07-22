@@ -1,12 +1,11 @@
 <?php
 
-
 namespace OfflineAgency\MongoAutoSync\Eloquent;
 
+use Illuminate\Database\Eloquent\Model as BaseModel;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Jenssegers\Mongodb\Eloquent\Model as MongoDbModel;
-use Illuminate\Database\Eloquent\Model as BaseModel;
 
 class Model extends MongoDbModel
 {
@@ -37,12 +36,12 @@ class Model extends MongoDbModel
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function getAttribute($key)
     {
         // This checks for embedded relation support.
-        if (method_exists($this, $key) && !method_exists(self::class, $key)) {
+        if (method_exists($this, $key) && ! method_exists(self::class, $key)) {
             return $this->getRelationValue($key);
         }
 

@@ -2,14 +2,13 @@
 
 namespace OfflineAgency\MongoAutoSync\Eloquent;
 
-use Jenssegers\Mongodb\Eloquent\Builder as MongoDbEloquentBuilder;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
-
+use Jenssegers\Mongodb\Eloquent\Builder as MongoDbEloquentBuilder;
 
 class Builder extends MongoDbEloquentBuilder
 {
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function update(array $values, array $options = [])
     {
@@ -25,7 +24,7 @@ class Builder extends MongoDbEloquentBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function insert(array $values)
     {
@@ -41,7 +40,7 @@ class Builder extends MongoDbEloquentBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function insertGetId(array $values, $sequence = null)
     {
@@ -57,7 +56,7 @@ class Builder extends MongoDbEloquentBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function delete()
     {
@@ -73,7 +72,7 @@ class Builder extends MongoDbEloquentBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function increment($column, $amount = 1, array $extra = [])
     {
@@ -98,7 +97,7 @@ class Builder extends MongoDbEloquentBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function decrement($column, $amount = 1, array $extra = [])
     {
@@ -121,7 +120,7 @@ class Builder extends MongoDbEloquentBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function chunkById($count, callable $callback, $column = '_id', $alias = null)
     {
@@ -129,7 +128,7 @@ class Builder extends MongoDbEloquentBuilder
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function raw($expression = null)
     {
@@ -158,13 +157,13 @@ class Builder extends MongoDbEloquentBuilder
      * Add the "updated at" column to an array of values.
      * TODO Remove if https://github.com/laravel/framework/commit/6484744326531829341e1ff886cc9b628b20d73e
      * wiil be reverted
-     * Issue in laravel frawework https://github.com/laravel/framework/issues/27791
+     * Issue in laravel frawework https://github.com/laravel/framework/issues/27791.
      * @param array $values
      * @return array
      */
     protected function addUpdatedAtColumn(array $values)
     {
-        if (!$this->model->usesTimestamps() || $this->model->getUpdatedAtColumn() === null) {
+        if (! $this->model->usesTimestamps() || $this->model->getUpdatedAtColumn() === null) {
             return $values;
         }
 
@@ -176,5 +175,4 @@ class Builder extends MongoDbEloquentBuilder
 
         return $values;
     }
-
 }

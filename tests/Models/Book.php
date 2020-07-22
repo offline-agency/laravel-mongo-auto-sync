@@ -16,5 +16,4 @@ class Book extends MDModel
     protected $collection = 'books';
     protected static $unguarded = true;
     protected $primaryKey = 'title';
-
 }
