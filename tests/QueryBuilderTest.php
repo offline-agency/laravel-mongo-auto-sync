@@ -44,7 +44,6 @@ class QueryBuilderTest extends TestCase
 
         $pid = (string) ($product['_id']);
 
-
         $result = DB::collection('items')->where('user_id', $user_id)->delete($pid);
 
         $this->assertEquals(3, DB::collection('items')->count());
