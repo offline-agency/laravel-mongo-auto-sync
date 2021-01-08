@@ -389,7 +389,7 @@ trait ModelAdditionalMethod
         $is_EM = is_EM($type);
 
         if ($is_EO) {
-            $objs[] = $this->getObjValueToBeSaved($method, '', false);;
+            $objs[] = $this->getObjValueToBeSaved($method, '', false);
         } elseif ($is_EM) {
             if (! is_null($this->$method) > 0) {
                 foreach ($this->$method as $value) {
