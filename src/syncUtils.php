@@ -44,7 +44,7 @@ if (! function_exists('ml')) {
      *
      * @return array ready to be saved
      */
-    function ml($destination, $input)
+    function ml(array $destination, string $input)
     {
         if (is_null($destination)) {
             $destination = [];
