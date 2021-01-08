@@ -39,8 +39,6 @@ class UpdateWithSyncTest extends SyncTestCase
             ]
         );
 
-        $navigation = new Navigation;
-
         $date = Date::now();
 
         $navigation = $this->createNavigation(
