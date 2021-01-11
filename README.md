@@ -94,7 +94,13 @@ composer require offlineagency/laravel-mongo-auto-sync
 You can find the documentation [here](https://docs.offlineagency.com/laravel-mongo-auto-sync/)
 
 ## Testing
-Run the tests with:
+
+Run this command inside your project's route
+``` bash
+docker-compose up
+```
+
+Now run the tests with:
 ``` bash
 composer test
 ```
