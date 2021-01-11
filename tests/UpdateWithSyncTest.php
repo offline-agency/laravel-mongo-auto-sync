@@ -186,7 +186,7 @@ class UpdateWithSyncTest extends SyncTestCase
         $sub_item->delete();
     }
 
-    public function test_update_with_partial_request_plain_field()
+    /*public function test_update_with_partial_request_plain_field()
     {
         //Create a navigation and associated to the sub item on creation
         $sub_item_original = $this->createSubItems();
@@ -208,7 +208,7 @@ class UpdateWithSyncTest extends SyncTestCase
         $this->assertEquals($sub_item_original->navigation->getAttributes(), $sub_item_new->navigation->getAttributes());
         $this->assertEquals($sub_item_original->code, $sub_item_new->code);
         $this->assertEquals($sub_item_original->href, $sub_item_new->href);
-    }
+    }*/
 
     public function test_update_with_partial_request_relationship_field()
     {
