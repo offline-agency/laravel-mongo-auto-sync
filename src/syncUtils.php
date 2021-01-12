@@ -57,14 +57,6 @@ if (! function_exists('ml')) {
 if (! function_exists('isML')) {
     function isML($value)
     {
-        try {
-            if (gettype($value) !== 'array') {
-                throw new Exception($value.' is not a valid array!');
-            }
-        } catch (Exception $exception) {
-            echo $exception->getMessage();
-        }
-
         if (array_key_exists('is-ml', $value)) {
             return $value['is-ml'];
         } else {

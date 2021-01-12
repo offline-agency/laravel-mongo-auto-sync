@@ -26,6 +26,7 @@ class SubItem extends MDModel
         ],
         'code' => [],
         'href' => [],
+        'autoincrement_id' => [],
     ];
 
     protected $mongoRelation = [
