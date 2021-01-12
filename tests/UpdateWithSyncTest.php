@@ -187,9 +187,9 @@ class UpdateWithSyncTest extends SyncTestCase
     public function test_update_with_partial_request_plain_field()
     {
         //Navigation
-       $this->partialUpdateNavigation();
+        $this->partialUpdateNavigation();
 
-       //SubItems
+        //SubItems
         $this->partialUpdateSubItems();
     }
 
@@ -202,8 +202,8 @@ class UpdateWithSyncTest extends SyncTestCase
         //$this->partialUpdateSubItemsRelationship();
     }
 
-
-    private function partialUpdateNavigation(){
+    private function partialUpdateNavigation()
+    {
         //Create a navigation and associated to the sub item on creation
         $navigation_original = $this->createNavigation();
 
@@ -233,7 +233,8 @@ class UpdateWithSyncTest extends SyncTestCase
         $navigation_new->delete();
     }
 
-    private function partialUpdateSubItems(){
+    private function partialUpdateSubItems()
+    {
         //Create a navigation and associated to the sub item on creation
         $sub_item_original = $this->createSubItems();
 
@@ -260,7 +261,8 @@ class UpdateWithSyncTest extends SyncTestCase
         $sub_item_new->delete();
     }
 
-    private function partialUpdateNavigationRelationship(){
+    private function partialUpdateNavigationRelationship()
+    {
         //Create a sub_items and associated to the navigation on update
         $navigation_original = $this->createNavigation();
         $sub_item_original = $this->createSubItems();
@@ -298,17 +300,15 @@ class UpdateWithSyncTest extends SyncTestCase
 
         //check target - subitems
 
-
-
         $sub_item_original->delete();
         $navigation_original->delete();
     }
 
-    private function partialUpdateSubItemsRelationship(){
+    private function partialUpdateSubItemsRelationship()
+    {
         //Create a navigation and associated to the sub item on update
         $sub_item_original = $this->createSubItems();
         $navigation = $this->createNavigation();
-
 
         //Test Update from SubItem
         $mini_navigation = $this->getMiniNavigation($navigation->id);
