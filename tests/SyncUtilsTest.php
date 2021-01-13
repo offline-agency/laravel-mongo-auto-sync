@@ -57,7 +57,7 @@ class SyncUtilsTest extends SyncTestCase
     public function test_isMl()
     {
         $value = [
-            'is-ml'=>true
+            'is-ml' => true
         ];
 
         $out = isML($value);
@@ -67,7 +67,7 @@ class SyncUtilsTest extends SyncTestCase
         //
 
         $value = [
-            'is-ml'=>false
+            'is-ml' => false
         ];
 
         $out = isML($value);
@@ -77,7 +77,7 @@ class SyncUtilsTest extends SyncTestCase
         //
 
         $value = [
-            'is-ml'=>''
+            'is-ml' => ''
         ];
 
         $out = isML($value);
@@ -289,9 +289,9 @@ class SyncUtilsTest extends SyncTestCase
         $request = new Request;
 
         $obj = [
-            'text'=>[],
-            'name'=>'test',
-            'autoincrement_id'=>getAID($modelTest)
+            'text' => [],
+            'name' => 'test',
+            'autoincrement_id' => getAID($modelTest)
         ];
 
         $modelTest->storeWithSync($request, $obj);
@@ -299,5 +299,69 @@ class SyncUtilsTest extends SyncTestCase
         $out = getAID($modelTest);
 
         $this->assertEquals(2, $out);
+    }
+
+    public function test_getArrayWithEmptyObj()
+    {
+
+        $modelTest = new ModelTest;
+        $is_EO = true;
+        $is_EM = [];
+        $expectedArray = [
+            (object)[
+                'text' => null,
+                'name' => null,
+                'autoincrement_id' => null
+            ]
+        ];
+        $out = getArrayWithEmptyObj($modelTest, $is_EO, $is_EM);
+
+        $this->assertEquals($expectedArray, $out);
+    }
+
+    public function test_getCounterForRelationships()
+    {
+
+        $is_EO = true;
+        $is_EM = false;
+        $i = null;
+        $method = '';
+
+        $out = getCounterForRelationships($method, $is_EO, $is_EM, $i);
+
+        $this->assertEquals('', $out);
+
+        //
+
+        $is_EO = false;
+        $is_EM = true;
+        $i = null;
+        $method = '';
+
+        $out = getCounterForRelationships($method, $is_EO, $is_EM, $i);
+
+        $this->assertEquals('', $out);
+
+        //
+
+        $is_EO = true;
+        $is_EM = false;
+        $i = null;
+        $method = null;
+
+        $out = getCounterForRelationships($method, $is_EO, $is_EM, $i);
+
+        $this->assertEquals('', $out);
+
+        //
+
+        $is_EO = false;
+        $is_EM = true;
+        $i = null;
+        $method = null;
+
+        $out = getCounterForRelationships($method, $is_EO, $is_EM, $i);
+
+        $this->assertEquals('-' . $i, $out);
     }
 }
