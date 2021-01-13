@@ -4,10 +4,7 @@
 namespace Tests;
 
 use Illuminate\Http\Request;
-use Tests\Models\SubItem;
-use Illuminate\Support\Str;
-
-
+use Tests\Models\ModelTest;
 
 class SyncUtilsTest extends SyncTestCase
 {
@@ -278,28 +275,29 @@ class SyncUtilsTest extends SyncTestCase
 
     public function test_getAID()
     {
-        //
-        $subItem = new SubItem;
+        //Check if there's no data inside the database, set id to 1
 
-        $subItem->delete();
+        ModelTest::truncate();
+        $modelTest = new ModelTest;
 
-        $out = getAID($subItem);
-//        dd($out);
+        $out = getAID($modelTest);
+
         $this->assertEquals(1, $out);
 
-        //
+        //If there's already data inside the database, increments new data by 1
 
         $request = new Request;
-        $arr = [
-            'text' => 'titolo',
-            'code' => 'valore1',
-            'href' => 'valore2',
-            'autoincrement_id' => getAID($subItem)
-        ];
-        $subItem->storeWithSync($request, $arr);
 
-        $out = getAID($subItem);
-//        dd($out);
+        $obj = [
+            'text'=>[],
+            'name'=>'test',
+            'autoincrement_id'=>getAID($modelTest)
+        ];
+
+        $modelTest->storeWithSync($request, $obj);
+
+        $out = getAID($modelTest);
+
         $this->assertEquals(2, $out);
     }
 }
