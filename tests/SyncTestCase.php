@@ -9,6 +9,8 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Str;
 use stdClass;
+use Tests\Models\Article;
+use Tests\Models\Category;
 use Tests\Models\Item;
 use Tests\Models\Navigation;
 use Tests\Models\SubItem;
@@ -75,7 +77,8 @@ class SyncTestCase extends TestCase
      */
     public function createNavigation(
         array $data = []
-    ) {
+    )
+    {
         $faker = Factory::create();
         $request = new Request;
 
@@ -103,6 +106,127 @@ class SyncTestCase extends TestCase
         return $navigation->storeWithSync($request, $arr);
     }
 
+    public function createCategory(
+        array $data = []
+    )
+    {
+        $faker = Factory::create();
+        $request = new Request;
+
+        $category = new Category;
+
+        $article = new Article;
+
+        $category_id = getAID($article);
+        $name = Arr::has($data, 'name') ? Arr::get($data, 'name') : $faker->text(50);
+        $slug = Arr::has($data, 'slug') ? Arr::get($data, 'slug') : Str::slug($name);
+        $description = Arr::has($data, 'description') ? Arr::get($data, 'description') : $faker->text(50);
+
+        $articles= Arr::has($data, 'articles') ? Arr::get($data, 'articles') : json_encode([]);
+
+        $arr = [
+            'category_id' => $category_id,
+            'name' => $name,
+            'slug' => $slug,
+            'description' => $description,
+            'articles' => $articles
+        ];
+
+        return $category->storeWithSync($request, $arr);
+    }
+
+    public function createArticle(
+        array $data = [],
+        int $size = 1
+    )
+    {
+        $faker = Factory::create();
+
+        for ($i = 0; $i < $size; $i++) {
+
+            $request = new Request;
+
+            $article = new Article;
+
+            $article_id = getAID($article);
+            $title = Arr::has($data, 'title') ? Arr::get($data, 'title') : $faker->text(10);
+            $content = Arr::has($data, 'content') ? Arr::get($data, 'name') : $faker->text(100);
+            $description = Arr::has($data, 'description') ? Arr::get($data, 'description') : $faker->text(50);
+            $slug = Arr::has($data, 'slug') ? Arr::get($data, 'slug') : Str::slug($title);
+            $visibility = Arr::has($data, 'visibility') ? Arr::get($data, 'visibility') : $faker->text(50);
+            $status = Arr::has($data, 'status') ? Arr::get($data, 'status') : $faker->text(50);
+            $last_updated_by = Arr::has($data, 'last_updated_by') ? Arr::get($data, 'last_updated_by') : $faker->text(50);
+            $primary_category = Arr::has($data, 'primary_category') ? Arr::get($data, 'primary_category') : $faker->text(50);
+
+            $categories = Arr::has($data, 'categories') ? Arr::get($data, 'categories') : json_encode([]);
+
+            $arr = [
+                'article_id' => $article_id,
+                'title' => $title,
+                'content' => $content,
+                'description' => $description,
+                'slug' => $slug,
+                'visibility' => $visibility,
+                'status' => $status,
+                'last_updated_by' => $last_updated_by,
+                'primary_category' => $primary_category,
+                'categories' => $categories
+            ];
+
+            $article->storeWithSync($request, $arr);
+        }
+    }
+
+    public function getMiniCategory(string $category_id = '')
+    {
+        if ($category_id == '' || is_null($category_id)) {
+            $category = $this->createCategory();
+        } else {
+            $category = Category::find($category_id);
+            if (is_null($category)) {
+                return json_encode(
+                    []
+                );
+            }
+        }
+        return json_encode(
+            [
+                (object)[
+                    'ref_id' => $category->id,
+                    'name' => $category->name,
+                    'slug' => $category->slug,
+                    'description' => $category->description,
+                ],
+            ]
+        );
+    }
+
+    public function getMiniArticle(string $article_id = '')
+    {
+        if ($article_id == '' || is_null($article_id)) {
+            $article = $this->createArticle();
+        } else {
+            $article = Article::find($article_id);
+            if (is_null($article)) {
+                return json_encode(
+                    []
+                );
+            }
+        }
+        return json_encode(
+            [
+                (object)[
+                    'ref_id' => $article->id,
+                    'title' => $article->title,
+                    'slug' => $article->slug,
+                    'visibility' => $article->visibility,
+                    'status' => $article->status,
+                    'last_updated_by' => $article->last_updated_by,
+                ],
+            ]
+        );
+    }
+
     /**
      * @param string $navigation_id
      * @return false|string
@@ -123,7 +247,7 @@ class SyncTestCase extends TestCase
 
         return json_encode(
             [
-                (object) [
+                (object)[
                     'ref_id' => $navigation->id,
                     'text' => $navigation->text,
                     'code' => $navigation->code,
@@ -139,7 +263,7 @@ class SyncTestCase extends TestCase
      */
     public function isNavigationCreated($navigation)
     {
-        return ! is_null(Navigation::find($navigation->id));
+        return !is_null(Navigation::find($navigation->id));
     }
 
     /**
@@ -148,7 +272,7 @@ class SyncTestCase extends TestCase
      */
     public function isItemCreated($item)
     {
-        return ! is_null(Item::find($item->id));
+        return !is_null(Item::find($item->id));
     }
 
     /**

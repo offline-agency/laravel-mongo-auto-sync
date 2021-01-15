@@ -299,6 +299,7 @@ class SyncUtilsTest extends SyncTestCase
         $out = getAID($modelTest);
 
         $this->assertEquals(2, $out);
+        ModelTest::truncate();
     }
 
     public function test_getArrayWithEmptyObj()

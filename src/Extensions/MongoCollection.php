@@ -6,11 +6,11 @@ use Illuminate\Database\Eloquent\Collection;
 
 class MongoCollection extends Collection
 {
-    //Method to retrieve a collection by slug, very useful for frontend
+
+    //Method to retrieve a single element of a collection by slug, very useful for frontend
     public function getBySlugAndStatus($category = null, $myslug = null)
     {
         $cl = cl();
-
         $out = $this->filter(function ($col) use ($category, $myslug, $cl) {
             if ($col->slug[$cl] == $myslug && $col->status == 'published' && $col->primarycategory->slug[$cl] == $category) {
                 return true;
@@ -18,9 +18,9 @@ class MongoCollection extends Collection
                 return false;
             }
         })->first();
-        if (! $out) {//Handler 404 Object Not Found
+        if (!$out) {//Handler 404 Object Not Found
             $obj_name = get_class($this->first());
-            $message = __('error.'.$obj_name);
+            $message = __('error.' . $obj_name);
             abort(404, $message);
         } else {
             return $out;
@@ -40,9 +40,9 @@ class MongoCollection extends Collection
                 return true;
             }
         })->first();
-        if (! $out) {//Handler 404 Object Not Found
+        if (!$out) {//Handler 404 Object Not Found
             $obj_name = get_class($this->first());
-            $message = __('error.'.$obj_name);
+            $message = __('error.' . $obj_name);
             abort(404, $message);
         } else {
             return $out;
