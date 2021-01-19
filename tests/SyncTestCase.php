@@ -122,7 +122,7 @@ class SyncTestCase extends TestCase
         $slug = Arr::has($data, 'slug') ? Arr::get($data, 'slug') : Str::slug($name);
         $description = Arr::has($data, 'description') ? Arr::get($data, 'description') : $faker->text(50);
 
-        $articles= Arr::has($data, 'articles') ? Arr::get($data, 'articles') : json_encode([]);
+        $articles = Arr::has($data, 'articles') ? Arr::get($data, 'articles') : json_encode([]);
 
         $arr = [
             'category_id' => $category_id,
@@ -145,36 +145,51 @@ class SyncTestCase extends TestCase
         for ($i = 0; $i < $size; $i++) {
 
             $request = new Request;
-
             $article = new Article;
 
-            $article_id = getAID($article);
-            $title = Arr::has($data, 'title') ? Arr::get($data, 'title') : $faker->text(10);
+            $autoincrement_id = getAID($article);
+            $title = Arr::has($data, 'title') ? Arr::get($data, 'title') : 'articolo ' . $autoincrement_id;
             $content = Arr::has($data, 'content') ? Arr::get($data, 'name') : $faker->text(100);
-            $description = Arr::has($data, 'description') ? Arr::get($data, 'description') : $faker->text(50);
             $slug = Arr::has($data, 'slug') ? Arr::get($data, 'slug') : Str::slug($title);
             $visibility = Arr::has($data, 'visibility') ? Arr::get($data, 'visibility') : $faker->text(50);
             $status = Arr::has($data, 'status') ? Arr::get($data, 'status') : $faker->text(50);
-            $last_updated_by = Arr::has($data, 'last_updated_by') ? Arr::get($data, 'last_updated_by') : $faker->text(50);
-            $primary_category = Arr::has($data, 'primary_category') ? Arr::get($data, 'primary_category') : $faker->text(50);
+            $is_deleted = Arr::has($data, 'is_deleted') ? Arr::get($data, 'is_deleted') : $faker->boolean;
+            $primarycategory = Arr::has($data, 'primarycategory') ? Arr::get($data, 'primarycategory') : $faker->text(50);
 
             $categories = Arr::has($data, 'categories') ? Arr::get($data, 'categories') : json_encode([]);
 
             $arr = [
-                'article_id' => $article_id,
+                'autoincrement_id' => $autoincrement_id,
                 'title' => $title,
                 'content' => $content,
-                'description' => $description,
                 'slug' => $slug,
                 'visibility' => $visibility,
                 'status' => $status,
-                'last_updated_by' => $last_updated_by,
-                'primary_category' => $primary_category,
+                'is_deleted' => $is_deleted,
+                'primarycategory' => $primarycategory,
                 'categories' => $categories
             ];
 
             $article->storeWithSync($request, $arr);
         }
+    }
+
+    public function getArticle(
+        array $data = [],
+        int $size = 1
+    )
+    {
+        $category = $this->createCategory(['name' => 'sport']);
+        $miniCategory = $this->getMiniCategory($category->id);
+
+        $relationshipValues = [
+            'primarycategory' => $miniCategory,
+            'categories' => $miniCategory,
+        ];
+
+        $mergedData = array_merge($relationshipValues, $data);
+
+        $this->createArticle($mergedData, $size);
     }
 
     public function getMiniCategory(string $category_id = '')
@@ -201,12 +216,12 @@ class SyncTestCase extends TestCase
         );
     }
 
-    public function getMiniArticle(string $article_id = '')
+    public function getMiniArticle(string $autoincrement_id = '')
     {
-        if ($article_id == '' || is_null($article_id)) {
+        if ($autoincrement_id == '' || is_null($autoincrement_id)) {
             $article = $this->createArticle();
         } else {
-            $article = Article::find($article_id);
+            $article = Article::find($autoincrement_id);
             if (is_null($article)) {
                 return json_encode(
                     []
@@ -221,7 +236,6 @@ class SyncTestCase extends TestCase
                     'slug' => $article->slug,
                     'visibility' => $article->visibility,
                     'status' => $article->status,
-                    'last_updated_by' => $article->last_updated_by,
                 ],
             ]
         );

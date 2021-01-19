@@ -6,12 +6,13 @@ use Illuminate\Database\Eloquent\Collection;
 
 class MongoCollection extends Collection
 {
-
     //Method to retrieve a single element of a collection by slug, very useful for frontend
     public function getBySlugAndStatus($category = null, $myslug = null)
     {
         $cl = cl();
+
         $out = $this->filter(function ($col) use ($category, $myslug, $cl) {
+
             if ($col->slug[$cl] == $myslug && $col->status == 'published' && $col->primarycategory->slug[$cl] == $category) {
                 return true;
             } else {

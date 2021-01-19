@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Tests\Models\Article;
 use Tests\Models\Category;
 
@@ -12,49 +13,54 @@ class MongoCollectionTest extends SyncTestCase
         Category::truncate();
         Article::truncate();
 
-        //Categoria
-        $category = $this->createCategory(['name' => 'sport']);
-        $miniCategory = $this->getMiniCategory($category->id);
+        $articlePublished = $this->getArticle(['status' => 'published'], 15);
 
-        //Articoli
-        $articlePublished = $this->createArticle([
-            'primary_category' => $miniCategory,
-            'categories' => $miniCategory,
-            'status' => 'published'
-        ],
-            15
-        );
+        $articleNotPublished = $this->getArticle(['status' => 'draft'], 5);
 
-        $articleNotPublished = $this->createArticle([
-            'primary_category' => $miniCategory,
-            'categories' => $miniCategory,
-            'status' => 'draft'
-        ],
-            5
-        );
-        $out = Article::all()->getBySlugAndStatus('sport','articolo-1');
+        //Expect error 404
+        $this->expectException(NotFoundHttpException::class);
 
+        //Check if instance of Article is passed
+        $outPublished = Article::all()->getBySlugAndStatus('sport', 'articolo-1');
+        $this->assertInstanceOf(Article::class, $outPublished);
 
-        //Test Errore 404
-        /*
-                $response = Article::all()->getBySlugAndStatus('sport','articolo 1');
-                $response->assertStatus();
-        */
+        //Check error 404 return
+        $outNotFoundBySlug = Article::all()->getBySlugAndStatus('sport', 'articolo');
+        $outNotFoundByCategory = Article::all()->getBySlugAndStatus('sports', 'articolo-1');
+
         Category::truncate();
         Article::truncate();
     }
 
     public function test_getBySlug()
     {
+        Category::truncate();
+        Article::truncate();
 
+        $article = $this->getArticle([], 5);
 
+        $this->expectException(NotFoundHttpException::class);
+
+        $out = Article::all()->getBySlug('articolo-1');
+        $this->assertInstanceOf(Article::class, $out);
+
+        $outNotFoundBySlug = Article::all()->getBySlugAndStatus('sport', 'articolo');
+        $outNotFoundByCategory = Article::all()->getBySlugAndStatus('sports', 'articolo-1');
+
+        Category::truncate();
+        Article::truncate();
     }
 
     public function test_getNotDeleted()
     {
+        Category::truncate();
+        Article::truncate();
 
+        $article = $this->getArticle([],10);
 
-//        $this->assertEquals(false, $out);
+        $getNotDeletedArticles = Article::all()->getNotDeleted();
 
+        //Get articles with 'is_deleted = false'
+        $this->assertFalse(false, $getNotDeletedArticles);
     }
 }

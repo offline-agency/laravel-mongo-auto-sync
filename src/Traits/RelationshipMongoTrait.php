@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use MongoDB\BSON\UTCDateTime;
 
-
 trait RelationshipMongoTrait
 {
     /**

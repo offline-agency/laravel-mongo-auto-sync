@@ -8,7 +8,6 @@ use Illuminate\Support\Arr;
 use MongoDB\BSON\UTCDateTime;
 use OfflineAgency\MongoAutoSync\Extensions\MongoCollection;
 use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
-
 use stdClass;
 
 trait ModelAdditionalMethod

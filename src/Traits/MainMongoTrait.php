@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use stdClass;
 
-
 trait MainMongoTrait
 {
     protected $has_partial_request;

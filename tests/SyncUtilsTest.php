@@ -3,8 +3,7 @@
 
 namespace Tests;
 
-use Illuminate\Http\Request;
-use Tests\Models\ModelTest;
+use Tests\Models\Article;
 
 class SyncUtilsTest extends SyncTestCase
 {
@@ -276,46 +275,42 @@ class SyncUtilsTest extends SyncTestCase
     public function test_getAID()
     {
         //Check if there's no data inside the database, set id to 1
+        Article::truncate();
+        $article = new Article;
 
-        ModelTest::truncate();
-        $modelTest = new ModelTest;
-
-        $out = getAID($modelTest);
+        $out = getAID($article);
 
         $this->assertEquals(1, $out);
 
         //If there's already data inside the database, increments new data by 1
 
-        $request = new Request;
+       $articleModel = $this->getArticle([]);
 
-        $obj = [
-            'text' => [],
-            'name' => 'test',
-            'autoincrement_id' => getAID($modelTest)
-        ];
-
-        $modelTest->storeWithSync($request, $obj);
-
-        $out = getAID($modelTest);
+        $out = getAID($article);
 
         $this->assertEquals(2, $out);
-        ModelTest::truncate();
+
+        Article::truncate();
     }
 
     public function test_getArrayWithEmptyObj()
     {
 
-        $modelTest = new ModelTest;
+        $article = new Article;
         $is_EO = true;
         $is_EM = [];
         $expectedArray = [
             (object)[
-                'text' => null,
-                'name' => null,
-                'autoincrement_id' => null
+                'autoincrement_id' => null,
+                'title' => null,
+                'content' => null,
+                'slug' => null,
+                'visibility' => null,
+                'status' => null,
+                'is_deleted' => null
             ]
         ];
-        $out = getArrayWithEmptyObj($modelTest, $is_EO, $is_EM);
+        $out = getArrayWithEmptyObj($article, $is_EO, $is_EM);
 
         $this->assertEquals($expectedArray, $out);
     }

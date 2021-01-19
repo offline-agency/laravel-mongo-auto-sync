@@ -7,7 +7,7 @@ use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 class Article extends MDModel
 {
     protected $items = [
-        'article_id' => [],
+        'autoincrement_id' => [],
         'title' => [
             'is-ml' => true,
             'is-editable' => true,
@@ -20,11 +20,11 @@ class Article extends MDModel
         ],
         'visibility' => [],
         'status' => [],
-        'last_updated_by' => [],
+        'is_deleted' => []
     ];
 
     protected $mongoRelation = [
-        'primary_category' => [
+        'primarycategory' => [
             'type' => 'EmbedsOne',
             'model' => 'Tests\Models\MiniCategory',
             'has-target' => false,
@@ -42,5 +42,10 @@ class Article extends MDModel
     public function categories()
     {
         return $this->embedsMany('Tests\Models\MiniCategory');
+    }
+
+    public function primarycategory()
+    {
+        return $this->embedsOne('Tests\Models\MiniCategory');
     }
 }
