@@ -309,6 +309,9 @@ class UpdateWithSyncTest extends SyncTestCase
         $this->assertEquals($navigation_original->target, $navigation_updated->target);
 
         //check target - subitems TODO
+        $sub_item = SubItem::all()->where('id', $sub_item_original->id)->first();
+
+        $this->assertEquals($navigation_updated->id, $sub_item->navigation->ref_id);
 
         $sub_item_original->delete();
         $navigation_original->delete();
@@ -330,23 +333,29 @@ class UpdateWithSyncTest extends SyncTestCase
             'request_type' => 'partial',
         ];
         $request = new Request;
-        $sub_item_new = $sub_item_original->updateWithSync($request, $data, $options);
+
+
+        $sub_item_updated = $sub_item_original->updateWithSync($request, $data, $options);
 
         //navigation has been updated?
-        $this->assertNotEquals($sub_item_original->navigation->getAttributes(), $sub_item_new->navigation->getAttributes());
-        $this->assertNotNull($sub_item_new->navigation);
+        $this->assertNotEquals($sub_item_original->navigation->getAttributes(), $sub_item_updated->navigation->getAttributes());
+        $this->assertNotNull($sub_item_updated->navigation);
 
-        $this->assertEquals($navigation->id, $sub_item_new->navigation->ref_id);
-        $this->assertEquals($navigation->text, $sub_item_new->navigation->text);
-        $this->assertEquals($navigation->code, $sub_item_new->navigation->code);
-        $this->assertEquals($navigation->title[cl()], $sub_item_new->navigation->title[cl()]);
+        $this->assertEquals($navigation->id, $sub_item_updated->navigation->ref_id);
+        $this->assertEquals($navigation->text, $sub_item_updated->navigation->text);
+        $this->assertEquals($navigation->code, $sub_item_updated->navigation->code);
+        $this->assertEquals($navigation->title[cl()], $sub_item_updated->navigation->title[cl()]);
 
         //all the other fields has not been updated?
-        $this->assertEquals($sub_item_original->text[cl()], $sub_item_new->text[cl()]);
-        $this->assertEquals($sub_item_original->code, $sub_item_new->code);
-        $this->assertEquals($sub_item_original->href, $sub_item_new->href);
+        $this->assertEquals($sub_item_original->text[cl()], $sub_item_updated->text[cl()]);
+        $this->assertEquals($sub_item_original->code, $sub_item_updated->code);
+        $this->assertEquals($sub_item_original->href, $sub_item_updated->href);
 
         //check target - navigation TODO
+        $navigation = Navigation::all()->where('id', $navigation->id)->first();
+
+        $this->assertTrue($navigation->sub_items->where('ref_id', $sub_item_updated->id)->count() > 0);
+
 
         $sub_item_original->delete();
         $navigation->delete();
