@@ -117,10 +117,6 @@ class UpdateWithSyncTest extends SyncTestCase
         $this->assertInstanceOf(MongoCollection::class, $navigation->sub_items);
         //Check target TODO
 
-
-
-
-
         $mini_navigation = $this->getMiniNavigation($navigation->id);
 
         $data = [
@@ -153,24 +149,20 @@ class UpdateWithSyncTest extends SyncTestCase
             'href' => 'href_updated',
             'date' => $date,
             'target' => 'target_updated',
-            'sub_items' => $sub_items
+            'sub_items' => $sub_items,
         ];
 
         $options = [];
         $request = new Request;
         $navigation_updated = $navigation_original->updateWithSync($request, $data, $options);
 
-        $this->assertEquals('text_updated',$navigation_updated->text );
-        $this->assertEquals('title_updated',getTranslatedContent($navigation_updated->title ));
-        $this->assertEquals('code_updated',$navigation_updated->code );
-        $this->assertEquals('href_updated',$navigation_updated->href );
+        $this->assertEquals('text_updated', $navigation_updated->text);
+        $this->assertEquals('title_updated', getTranslatedContent($navigation_updated->title));
+        $this->assertEquals('code_updated', $navigation_updated->code);
+        $this->assertEquals('href_updated', $navigation_updated->href);
         //$this->assertEquals($date,$navigation_updated->date );TODO: fix precision
-        $this->assertEquals('target_updated',$navigation_updated->target );
-        $this->assertEquals(1,$navigation_updated->sub_items->count() );
-
-
-
-
+        $this->assertEquals('target_updated', $navigation_updated->target);
+        $this->assertEquals(1, $navigation_updated->sub_items->count());
 
         $mini_navigation = $this->getMiniNavigation($navigation->id);
         $data = [
@@ -319,11 +311,10 @@ class UpdateWithSyncTest extends SyncTestCase
 
     private function partialUpdateSubItemsRelationship()
     {
-
         $navigation_original = $this->createNavigation();
         $mini_navigation_original = $this->getMiniNavigation($navigation_original->id);
 
-        $sub_item_original = $this->createSubItems([ 'navigation' => $mini_navigation_original]);
+        $sub_item_original = $this->createSubItems(['navigation' => $mini_navigation_original]);
         $navigation = $this->createNavigation();
 
         //Test Update from SubItem
@@ -336,7 +327,6 @@ class UpdateWithSyncTest extends SyncTestCase
             'request_type' => 'partial',
         ];
         $request = new Request;
-
 
         $sub_item_updated = $sub_item_original->updateWithSync($request, $data, $options);
 
