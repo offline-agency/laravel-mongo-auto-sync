@@ -72,7 +72,7 @@ trait RelationshipMongoTrait
 
                     //Delete EmbedsMany or EmbedsOne on Target - TODO: check if it is necessary to run deleteTargetObj method
                     if ($hasTarget) {
-                        $this->deleteTargetObj($method, $modelTarget, $methodOnTarget, $is_EO, $is_EM,$is_EO_target, $is_EM_target);
+                        $this->deleteTargetObj($method, $modelTarget, $methodOnTarget, $is_EO, $is_EM, $is_EO_target, $is_EM_target);
                     }
                     //Delete EmbedsMany or EmbedsOne on current object
                     if ($is_EM) {
@@ -133,7 +133,7 @@ trait RelationshipMongoTrait
                 $new_values[] = $temp->attributes;
             }
             $new_values[] = $mini_model->attributes;
-        } else if($is_EO_target) {
+        } elseif ($is_EO_target) {
             $new_values = $mini_model->attributes;
         }
 
@@ -189,7 +189,7 @@ trait RelationshipMongoTrait
                 $target_id = $embedObj->ref_id;
                 $this->handleSubTarget($target_id, $modelTarget, $methodOnTarget, $is_EO_target, $is_EM_target);
             }
-        } else if($is_EM){
+        } elseif ($is_EM) {
             foreach ($this->$method as $target) {
                 $this->handleSubTarget($target->ref_id, $modelTarget, $methodOnTarget, $is_EO_target, $is_EM_target);
             }
@@ -218,8 +218,8 @@ trait RelationshipMongoTrait
                 $target->$methodOnTarget = $new_values;
                 $target->save();
             }
-        }else if($is_EO_target){
-           //Do nothing because when we are updating we already init the informations
+        } elseif ($is_EO_target) {
+            //Do nothing because when we are updating we already init the informations
         }
     }
 
