@@ -13,9 +13,9 @@ class MongoCollectionTest extends SyncTestCase
         Category::truncate();
         Article::truncate();
 
-        $articlePublished = $this->getArticle(['status' => 'published'], 15);
+        $articlePublished = $this->prepareArticleData(['status' => 'published'], 15);
 
-        $articleNotPublished = $this->getArticle(['status' => 'draft'], 5);
+        $articleNotPublished = $this->prepareArticleData(['status' => 'draft'], 5);
 
         //Expect error 404
         $this->expectException(NotFoundHttpException::class);
@@ -37,7 +37,7 @@ class MongoCollectionTest extends SyncTestCase
         Category::truncate();
         Article::truncate();
 
-        $article = $this->getArticle([], 5);
+        $article = $this->prepareArticleData([], 5);
 
         $this->expectException(NotFoundHttpException::class);
 
@@ -56,7 +56,7 @@ class MongoCollectionTest extends SyncTestCase
         Category::truncate();
         Article::truncate();
 
-        $article = $this->getArticle([],10);
+        $article = $this->prepareArticleData([],10);
 
         $getNotDeletedArticles = Article::all()->getNotDeleted();
 

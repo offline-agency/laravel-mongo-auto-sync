@@ -284,7 +284,7 @@ class SyncUtilsTest extends SyncTestCase
 
         //If there's already data inside the database, increments new data by 1
 
-       $articleModel = $this->getArticle([]);
+       $articleModel = $this->prepareArticleData([]);
 
         $out = getAID($article);
 

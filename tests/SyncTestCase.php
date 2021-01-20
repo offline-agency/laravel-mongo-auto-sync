@@ -135,7 +135,7 @@ class SyncTestCase extends TestCase
         return $category->storeWithSync($request, $arr);
     }
 
-    public function createArticle(
+    public function createArticles(
         array $data = [],
         int $size = 1
     )
@@ -174,7 +174,7 @@ class SyncTestCase extends TestCase
         }
     }
 
-    public function getArticle(
+    public function prepareArticleData(
         array $data = [],
         int $size = 1
     )
@@ -189,7 +189,7 @@ class SyncTestCase extends TestCase
 
         $mergedData = array_merge($relationshipValues, $data);
 
-        $this->createArticle($mergedData, $size);
+        $this->createArticles($mergedData, $size);
     }
 
     public function getMiniCategory(string $category_id = '')

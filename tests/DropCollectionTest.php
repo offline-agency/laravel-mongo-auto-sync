@@ -2,19 +2,29 @@
 
 namespace Tests;
 
-use Illuminate\Http\Request;
 use Tests\Models\Article;
+use Tests\Models\Category;
 
-class DropCollectionTest extends TestCase
+class DropCollectionTest extends SyncTestCase
 {
     public function test_drop_collection_with_object()
     {
-        $articles = $this->createArticle();
+        Article::truncate();
+        Category::truncate();
+
+        $this->prepareArticleData([],10);
 
         $this->artisan('drop:collection', ['collection_name' => 'Article'])
             ->assertExitCode(0);
 
-        $this->isDeleted($articles);
+        $articles = Article::all();
+        $this->assertEmpty($articles);
+        $category = Category::where('name.' . cl(),'sport')->first();
+
+        $this->assertEmpty($category->articles);
+
+        Article::truncate();
+        Category::truncate();
     }
 
     public function test_exception_model_not_found()
@@ -30,25 +40,6 @@ class DropCollectionTest extends TestCase
         $this->expectExceptionMessage('Error directory path_that_does_not_exist not found');
         $this->artisan('model-doc:generate', ['collection_name' => 'ModelThatDoesNotExist'])
             ->assertExitCode(0);
-    }
-
-    public function createArticle()
-    {
-        $articles = [];
-
-        for ($i = 0; $i < 2; $i++) {
-            $article = new Article;
-            $request = new Request;
-            $arr = [
-                'title' => 'Article #'.$i,
-            ];
-
-            $article->storeWithSync($request, $arr);
-
-            $articles[$i] = $article;
-        }
-
-        return $articles;
     }
 
     public function isDeleted($articles)
