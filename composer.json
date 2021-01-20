@@ -32,7 +32,9 @@
         "psr-4": {
             "OfflineAgency\\MongoAutoSync\\": "src/"
         },
-        "files": []
+        "files": [
+            "src/syncUtils.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

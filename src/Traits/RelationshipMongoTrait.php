@@ -2,6 +2,8 @@
 
 namespace OfflineAgency\MongoAutoSync\Traits;
 
+use DateTime;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use MongoDB\BSON\UTCDateTime;
@@ -131,7 +133,7 @@ trait RelationshipMongoTrait
                 $new_values[] = $temp->attributes;
             }
             $new_values[] = $mini_model->attributes;
-        } else {
+        } else if($is_EO_target) {
             $new_values = $mini_model->attributes;
         }
 
@@ -171,14 +173,14 @@ trait RelationshipMongoTrait
     }
 
     /**
-     * @param $method
-     * @param $modelTarget
-     * @param $methodOnTarget
+     * @param string $method
+     * @param string $modelTarget
+     * @param string $methodOnTarget
      * @param bool $is_EO
      * @param bool $is_EO_target
      * @param bool $is_EM_target
      */
-    public function deleteTargetObj($method, $modelTarget, $methodOnTarget, $is_EO, $is_EO_target, $is_EM_target)
+    public function deleteTargetObj($method, $modelTarget, $methodOnTarget, bool $is_EO, bool $is_EO_target, bool $is_EM_target)
     {
         if ($is_EO) {
             $embedObj = $this->$method;
@@ -186,7 +188,7 @@ trait RelationshipMongoTrait
                 $target_id = $embedObj->ref_id;
                 $this->handleSubTarget($target_id, $modelTarget, $methodOnTarget, $is_EO_target, $is_EM_target);
             }
-        } else {
+        } else if($is_EM_target){
             foreach ($this->$method as $target) {
                 $this->handleSubTarget($target->ref_id, $modelTarget, $methodOnTarget, $is_EO_target, $is_EM_target);
             }
@@ -194,13 +196,13 @@ trait RelationshipMongoTrait
     }
 
     /**
-     * @param $target_id
-     * @param $modelTarget
-     * @param $methodOnTarget
+     * @param string $target_id
+     * @param string $modelTarget
+     * @param string $methodOnTarget
      * @param bool $is_EO_target
      * @param bool $is_EM_target
      */
-    public function handleSubTarget($target_id, $modelTarget, $methodOnTarget, $is_EO_target, $is_EM_target)
+    public function handleSubTarget(string $target_id, string $modelTarget, string $methodOnTarget, bool $is_EO_target, bool $is_EM_target)
     {
         if ($is_EM_target) {
             $target = new $modelTarget;
@@ -215,6 +217,8 @@ trait RelationshipMongoTrait
                 $target->$methodOnTarget = $new_values;
                 $target->save();
             }
+        }else if($is_EO_target){
+           //Do nothing because when we are updating we already init the informations
         }
     }
 
@@ -285,7 +289,7 @@ trait RelationshipMongoTrait
      * @param bool $is_EM_target
      * @throws Exception
      */
-    private function processEmbedOnTargetCollection($modelTarget, $obj, $methodOnTarget, $modelOnTarget, $is_EO_target, $is_EM_target)
+    private function processEmbedOnTargetCollection($modelTarget, $obj, $methodOnTarget, $modelOnTarget, bool $is_EO_target, bool $is_EM_target)
     {
         $modelToBeSync = $this->getModelTobeSync($modelTarget, $obj);
         if (! is_null($modelToBeSync)) {
