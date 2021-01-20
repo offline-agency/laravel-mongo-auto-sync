@@ -319,8 +319,11 @@ class UpdateWithSyncTest extends SyncTestCase
 
     private function partialUpdateSubItemsRelationship()
     {
-        //Create a navigation and associated to the sub item on update
-        $sub_item_original = $this->createSubItems();
+
+        $navigation_original = $this->createNavigation();
+        $mini_navigation_original = $this->getMiniNavigation($navigation_original->id);
+
+        $sub_item_original = $this->createSubItems([ 'navigation' => $mini_navigation_original]);
         $navigation = $this->createNavigation();
 
         //Test Update from SubItem
@@ -356,6 +359,10 @@ class UpdateWithSyncTest extends SyncTestCase
 
         $this->assertTrue($navigation->sub_items->where('ref_id', $sub_item_updated->id)->count() > 0);
 
+        //check target - Navigation subitem has been detached from navigation original?
+        $navigation = Navigation::all()->where('id', $navigation_original->id)->first();
+
+        $this->assertTrue($navigation->sub_items->where('ref_id', $sub_item_updated->id)->count() === 0);
 
         $sub_item_original->delete();
         $navigation->delete();
