@@ -304,6 +304,7 @@ class SyncUtilsTest extends SyncTestCase
                 'visibility' => null,
                 'status' => null,
                 'is_deleted' => null,
+                'is_active' => null
             ],
         ];
         $out = getArrayWithEmptyObj($article, $is_EO, $is_EM);
@@ -354,5 +355,24 @@ class SyncUtilsTest extends SyncTestCase
         $out = getCounterForRelationships($method, $is_EO, $is_EM, $i);
 
         $this->assertEquals('-'.$i, $out);
+    }
+
+    public function test_getTypeOnTarget()
+    {
+        $EM = [
+            'typeOnTarget' => 'EmbedsMany'
+        ];
+        $EO = [
+            'typeOnTarget' => 'EmbedsOne'
+        ];
+        $defaultValue = [];
+
+        $outEM = getTypeOnTarget($EM);
+        $outEO = getTypeOnTarget($EO);
+        $outDefaultValue = getTypeOnTarget($defaultValue);
+
+        $this->assertEquals('EmbedsMany', $outEM);
+        $this->assertEquals('EmbedsOne', $outEO);
+        $this->assertEquals('EmbedsMany', $outDefaultValue);
     }
 }

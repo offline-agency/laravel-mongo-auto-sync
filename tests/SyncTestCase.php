@@ -150,6 +150,7 @@ class SyncTestCase extends TestCase
             $visibility = Arr::has($data, 'visibility') ? Arr::get($data, 'visibility') : $faker->text(50);
             $status = Arr::has($data, 'status') ? Arr::get($data, 'status') : $faker->text(50);
             $is_deleted = Arr::has($data, 'is_deleted') ? Arr::get($data, 'is_deleted') : $faker->boolean;
+            $is_active = Arr::has($data, 'is_active') ? Arr::get($data, 'is_active') : $faker->text(50);
             $primarycategory = Arr::has($data, 'primarycategory') ? Arr::get($data, 'primarycategory') : $faker->text(50);
 
             $categories = Arr::has($data, 'categories') ? Arr::get($data, 'categories') : json_encode([]);
@@ -162,6 +163,7 @@ class SyncTestCase extends TestCase
                 'visibility' => $visibility,
                 'status' => $status,
                 'is_deleted' => $is_deleted,
+                'is_active' => $is_active,
                 'primarycategory' => $primarycategory,
                 'categories' => $categories,
             ];
@@ -238,6 +240,12 @@ class SyncTestCase extends TestCase
         );
     }
 
+    public function getIdNull()
+    {
+        return (object)[
+            'id' => null
+        ];
+    }
     /**
      * @param string $navigation_id
      * @return false|string

@@ -12,7 +12,7 @@ class MongoCollection extends Collection
         $cl = cl();
 
         $out = $this->filter(function ($col) use ($category, $myslug, $cl) {
-            if ($col->slug[$cl] == $myslug && $col->status == 'published' && $col->primarycategory->slug[$cl] == $category) {
+            if ($col->slug[$cl] === $myslug && $col->status === 'published' && $col->primarycategory->slug[$cl] === $category) {
                 return true;
             } else {
                 return false;
@@ -36,7 +36,7 @@ class MongoCollection extends Collection
     {
         $cl = cl();
         $out = $this->filter(function ($col) use ($myslug, $cl) {
-            if ($col->slug[$cl] == $myslug) {
+            if ($col->slug[$cl] === $myslug) {
                 return true;
             }
         })->first();
@@ -60,7 +60,7 @@ class MongoCollection extends Collection
             if ($col->is_deleted) {
                 return false;
             } else {
-                return false;
+                return true;
             }
         });
     }
@@ -73,7 +73,7 @@ class MongoCollection extends Collection
     public function getPublished()
     {
         return $this->filter(function ($col) {
-            if ($col->status == 'published') {
+            if ($col->status === 'published') {
                 return true;
             } else {
                 return false;
@@ -113,14 +113,15 @@ class MongoCollection extends Collection
         }
 
         $id = $obj->id;
-
+        //trancia
         $out = $this->filter(function ($col) use ($id) {
-            if ($col->ref_id == $id) {
+            if ($col->ref_id === $id) {
                 return true;
             } else {
                 return false;
             }
         });
+        //conta i true
         if ($out->count() > 0) {
             return true;
         } else {
@@ -140,7 +141,6 @@ class MongoCollection extends Collection
         for ($i = 0; $i <= ($this->count() - 1); $i++) {
             $this[$i]->ref_id == $id ? $this->prepend($this->splice($i, 1)[0]) : 0;
         }
-
         return $this;
     }
 
@@ -174,7 +174,7 @@ class MongoCollection extends Collection
     public function findByAID(string $aid)
     {
         return $this->filter(function ($col) use ($aid) {
-            return $col->autoincrement_id == $aid;
+            return $col->autoincrement_id === $aid;
         })->first();
     }
 
