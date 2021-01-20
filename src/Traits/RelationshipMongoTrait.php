@@ -72,7 +72,7 @@ trait RelationshipMongoTrait
 
                     //Delete EmbedsMany or EmbedsOne on Target - TODO: check if it is necessary to run deleteTargetObj method
                     if ($hasTarget) {
-                        $this->deleteTargetObj($method, $modelTarget, $methodOnTarget, $is_EO, $is_EO_target, $is_EM_target);
+                        $this->deleteTargetObj($method, $modelTarget, $methodOnTarget, $is_EO, $is_EM,$is_EO_target, $is_EM_target);
                     }
                     //Delete EmbedsMany or EmbedsOne on current object
                     if ($is_EM) {
@@ -177,10 +177,11 @@ trait RelationshipMongoTrait
      * @param string $modelTarget
      * @param string $methodOnTarget
      * @param bool $is_EO
+     * @param bool $is_EM
      * @param bool $is_EO_target
      * @param bool $is_EM_target
      */
-    public function deleteTargetObj($method, $modelTarget, $methodOnTarget, bool $is_EO, bool $is_EO_target, bool $is_EM_target)
+    public function deleteTargetObj($method, $modelTarget, $methodOnTarget, bool $is_EO, bool $is_EM, bool $is_EO_target, bool $is_EM_target)
     {
         if ($is_EO) {
             $embedObj = $this->$method;
@@ -188,7 +189,7 @@ trait RelationshipMongoTrait
                 $target_id = $embedObj->ref_id;
                 $this->handleSubTarget($target_id, $modelTarget, $methodOnTarget, $is_EO_target, $is_EM_target);
             }
-        } else if($is_EM_target){
+        } else if($is_EM){
             foreach ($this->$method as $target) {
                 $this->handleSubTarget($target->ref_id, $modelTarget, $methodOnTarget, $is_EO_target, $is_EM_target);
             }
