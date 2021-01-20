@@ -33,7 +33,7 @@ trait RelationshipMongoTrait
                 $modelTarget = $relation['modelTarget'];
                 $methodOnTarget = $relation['methodOnTarget'];
                 $modelOnTarget = $relation['modelOnTarget'];
-                $typeOnTarget = Arr::has($relation, 'typeOnTarget') ? Arr::get($relation, 'typeOnTarget') : 'EmbedsMany';
+                $typeOnTarget = getTypeOnTarget($relation);
             } else {
                 $modelTarget = '';
                 $methodOnTarget = '';

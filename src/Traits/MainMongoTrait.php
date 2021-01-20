@@ -63,7 +63,6 @@ trait MainMongoTrait
     {
         //Get the relation info
         $relations = $this->getMongoRelation();
-
         //Process all relationships
         foreach ($relations as $method => $relation) {
             //Get Relation Save Mode
@@ -73,17 +72,17 @@ trait MainMongoTrait
                 $modelTarget = $relation['modelTarget'];
                 $methodOnTarget = $relation['methodOnTarget'];
                 $modelOnTarget = $relation['modelOnTarget'];
-
                 $is_EO = is_EO($type);
                 $is_EM = is_EM($type);
                 $is_HO = is_HO($type);
                 $is_HM = is_HM($type);
-
+                $typeOnTarget = getTypeOnTarget($relation);
+                $is_EM_target = is_EM($typeOnTarget);
+                $is_EO_target = is_EO($typeOnTarget);
                 if ($is_EO || $is_EM) {//EmbedsOne Create - EmbedsMany Create
                     //Delete EmbedsMany or EmbedsOne on Target
-                    $this->deleteTargetObj($method, $modelTarget, $methodOnTarget, $is_EO);
+                    $this->deleteTargetObj($method, $modelTarget, $methodOnTarget, $is_EO, $is_EO_target, $is_EM_target);
                 }
-
                 //TODO: Need to be implemented
                 /* elseif ($is_HM) {//HasMany
                  } elseif ($is_HO) {//HasOne Create
@@ -92,10 +91,8 @@ trait MainMongoTrait
         }
         //Delete current object
         $this->delete();
-
         //Dispatch the destroy event
         $this->fireModelEvent('destroyWithSync');
-
         return $this;
     }
 
@@ -118,8 +115,8 @@ trait MainMongoTrait
      */
     public function checkPropertyExistence($obj, string $EOkey, $method = '', $model = '')
     {
-        if (! property_exists($obj, $EOkey)) {
-            $msg = 'Error - '.$EOkey.' attribute not found on obj '.json_encode($obj).' during save of model: '.$model.' and attribute: '.$method;
+        if (!property_exists($obj, $EOkey)) {
+            $msg = 'Error - ' . $EOkey . ' attribute not found on obj ' . json_encode($obj) . ' during save of model: ' . $model . ' and attribute: ' . $method;
             throw new Exception($msg);
         }
     }
@@ -131,8 +128,8 @@ trait MainMongoTrait
      */
     public function checkArrayExistence($arr, string $key)
     {
-        if (! Arr::has($arr, $key)) {
-            $msg = ('Error - '.$key.' attribute not found on obj '.json_encode($arr));
+        if (!Arr::has($arr, $key)) {
+            $msg = ('Error - ' . $key . ' attribute not found on obj ' . json_encode($arr));
             throw new Exception($msg);
         }
     }
@@ -144,8 +141,8 @@ trait MainMongoTrait
      */
     private function checkRequestExistence(Request $request, string $key)
     {
-        if (! $request->has($key)) {
-            $msg = ('Error - '.$key.' attribute not found in Request '.json_encode($request->all()));
+        if (!$request->has($key)) {
+            $msg = ('Error - ' . $key . ' attribute not found in Request ' . json_encode($request->all()));
             throw new Exception($msg);
         }
     }
@@ -157,7 +154,7 @@ trait MainMongoTrait
      */
     public function getIsSkippable($request_has_key, $hasTarget = false)
     {
-        return ! $request_has_key && $this->getHasPartialRequest() && ! $hasTarget;
+        return !$request_has_key && $this->getHasPartialRequest() && !$hasTarget;
     }
 
     /**

@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Config;
 use Jenssegers\Mongodb\Eloquent\Model;
 
@@ -337,6 +338,12 @@ if (! function_exists('getCounterForRelationships')) {
             return '';
         } else {
             return '-'.$i;
+        }
+    }
+
+    if (! function_exists('getTypeOnTarget')) {
+        function getTypeOnTarget($relation){
+            return Arr::has($relation, 'typeOnTarget') ? Arr::get($relation, 'typeOnTarget') : 'EmbedsMany';
         }
     }
 }
