@@ -56,7 +56,7 @@ class MongoCollectionTest extends SyncTestCase
         Category::truncate();
         Article::truncate();
 
-        $article = $this->prepareArticleData([],10);
+        $article = $this->prepareArticleData([], 10);
 
         $getNotDeletedArticles = Article::all()->getNotDeleted();
 

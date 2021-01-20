@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Tests\Models;
 
 use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
@@ -17,7 +16,7 @@ class Category extends MDModel
         ],
         'description' => [
             'is-ml' => true,
-        ]
+        ],
     ];
 
     protected $mongoRelation = [
@@ -27,8 +26,8 @@ class Category extends MDModel
             'mode' => 'classic',
             'modelTarget' => 'Tests\Models\Article',
             'methodOnTarget' => 'categories',
-            'modelOnTarget' => 'Tests\Models\MiniCategory'
-        ]
+            'modelOnTarget' => 'Tests\Models\MiniCategory',
+        ],
     ];
 
     public function articles()

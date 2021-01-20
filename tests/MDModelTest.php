@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Tests;
 
 use OfflineAgency\MongoAutoSync\Extensions\MongoCollection;
@@ -10,7 +9,7 @@ class MDModelTest extends SyncTestCase
 {
     public function test_getId()
     {
-        $modelTest =$this->createNavigation();
+        $modelTest = $this->createNavigation();
 
         $out = $modelTest->getId();
 
@@ -30,8 +29,7 @@ class MDModelTest extends SyncTestCase
     {
         Navigation::truncate();
 
-        for ($i = 0; $i < 10; $i++){
-
+        for ($i = 0; $i < 10; $i++) {
             $this->createNavigation();
         }
 

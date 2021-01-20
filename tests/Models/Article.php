@@ -20,7 +20,7 @@ class Article extends MDModel
         ],
         'visibility' => [],
         'status' => [],
-        'is_deleted' => []
+        'is_deleted' => [],
     ];
 
     protected $mongoRelation = [
@@ -36,7 +36,7 @@ class Article extends MDModel
             'modelTarget' => 'Tests\Models\Category',
             'methodOnTarget' => 'articles',
             'modelOnTarget' => 'Tests\Models\MiniArticle',
-        ]
+        ],
     ];
 
     public function categories()

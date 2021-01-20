@@ -77,8 +77,7 @@ class SyncTestCase extends TestCase
      */
     public function createNavigation(
         array $data = []
-    )
-    {
+    ) {
         $faker = Factory::create();
         $request = new Request;
 
@@ -108,8 +107,7 @@ class SyncTestCase extends TestCase
 
     public function createCategory(
         array $data = []
-    )
-    {
+    ) {
         $faker = Factory::create();
         $request = new Request;
 
@@ -129,7 +127,7 @@ class SyncTestCase extends TestCase
             'name' => $name,
             'slug' => $slug,
             'description' => $description,
-            'articles' => $articles
+            'articles' => $articles,
         ];
 
         return $category->storeWithSync($request, $arr);
@@ -138,17 +136,15 @@ class SyncTestCase extends TestCase
     public function createArticles(
         array $data = [],
         int $size = 1
-    )
-    {
+    ) {
         $faker = Factory::create();
 
         for ($i = 0; $i < $size; $i++) {
-
             $request = new Request;
             $article = new Article;
 
             $autoincrement_id = getAID($article);
-            $title = Arr::has($data, 'title') ? Arr::get($data, 'title') : 'articolo ' . $autoincrement_id;
+            $title = Arr::has($data, 'title') ? Arr::get($data, 'title') : 'articolo '.$autoincrement_id;
             $content = Arr::has($data, 'content') ? Arr::get($data, 'name') : $faker->text(100);
             $slug = Arr::has($data, 'slug') ? Arr::get($data, 'slug') : Str::slug($title);
             $visibility = Arr::has($data, 'visibility') ? Arr::get($data, 'visibility') : $faker->text(50);
@@ -167,7 +163,7 @@ class SyncTestCase extends TestCase
                 'status' => $status,
                 'is_deleted' => $is_deleted,
                 'primarycategory' => $primarycategory,
-                'categories' => $categories
+                'categories' => $categories,
             ];
 
             $article->storeWithSync($request, $arr);
@@ -177,8 +173,7 @@ class SyncTestCase extends TestCase
     public function prepareArticleData(
         array $data = [],
         int $size = 1
-    )
-    {
+    ) {
         $category = $this->createCategory(['name' => 'sport']);
         $miniCategory = $this->getMiniCategory($category->id);
 
@@ -204,9 +199,10 @@ class SyncTestCase extends TestCase
                 );
             }
         }
+
         return json_encode(
             [
-                (object)[
+                (object) [
                     'ref_id' => $category->id,
                     'name' => $category->name,
                     'slug' => $category->slug,
@@ -228,9 +224,10 @@ class SyncTestCase extends TestCase
                 );
             }
         }
+
         return json_encode(
             [
-                (object)[
+                (object) [
                     'ref_id' => $article->id,
                     'title' => $article->title,
                     'slug' => $article->slug,
@@ -261,7 +258,7 @@ class SyncTestCase extends TestCase
 
         return json_encode(
             [
-                (object)[
+                (object) [
                     'ref_id' => $navigation->id,
                     'text' => $navigation->text,
                     'code' => $navigation->code,
@@ -277,7 +274,7 @@ class SyncTestCase extends TestCase
      */
     public function isNavigationCreated($navigation)
     {
-        return !is_null(Navigation::find($navigation->id));
+        return ! is_null(Navigation::find($navigation->id));
     }
 
     /**
@@ -286,7 +283,7 @@ class SyncTestCase extends TestCase
      */
     public function isItemCreated($item)
     {
-        return !is_null(Item::find($item->id));
+        return ! is_null(Item::find($item->id));
     }
 
     /**
