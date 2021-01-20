@@ -308,7 +308,7 @@ class UpdateWithSyncTest extends SyncTestCase
         $this->assertEquals($navigation_original->date, $navigation_updated->date);
         $this->assertEquals($navigation_original->target, $navigation_updated->target);
 
-        //check target - subitems TODO
+        //check target - Sub_item
         $sub_item = SubItem::all()->where('id', $sub_item_original->id)->first();
 
         $this->assertEquals($navigation_updated->id, $sub_item->navigation->ref_id);
@@ -351,7 +351,7 @@ class UpdateWithSyncTest extends SyncTestCase
         $this->assertEquals($sub_item_original->code, $sub_item_updated->code);
         $this->assertEquals($sub_item_original->href, $sub_item_updated->href);
 
-        //check target - navigation TODO
+        //check target - Navigation
         $navigation = Navigation::all()->where('id', $navigation->id)->first();
 
         $this->assertTrue($navigation->sub_items->where('ref_id', $sub_item_updated->id)->count() > 0);
