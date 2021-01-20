@@ -10,8 +10,7 @@ class MongoCollectionTest extends SyncTestCase
 {
     public function test_getBySlugAndStatus()
     {
-        Category::truncate();
-        Article::truncate();
+        $this->cleanDb();
 
         $articlePublished = $this->prepareArticleData(['status' => 'published'], 15);
 
@@ -28,14 +27,12 @@ class MongoCollectionTest extends SyncTestCase
         $outNotFoundBySlug = Article::all()->getBySlugAndStatus('sport', 'articolo');
         $outNotFoundByCategory = Article::all()->getBySlugAndStatus('sports', 'articolo-1');
 
-        Category::truncate();
-        Article::truncate();
+        $this->cleanDb();
     }
 
     public function test_getBySlug()
     {
-        Category::truncate();
-        Article::truncate();
+        $this->cleanDb();
 
         $article = $this->prepareArticleData([], 5);
 
@@ -47,14 +44,12 @@ class MongoCollectionTest extends SyncTestCase
         $outNotFoundBySlug = Article::all()->getBySlugAndStatus('sport', 'articolo');
         $outNotFoundByCategory = Article::all()->getBySlugAndStatus('sports', 'articolo-1');
 
-        Category::truncate();
-        Article::truncate();
+        $this->cleanDb();
     }
 
     public function test_getNotDeleted()
     {
-        Category::truncate();
-        Article::truncate();
+        $this->cleanDb();
 
         $this->prepareArticleData(['is_deleted' => true], 5);
         $this->prepareArticleData(['is_deleted' => false], 3);
@@ -65,14 +60,12 @@ class MongoCollectionTest extends SyncTestCase
         $this->assertCount(3, $notDeletedArticles);
         $this->assertCount(8, $allArticles);
 
-        Category::truncate();
-        Article::truncate();
+        $this->cleanDb();
     }
 
     public function test_getPublished()
     {
-        Category::truncate();
-        Article::truncate();
+        $this->cleanDb();
 
         $this->prepareArticleData(['status' => 'published'], 5);
         $this->prepareArticleData(['status' => 'draft'], 3);
@@ -83,13 +76,12 @@ class MongoCollectionTest extends SyncTestCase
         $this->assertCount(5, $getPublished);
         $this->assertCount(8, $allArticles);
 
-
+        $this->cleanDb();
     }
 
     public function test_getPublic()
     {
-        Category::truncate();
-        Article::truncate();
+        $this->cleanDb();
 
         $this->prepareArticleData(['visibility' => 'public'], 5);
         $this->prepareArticleData(['visibility' => 'hidden'], 3);
@@ -99,12 +91,13 @@ class MongoCollectionTest extends SyncTestCase
 
         $this->assertCount(5, $public);
         $this->assertCount(8, $allArticles);
+
+        $this->cleanDb();
     }
 
     public function test_hasItem()
     {
-        Category::truncate();
-        Article::truncate();
+        $this->cleanDb();
 
         $this->prepareArticleData([],1);
         $this->createCategory(['name' => 'news']);
@@ -116,64 +109,77 @@ class MongoCollectionTest extends SyncTestCase
         $out = $article->categories->hasItem(null);
         $this->assertFalse($out);
 
-        //1
         $out = $article->categories->hasItem($categoryAssigned);
         $this->assertTrue($out);
 
-
-        //2
         $out = $article->categories->hasItem($categoryNotAssigned);
         $this->assertFalse($out);
 
-        //Get Id Null
         $out = $article->categories->hasItem($idNull);
         $this->assertFalse($out);
 
-        Category::truncate();
-        Article::truncate();
+        $this->cleanDb();
     }
 
     public function test_moveFirst()
     {
-        Category::truncate();
-        Article::truncate();
+        $this->cleanDb();
 
-        $this->prepareArticleData([],2);
+        $this->prepareArticleDataWithTwoCategories();
 
-        $allArticle = Article::all();
+        $article = Article::all()->first();
+        $out = $article->categories->moveFirst($article->primarycategory->ref_id);
+        
+        $this->assertEquals('news', getTranslatedContent($out->first()->name));
+        $this->assertCount(2, $out);
+
+        $this->cleanDb();
     }
 
     public function test_getActive()
     {
+        $this->cleanDb();
 
-        Category::truncate();
-        Article::truncate();
-
-        $this->prepareArticleData(['is_active' => 'test'],2);
+        $this->prepareArticleData(['is_active' => true],2);
+        $this->prepareArticleData(['is_active' => false]);
 
         $allArticles = Article::all();
         $active = $allArticles->getActive();
+        $notActiveCount = $allArticles->count() - $active->count();
 
-        //Equal of Model Article
-        $this->assertEquals($allArticles, $active);
+        $this->assertCount(2, $active);
+        $this->assertCount(3, $allArticles);
+        $this->assertEquals(1, $notActiveCount);
 
-        Category::truncate();
-        Article::truncate();
+        $this->cleanDb();
     }
 
     public function test_exist()
     {
-        Category::truncate();
-        Article::truncate();
+        $this->cleanDb();
 
+        //Test not Exist - return value false
+        $allArticles = Article::all();
+        $out = $allArticles->exist();
+
+        $this->assertFalse($out, $out);
+        $this->assertCount(0, $allArticles);
+
+        //Test Exist - return value true
         $this->prepareArticleData([], 2);
 
         $allArticles = Article::all();
         $out = $allArticles->exist();
 
-        $this->assertEquals(true, $out);
+        $this->assertEquals($out, $out);
         $this->assertCount(2, $allArticles);
-        //TODO third assertion 'false'
 
+        $this->cleanDb();
+    }
+
+    private function cleanDb()
+    {
+        Category::truncate();
+        Article::truncate();
     }
 }

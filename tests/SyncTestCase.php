@@ -105,6 +105,11 @@ class SyncTestCase extends TestCase
         return $navigation->storeWithSync($request, $arr);
     }
 
+    /**
+     * @param array $data
+     * @return Category
+     * @throws Exception
+     */
     public function createCategory(
         array $data = []
     ) {
@@ -133,6 +138,11 @@ class SyncTestCase extends TestCase
         return $category->storeWithSync($request, $arr);
     }
 
+    /**
+     * @param array $data
+     * @param int $size
+     * @throws Exception
+     */
     public function createArticles(
         array $data = [],
         int $size = 1
@@ -172,6 +182,11 @@ class SyncTestCase extends TestCase
         }
     }
 
+    /**
+     * @param array $data
+     * @param int $size
+     * @throws Exception
+     */
     public function prepareArticleData(
         array $data = [],
         int $size = 1
@@ -189,31 +204,71 @@ class SyncTestCase extends TestCase
         $this->createArticles($mergedData, $size);
     }
 
-    public function getMiniCategory(string $category_id = '')
+    public function prepareArticleDataWithTwoCategories(
+        array $data = [],
+        int $size = 1
+    ) {
+        $first_category = $this->createCategory(['name' => 'sport']);
+        $second_category = $this->createCategory(['name' => 'news']);
+        $miniPrimaryCategory = $this->getMiniCategory($second_category->id);
+
+        $miniCategories = $this->getMiniCategory([$second_category->id, $first_category->id]);
+
+        $relationshipValues = [
+            'primarycategory' => $miniPrimaryCategory,
+            'categories' => $miniCategories,
+        ];
+        //dd($relationshipValues);
+        $mergedData = array_merge($relationshipValues, $data);
+
+        $this->createArticles($mergedData, $size);
+    }
+
+    /**
+     * @param string|array $category_id
+     * @return string|false
+     * @throws Exception
+     */
+    public function getMiniCategory($category_id = '')
     {
+        if (is_array($category_id)){
+            $out = [];
+            foreach($category_id as $category){
+                $out[] = $this->prepareSingleMiniCategory($category);
+            }
+        }else{
+            $out[] = $this->prepareSingleMiniCategory($category_id);
+        }
+        return json_encode($out);
+    }
+
+    /**
+     * @param $category_id
+     * @return object
+     * @throws Exception
+     */
+    public function prepareSingleMiniCategory($category_id){
         if ($category_id == '' || is_null($category_id)) {
             $category = $this->createCategory();
         } else {
             $category = Category::find($category_id);
             if (is_null($category)) {
-                return json_encode(
-                    []
-                );
+                return null;
             }
         }
 
-        return json_encode(
-            [
-                (object) [
+        return (object) [
                     'ref_id' => $category->id,
                     'name' => $category->name,
                     'slug' => $category->slug,
                     'description' => $category->description,
-                ],
-            ]
-        );
+                ];
     }
 
+    /**
+     * @param string $autoincrement_id
+     * @return false|string
+     */
     public function getMiniArticle(string $autoincrement_id = '')
     {
         if ($autoincrement_id == '' || is_null($autoincrement_id)) {
@@ -240,6 +295,9 @@ class SyncTestCase extends TestCase
         );
     }
 
+    /**
+     * @return object
+     */
     public function getIdNull()
     {
         return (object)[
