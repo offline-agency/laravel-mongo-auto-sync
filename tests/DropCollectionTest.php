@@ -12,14 +12,14 @@ class DropCollectionTest extends SyncTestCase
         Article::truncate();
         Category::truncate();
 
-        $this->prepareArticleData([],10);
+        $this->prepareArticleData([], 10);
 
         $this->artisan('drop:collection', ['collection_name' => 'Article'])
             ->assertExitCode(0);
 
         $articles = Article::all();
         $this->assertEmpty($articles);
-        $category = Category::where('name.' . cl(),'sport')->first();
+        $category = Category::where('name.'.cl(), 'sport')->first();
 
         $this->assertEmpty($category->articles);
 

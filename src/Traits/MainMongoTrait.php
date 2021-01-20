@@ -93,6 +93,7 @@ trait MainMongoTrait
         $this->delete();
         //Dispatch the destroy event
         $this->fireModelEvent('destroyWithSync');
+
         return $this;
     }
 
@@ -115,8 +116,8 @@ trait MainMongoTrait
      */
     public function checkPropertyExistence($obj, string $EOkey, $method = '', $model = '')
     {
-        if (!property_exists($obj, $EOkey)) {
-            $msg = 'Error - ' . $EOkey . ' attribute not found on obj ' . json_encode($obj) . ' during save of model: ' . $model . ' and attribute: ' . $method;
+        if (! property_exists($obj, $EOkey)) {
+            $msg = 'Error - '.$EOkey.' attribute not found on obj '.json_encode($obj).' during save of model: '.$model.' and attribute: '.$method;
             throw new Exception($msg);
         }
     }
@@ -128,8 +129,8 @@ trait MainMongoTrait
      */
     public function checkArrayExistence($arr, string $key)
     {
-        if (!Arr::has($arr, $key)) {
-            $msg = ('Error - ' . $key . ' attribute not found on obj ' . json_encode($arr));
+        if (! Arr::has($arr, $key)) {
+            $msg = ('Error - '.$key.' attribute not found on obj '.json_encode($arr));
             throw new Exception($msg);
         }
     }
@@ -141,8 +142,8 @@ trait MainMongoTrait
      */
     private function checkRequestExistence(Request $request, string $key)
     {
-        if (!$request->has($key)) {
-            $msg = ('Error - ' . $key . ' attribute not found in Request ' . json_encode($request->all()));
+        if (! $request->has($key)) {
+            $msg = ('Error - '.$key.' attribute not found in Request '.json_encode($request->all()));
             throw new Exception($msg);
         }
     }
@@ -154,7 +155,7 @@ trait MainMongoTrait
      */
     public function getIsSkippable($request_has_key, $hasTarget = false)
     {
-        return !$request_has_key && $this->getHasPartialRequest() && !$hasTarget;
+        return ! $request_has_key && $this->getHasPartialRequest() && ! $hasTarget;
     }
 
     /**

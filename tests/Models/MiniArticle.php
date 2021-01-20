@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Tests\Models;
 
 use OfflineAgency\MongoAutoSync\Http\Models\DefaultMini;

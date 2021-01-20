@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Tests;
 
 use Tests\Models\Article;
@@ -21,7 +20,7 @@ class SyncUtilsTest extends SyncTestCase
         $cl = cl();
 
         $mlCollection = [
-            $cl => 'car'
+            $cl => 'car',
         ];
 
         $out = getTranslatedContent($mlCollection);
@@ -49,14 +48,14 @@ class SyncUtilsTest extends SyncTestCase
         $input = '1';
         $out = ml($destination, $input);
         $this->assertEquals([
-            "en" => "1"
+            'en' => '1',
         ], $out);
     }
 
     public function test_isMl()
     {
         $value = [
-            'is-ml' => true
+            'is-ml' => true,
         ];
 
         $out = isML($value);
@@ -66,7 +65,7 @@ class SyncUtilsTest extends SyncTestCase
         //
 
         $value = [
-            'is-ml' => false
+            'is-ml' => false,
         ];
 
         $out = isML($value);
@@ -76,7 +75,7 @@ class SyncUtilsTest extends SyncTestCase
         //
 
         $value = [
-            'is-ml' => ''
+            'is-ml' => '',
         ];
 
         $out = isML($value);
@@ -89,7 +88,7 @@ class SyncUtilsTest extends SyncTestCase
         //Input expected '' from $value
 
         $value = [
-            'is-md' => true
+            'is-md' => true,
         ];
 
         $out = isMD($value);
@@ -97,7 +96,7 @@ class SyncUtilsTest extends SyncTestCase
 
         //
         $value = [
-            'is-md' => false
+            'is-md' => false,
         ];
 
         $out = isMD($value);
@@ -106,7 +105,7 @@ class SyncUtilsTest extends SyncTestCase
         //
 
         $value = [
-            'is-md' => ''
+            'is-md' => '',
         ];
 
         $out = isMD($value);
@@ -127,11 +126,9 @@ class SyncUtilsTest extends SyncTestCase
 
         $value = '';
 
-
         $out = is_EM($value);
 
         $this->assertEquals(false, $out);
-
     }
 
     public function test_isEO()
@@ -193,7 +190,7 @@ class SyncUtilsTest extends SyncTestCase
     public function test_isEditable()
     {
         $value = [
-            'is-editable' => false
+            'is-editable' => false,
         ];
 
         $out = isEditable($value);
@@ -203,7 +200,7 @@ class SyncUtilsTest extends SyncTestCase
         //
 
         $value = [
-            'is-editable' => true
+            'is-editable' => true,
         ];
 
         $out = isEditable($value);
@@ -213,7 +210,7 @@ class SyncUtilsTest extends SyncTestCase
         //
 
         $value = [
-            'is-editable' => ''
+            'is-editable' => '',
         ];
 
         $out = isEditable($value);
@@ -224,7 +221,7 @@ class SyncUtilsTest extends SyncTestCase
     public function test_hasTarget()
     {
         $value = [
-            'has-target' => false
+            'has-target' => false,
         ];
 
         $out = hasTarget($value);
@@ -234,7 +231,7 @@ class SyncUtilsTest extends SyncTestCase
         //
 
         $value = [
-            'has-target' => true
+            'has-target' => true,
         ];
 
         $out = hasTarget($value);
@@ -244,7 +241,7 @@ class SyncUtilsTest extends SyncTestCase
         //
 
         $value = [
-            'has-target' => ''
+            'has-target' => '',
         ];
 
         $out = hasTarget($value);
@@ -284,7 +281,7 @@ class SyncUtilsTest extends SyncTestCase
 
         //If there's already data inside the database, increments new data by 1
 
-       $articleModel = $this->prepareArticleData([]);
+        $articleModel = $this->prepareArticleData([]);
 
         $out = getAID($article);
 
@@ -295,20 +292,19 @@ class SyncUtilsTest extends SyncTestCase
 
     public function test_getArrayWithEmptyObj()
     {
-
         $article = new Article;
         $is_EO = true;
         $is_EM = [];
         $expectedArray = [
-            (object)[
+            (object) [
                 'autoincrement_id' => null,
                 'title' => null,
                 'content' => null,
                 'slug' => null,
                 'visibility' => null,
                 'status' => null,
-                'is_deleted' => null
-            ]
+                'is_deleted' => null,
+            ],
         ];
         $out = getArrayWithEmptyObj($article, $is_EO, $is_EM);
 
@@ -317,7 +313,6 @@ class SyncUtilsTest extends SyncTestCase
 
     public function test_getCounterForRelationships()
     {
-
         $is_EO = true;
         $is_EM = false;
         $i = null;
@@ -358,6 +353,6 @@ class SyncUtilsTest extends SyncTestCase
 
         $out = getCounterForRelationships($method, $is_EO, $is_EM, $i);
 
-        $this->assertEquals('-' . $i, $out);
+        $this->assertEquals('-'.$i, $out);
     }
 }

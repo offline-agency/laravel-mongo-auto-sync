@@ -342,7 +342,8 @@ if (! function_exists('getCounterForRelationships')) {
     }
 
     if (! function_exists('getTypeOnTarget')) {
-        function getTypeOnTarget($relation){
+        function getTypeOnTarget($relation)
+        {
             return Arr::has($relation, 'typeOnTarget') ? Arr::get($relation, 'typeOnTarget') : 'EmbedsMany';
         }
     }
