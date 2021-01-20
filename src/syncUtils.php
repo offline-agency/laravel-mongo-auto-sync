@@ -231,31 +231,6 @@ if (! function_exists('getAID')) {
     }
 }
 
-if (! function_exists('processList')) {
-    /**
-     * @param array $array
-     *
-     * @return string
-     */
-    function processList($array)
-    {
-        $final = [];
-        $n = count($array);
-        for ($i = 0; $i < $n; $i++) {
-            $obj = [];
-            if ($array[$i] !== null) {
-                $obj = ['label' => $array[$i], 'key' => $i];
-                $final[] = $obj;
-            } else {
-                $final[] = $obj;
-                array_pop($final);
-            }
-        }
-
-        return json_encode($final);
-    }
-}
-
 if (! function_exists('isRequestReadyToBeProcessed')) {
     function isRequestReadyToBeProcessed(Request $request)
     {

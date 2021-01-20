@@ -2,6 +2,7 @@
 
 namespace OfflineAgency\MongoAutoSync\Traits;
 
+use DateTime;
 use Exception;
 use Illuminate\Http\Request;
 use MongoDB\BSON\UTCDateTime;

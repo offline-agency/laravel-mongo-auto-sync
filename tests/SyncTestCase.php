@@ -226,4 +226,29 @@ class SyncTestCase extends TestCase
 
         return json_encode($arr);
     }
+
+    protected function getMiniSubItem(string $sub_item_id)
+    {
+        if ($sub_item_id == '' || is_null($sub_item_id)) {
+            $sub_item = $this->createSubItems();
+        } else {
+            $sub_item = SubItem::find($sub_item_id);
+            if (is_null($sub_item)) {
+                return json_encode(
+                    []
+                );
+            }
+        }
+
+        return json_encode(
+            [
+                (object) [
+                    'ref_id' => $sub_item->id,
+                    'code' => $sub_item->code,
+                    'href' => $sub_item->href,
+                    'text' => getTranslatedContent($sub_item->text),
+                ],
+            ]
+        );
+    }
 }
