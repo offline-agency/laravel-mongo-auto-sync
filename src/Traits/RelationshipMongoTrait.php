@@ -196,13 +196,13 @@ trait RelationshipMongoTrait
     }
 
     /**
-     * @param string $target_id
+     * @param string|null $target_id
      * @param string $modelTarget
      * @param string $methodOnTarget
      * @param bool $is_EO_target
      * @param bool $is_EM_target
      */
-    public function handleSubTarget(string $target_id, string $modelTarget, string $methodOnTarget, bool $is_EO_target, bool $is_EM_target)
+    public function handleSubTarget(?string $target_id, string $modelTarget, string $methodOnTarget, bool $is_EO_target, bool $is_EM_target)
     {
         if ($is_EM_target) {
             $target = new $modelTarget;
