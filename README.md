@@ -5,6 +5,7 @@
 [![MIT Licensed](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
 [![Quality Score](https://img.shields.io/scrutinizer/g/offline-agency/laravel-mongo-auto-sync.svg?style=flat-square)](https://scrutinizer-ci.com/g/offline-agency/laravel-mongo-auto-sync)
 [![StyleCI](https://github.styleci.io/repos/167277388/shield)](https://styleci.io/repos/167277388)
+[![codecov](https://codecov.io/gh/offline-agency/laravel-mongo-auto-sync/branch/master/graph/badge.svg?token=0BHADJQYAW)](https://codecov.io/gh/offline-agency/laravel-mongo-auto-sync)
 
 This package provides a better support for [MongoDB](https://www.mongodb.com) relationships in [Laravel](https://laravel.com/) Projects.
 At low level all CRUD operations has been handled by [jenssegers/laravel-mongodb](https://github.com/jenssegers/laravel-mongodb)
@@ -94,7 +95,13 @@ composer require offlineagency/laravel-mongo-auto-sync
 You can find the documentation [here](https://docs.offlineagency.com/laravel-mongo-auto-sync/)
 
 ## Testing
-Run the tests with:
+
+Run this command inside your project's route
+``` bash
+docker-compose up
+```
+
+Now run the tests with:
 ``` bash
 composer test
 ```
@@ -117,6 +124,8 @@ Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
 
 ## Security
 If you discover any security-related issues, please email support@offlineagency.com instead of using the issue tracker.
+
+
 
 ## Credits
 - [Giacomo Fabbian](https://github.com/Giacomo92)

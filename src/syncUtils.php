@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Config;
 use Jenssegers\Mongodb\Eloquent\Model;
 
@@ -57,14 +58,6 @@ if (! function_exists('ml')) {
 if (! function_exists('isML')) {
     function isML($value)
     {
-        try {
-            if (gettype($value) !== 'array') {
-                throw new Exception($value.' is not a valid array!');
-            }
-        } catch (Exception $exception) {
-            echo $exception->getMessage();
-        }
-
         if (array_key_exists('is-ml', $value)) {
             return $value['is-ml'];
         } else {
@@ -320,6 +313,13 @@ if (! function_exists('getCounterForRelationships')) {
             return '';
         } else {
             return '-'.$i;
+        }
+    }
+
+    if (! function_exists('getTypeOnTarget')) {
+        function getTypeOnTarget($relation)
+        {
+            return Arr::has($relation, 'typeOnTarget') ? Arr::get($relation, 'typeOnTarget') : 'EmbedsMany';
         }
     }
 }

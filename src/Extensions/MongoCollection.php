@@ -6,13 +6,13 @@ use Illuminate\Database\Eloquent\Collection;
 
 class MongoCollection extends Collection
 {
-    //Method to retrieve a collection by slug, very useful for frontend
+    //Method to retrieve a single element of a collection by slug, very useful for frontend
     public function getBySlugAndStatus($category = null, $myslug = null)
     {
         $cl = cl();
-
+        //TODO: move primarycategory, status, slug on config file
         $out = $this->filter(function ($col) use ($category, $myslug, $cl) {
-            if ($col->slug[$cl] == $myslug && $col->status == 'published' && $col->primarycategory->slug[$cl] == $category) {
+            if ($col->slug[$cl] === $myslug && $col->status === 'published' && $col->primarycategory->slug[$cl] === $category) {
                 return true;
             } else {
                 return false;
@@ -36,7 +36,7 @@ class MongoCollection extends Collection
     {
         $cl = cl();
         $out = $this->filter(function ($col) use ($myslug, $cl) {
-            if ($col->slug[$cl] == $myslug) {
+            if ($col->slug[$cl] === $myslug) {
                 return true;
             }
         })->first();
@@ -60,7 +60,7 @@ class MongoCollection extends Collection
             if ($col->is_deleted) {
                 return false;
             } else {
-                return false;
+                return true;
             }
         });
     }
@@ -73,7 +73,7 @@ class MongoCollection extends Collection
     public function getPublished()
     {
         return $this->filter(function ($col) {
-            if ($col->status == 'published') {
+            if ($col->status === 'published') {
                 return true;
             } else {
                 return false;
@@ -115,12 +115,13 @@ class MongoCollection extends Collection
         $id = $obj->id;
 
         $out = $this->filter(function ($col) use ($id) {
-            if ($col->ref_id == $id) {
+            if ($col->ref_id === $id) {
                 return true;
             } else {
                 return false;
             }
         });
+
         if ($out->count() > 0) {
             return true;
         } else {

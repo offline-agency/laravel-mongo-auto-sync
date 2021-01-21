@@ -63,7 +63,6 @@ trait MainMongoTrait
     {
         //Get the relation info
         $relations = $this->getMongoRelation();
-
         //Process all relationships
         foreach ($relations as $method => $relation) {
             //Get Relation Save Mode
@@ -73,17 +72,17 @@ trait MainMongoTrait
                 $modelTarget = $relation['modelTarget'];
                 $methodOnTarget = $relation['methodOnTarget'];
                 $modelOnTarget = $relation['modelOnTarget'];
-
                 $is_EO = is_EO($type);
                 $is_EM = is_EM($type);
                 $is_HO = is_HO($type);
                 $is_HM = is_HM($type);
-
+                $typeOnTarget = getTypeOnTarget($relation);
+                $is_EM_target = is_EM($typeOnTarget);
+                $is_EO_target = is_EO($typeOnTarget);
                 if ($is_EO || $is_EM) {//EmbedsOne Create - EmbedsMany Create
                     //Delete EmbedsMany or EmbedsOne on Target
-                    $this->deleteTargetObj($method, $modelTarget, $methodOnTarget, $is_EO);
+                    $this->deleteTargetObj($method, $modelTarget, $methodOnTarget, $is_EO, $is_EM, $is_EO_target, $is_EM_target);
                 }
-
                 //TODO: Need to be implemented
                 /* elseif ($is_HM) {//HasMany
                  } elseif ($is_HO) {//HasOne Create
@@ -92,7 +91,6 @@ trait MainMongoTrait
         }
         //Delete current object
         $this->delete();
-
         //Dispatch the destroy event
         $this->fireModelEvent('destroyWithSync');
 

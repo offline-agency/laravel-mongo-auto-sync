@@ -5,7 +5,6 @@ namespace OfflineAgency\MongoAutoSync\Traits;
 use DateTime;
 use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 use MongoDB\BSON\UTCDateTime;
 
 trait RelationshipMongoTrait
@@ -35,7 +34,7 @@ trait RelationshipMongoTrait
                 $modelTarget = $relation['modelTarget'];
                 $methodOnTarget = $relation['methodOnTarget'];
                 $modelOnTarget = $relation['modelOnTarget'];
-                $typeOnTarget = Arr::has($relation, 'typeOnTarget') ? Arr::get($relation, 'typeOnTarget') : 'EmbedsMany';
+                $typeOnTarget = getTypeOnTarget($relation);
             } else {
                 $modelTarget = '';
                 $methodOnTarget = '';
