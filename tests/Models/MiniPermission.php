@@ -13,5 +13,4 @@ class MiniPermission extends DefaultMini
             'is-ml' => true,
         ],
     ];
-
 }

@@ -31,7 +31,6 @@ class MongoCollectionTest extends SyncTestCase
             );
         }
 
-
         //Not found by all parameters null 404
         try {
             Article::all()->getBySlugAndStatus(null, null);
@@ -41,7 +40,6 @@ class MongoCollectionTest extends SyncTestCase
                 $e
             );
         }
-
 
         //Not found by category null  404
         try {
@@ -53,10 +51,9 @@ class MongoCollectionTest extends SyncTestCase
             );
         }
 
-
         //Not found by title null 404
         try {
-           Article::all()->getBySlugAndStatus('sport', null);
+            Article::all()->getBySlugAndStatus('sport', null);
         } catch (Throwable $e) {
             $this->assertEquals(
                 new NotFoundHttpException('error.Tests\Models\Article'),
@@ -74,7 +71,6 @@ class MongoCollectionTest extends SyncTestCase
             );
         }
 
-
         //Not found draft article not existing 404
         try {
             Article::all()->getBySlugAndStatus('sport', 'articolo-16');
@@ -85,14 +81,12 @@ class MongoCollectionTest extends SyncTestCase
             );
         }
 
-
         //Check if instance of Article is passed
         $outPublished = Article::all()->getBySlugAndStatus('sport', 'articolo-1');
         $this->assertInstanceOf(Article::class, $outPublished);
         $this->assertEquals('articolo 1', getTranslatedContent($outPublished->title));
         $this->assertEquals('articolo-1', getTranslatedContent($outPublished->slug));
         $this->assertEquals('sport', getTranslatedContent($outPublished->primarycategory->name));
-
 
         $this->cleanDb();
     }
@@ -166,13 +160,13 @@ class MongoCollectionTest extends SyncTestCase
     {
         $this->cleanDb();
 
-        $this->prepareArticleData([],1);
+        $this->prepareArticleData([], 1);
         $this->createCategory(['name' => 'news']);
 
         $idNull = $this->getIdNull();
         $article = Article::all()->first();
-        $categoryAssigned = Category::where('name.' . cl(), 'sport')->first();
-        $categoryNotAssigned = Category::where('name.' . cl(), 'news')->first();
+        $categoryAssigned = Category::where('name.'.cl(), 'sport')->first();
+        $categoryNotAssigned = Category::where('name.'.cl(), 'news')->first();
         $out = $article->categories->hasItem(null);
         $this->assertFalse($out);
 
@@ -207,7 +201,7 @@ class MongoCollectionTest extends SyncTestCase
     {
         $this->cleanDb();
 
-        $this->prepareArticleData(['is_active' => true],2);
+        $this->prepareArticleData(['is_active' => true], 2);
         $this->prepareArticleData(['is_active' => false]);
 
         $allArticles = Article::all();
@@ -244,7 +238,8 @@ class MongoCollectionTest extends SyncTestCase
         $this->cleanDb();
     }
 
-    public function test_findByAID(){
+    public function test_findByAID()
+    {
         $this->cleanDb();
         $this->prepareArticleData(['title' => 'My autoincrement title']);
         $this->prepareArticleData([], 2);
@@ -252,10 +247,9 @@ class MongoCollectionTest extends SyncTestCase
         $allArticles = Article::all();
         $out = $allArticles->findByAID(1);
 
-        $this->assertEquals('My autoincrement title',getTranslatedContent($out->title));
-        $this->assertCount(3,$allArticles);
+        $this->assertEquals('My autoincrement title', getTranslatedContent($out->title));
+        $this->assertCount(3, $allArticles);
         $this->cleanDb();
-
 
         $this->cleanDb();
         $this->prepareArticleData([], 2);
@@ -264,8 +258,8 @@ class MongoCollectionTest extends SyncTestCase
         $allArticles = Article::all();
         $out = $allArticles->findByAID(3);
 
-        $this->assertEquals('My autoincrement title',getTranslatedContent($out->title));
-        $this->assertCount(3,$allArticles);
+        $this->assertEquals('My autoincrement title', getTranslatedContent($out->title));
+        $this->assertCount(3, $allArticles);
         $this->cleanDb();
     }
 

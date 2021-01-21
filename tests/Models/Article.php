@@ -21,7 +21,7 @@ class Article extends MDModel
         'visibility' => [],
         'status' => [],
         'is_deleted' => [],
-        'is_active' => []
+        'is_active' => [],
     ];
 
     protected $mongoRelation = [

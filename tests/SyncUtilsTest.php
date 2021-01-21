@@ -304,7 +304,7 @@ class SyncUtilsTest extends SyncTestCase
                 'visibility' => null,
                 'status' => null,
                 'is_deleted' => null,
-                'is_active' => null
+                'is_active' => null,
             ],
         ];
         $out = getArrayWithEmptyObj($article, $is_EO, $is_EM);
@@ -360,10 +360,10 @@ class SyncUtilsTest extends SyncTestCase
     public function test_getTypeOnTarget()
     {
         $EM = [
-            'typeOnTarget' => 'EmbedsMany'
+            'typeOnTarget' => 'EmbedsMany',
         ];
         $EO = [
-            'typeOnTarget' => 'EmbedsOne'
+            'typeOnTarget' => 'EmbedsOne',
         ];
         $defaultValue = [];
 

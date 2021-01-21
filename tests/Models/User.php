@@ -6,11 +6,10 @@ use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 
 class User extends MDModel
 {
-
     protected $items = [
         'email' => [],
         'name' => [],
-        'surname' => []
+        'surname' => [],
     ];
 
     protected $mongoRelation = [
@@ -29,7 +28,7 @@ class User extends MDModel
             'modelTarget' => 'Tests\Models\Role',
             'methodOnTarget' => 'users',
             'modelOnTarget' => 'Tests\Models\MiniUser',
-        ]
+        ],
     ];
 
     public function roles()
@@ -41,5 +40,4 @@ class User extends MDModel
     {
         return $this->embedsMany('Tests\Models\MiniPermission');
     }
-
 }
