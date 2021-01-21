@@ -8,6 +8,7 @@ use Tests\Models\Category;
 use Tests\Models\Permission;
 use Tests\Models\Role;
 use Tests\Models\User;
+use Throwable;
 
 class MongoCollectionTest extends SyncTestCase
 {
@@ -15,20 +16,78 @@ class MongoCollectionTest extends SyncTestCase
     {
         $this->cleanDb();
 
-        $articlePublished = $this->prepareArticleData(['status' => 'published'], 15);
+        $this->prepareArticleData(['status' => 'published'], 15);
 
-        $articleNotPublished = $this->prepareArticleData(['status' => 'draft'], 5);
+        $this->prepareArticleData(['status' => 'draft'], 5);
 
-        //Expect error 404
-        $this->expectException(NotFoundHttpException::class);
+        //Not found by slug 404
+
+        try {
+            Article::all()->getBySlugAndStatus('sport', 'articolo');
+        } catch (Throwable $e) {
+        }
+        $this->assertEquals(
+            new NotFoundHttpException('error.Tests\Models\Article'),
+            $e
+        );
+
+        //Not found by all parameters null 404
+        try {
+            Article::all()->getBySlugAndStatus(null, null);
+        } catch (Throwable $e) {
+        }
+        $this->assertEquals(
+            new NotFoundHttpException('error.Tests\Models\Article'),
+            $e
+        );
+
+        //Not found by category null  404
+        try {
+            Article::all()->getBySlugAndStatus(null, 'articolo-1');
+        } catch (Throwable $e) {
+        }
+        $this->assertEquals(
+            new NotFoundHttpException('error.Tests\Models\Article'),
+            $e
+        );
+
+        //Not found by title null 404
+        try {
+           Article::all()->getBySlugAndStatus('sport', null);
+        } catch (Throwable $e) {
+        }
+        $this->assertEquals(
+            new NotFoundHttpException('error.Tests\Models\Article'),
+            $e
+        );
+
+        //Not found by category not existing 404
+        try {
+            Article::all()->getBySlugAndStatus('category-not-existing', 'articolo-1');
+        } catch (Throwable $e) {
+        }
+        $this->assertEquals(
+            new NotFoundHttpException('error.Tests\Models\Article'),
+            $e
+        );
+
+        //Not found draft article not existing 404
+        try {
+            Article::all()->getBySlugAndStatus('sport', 'articolo-16');
+        } catch (Throwable $e) {
+        }
+        $this->assertEquals(
+            new NotFoundHttpException('error.Tests\Models\Article'),
+            $e
+        );
 
         //Check if instance of Article is passed
         $outPublished = Article::all()->getBySlugAndStatus('sport', 'articolo-1');
         $this->assertInstanceOf(Article::class, $outPublished);
+        $this->assertEquals('articolo 1', getTranslatedContent($outPublished->title));
+        $this->assertEquals('articolo-1', getTranslatedContent($outPublished->slug));
+        $this->assertEquals('sport', getTranslatedContent($outPublished->primarycategory->name));
 
-        //Check error 404 return
-        $outNotFoundBySlug = Article::all()->getBySlugAndStatus('sport', 'articolo');
-        $outNotFoundByCategory = Article::all()->getBySlugAndStatus('sports', 'articolo-1');
 
         $this->cleanDb();
     }
