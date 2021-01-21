@@ -113,7 +113,7 @@ class MongoCollection extends Collection
         }
 
         $id = $obj->id;
-        //trancia
+
         $out = $this->filter(function ($col) use ($id) {
             if ($col->ref_id === $id) {
                 return true;
@@ -121,7 +121,7 @@ class MongoCollection extends Collection
                 return false;
             }
         });
-        //conta i true
+
         if ($out->count() > 0) {
             return true;
         } else {
