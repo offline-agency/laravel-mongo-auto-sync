@@ -8,6 +8,6 @@ class MiniRole extends DefaultMini
 {
     protected $items = [
         'ref_id' => [],
-        'name' => []
+        'name' => [],
     ];
 }

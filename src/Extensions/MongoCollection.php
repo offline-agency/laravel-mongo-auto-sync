@@ -141,6 +141,7 @@ class MongoCollection extends Collection
         for ($i = 0; $i <= ($this->count() - 1); $i++) {
             $this[$i]->ref_id == $id ? $this->prepend($this->splice($i, 1)[0]) : 0;
         }
+
         return $this;
     }
 

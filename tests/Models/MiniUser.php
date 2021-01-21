@@ -10,6 +10,6 @@ class MiniUser extends DefaultMini
         'ref_id' => [],
         'name' => [],
         'surname' => [],
-        'email' => []
+        'email' => [],
     ];
 }

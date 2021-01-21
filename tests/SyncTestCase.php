@@ -146,14 +146,14 @@ class SyncTestCase extends TestCase
      */
     public function createPermission(
         array $data = []
-    ){
+    ) {
         $faker = Factory::create();
         $request = new Request;
 
         $permission = new Permission;
 
         $name = Arr::has($data, 'name') ? Arr::get($data, 'name') : $faker->name;
-        $label = Arr::has($data, 'label') ? Arr::get($data, 'label') :  $faker->name;
+        $label = Arr::has($data, 'label') ? Arr::get($data, 'label') : $faker->name;
 
         $roles = Arr::has($data, 'roles') ? Arr::get($data, 'roles') : json_encode([]);
         $users = Arr::has($data, 'users') ? Arr::get($data, 'users') : json_encode([]);
@@ -175,7 +175,7 @@ class SyncTestCase extends TestCase
      */
     public function createRole(
         array $data = []
-    ){
+    ) {
         $faker = Factory::create();
         $request = new Request;
 
@@ -299,7 +299,7 @@ class SyncTestCase extends TestCase
     public function prepareUserData(
         array $data = [],
         int $size = 1
-    ){
+    ) {
         $first_permission = $this->createPermission(['name' => 'EditArticle']);
         $second_permission = $this->createPermission(['name' => 'CreateUser']);
 
@@ -308,12 +308,12 @@ class SyncTestCase extends TestCase
 
         $miniPermissions = $this->getMiniPermissions([
             $first_permission->id,
-            $second_permission->id
+            $second_permission->id,
         ]);
 
         $miniRoles = $this->getMiniRoles([
             $first_role->id,
-            $second_role->id]
+            $second_role->id, ]
         );
 
         $relationshipValues = [
@@ -353,14 +353,15 @@ class SyncTestCase extends TestCase
      */
     public function getMiniCategory($category_id = '')
     {
-        if (is_array($category_id)){
+        if (is_array($category_id)) {
             $out = [];
-            foreach($category_id as $category){
+            foreach ($category_id as $category) {
                 $out[] = $this->prepareSingleMiniCategory($category);
             }
-        }else{
+        } else {
             $out[] = $this->prepareSingleMiniCategory($category_id);
         }
+
         return json_encode($out);
     }
 
@@ -371,14 +372,15 @@ class SyncTestCase extends TestCase
      */
     public function getMiniPermissions($permission_id = '')
     {
-        if (is_array($permission_id)){
+        if (is_array($permission_id)) {
             $out = [];
-            foreach($permission_id as $permission){
+            foreach ($permission_id as $permission) {
                 $out[] = $this->prepareSingleMiniPermission($permission);
             }
-        }else{
+        } else {
             $out[] = $this->prepareSingleMiniPermission($permission_id);
         }
+
         return json_encode($out);
     }
 
@@ -389,14 +391,15 @@ class SyncTestCase extends TestCase
      */
     public function getMiniRoles($role_id = '')
     {
-        if (is_array($role_id)){
+        if (is_array($role_id)) {
             $out = [];
-            foreach($role_id as $role){
+            foreach ($role_id as $role) {
                 $out[] = $this->prepareSingleMiniRole($role);
             }
-        }else{
+        } else {
             $out[] = $this->prepareSingleMiniRole($role_id);
         }
+
         return json_encode($out);
     }
 
@@ -405,7 +408,8 @@ class SyncTestCase extends TestCase
      * @return object
      * @throws Exception
      */
-    public function prepareSingleMiniCategory($category_id){
+    public function prepareSingleMiniCategory($category_id)
+    {
         if ($category_id == '' || is_null($category_id)) {
             $category = $this->createCategory();
         } else {
@@ -416,11 +420,11 @@ class SyncTestCase extends TestCase
         }
 
         return (object) [
-                    'ref_id' => $category->id,
-                    'name' => $category->name,
-                    'slug' => $category->slug,
-                    'description' => $category->description,
-                ];
+            'ref_id' => $category->id,
+            'name' => $category->name,
+            'slug' => $category->slug,
+            'description' => $category->description,
+        ];
     }
 
     /**
@@ -428,7 +432,8 @@ class SyncTestCase extends TestCase
      * @return object
      * @throws Exception
      */
-    public function prepareSingleMiniPermission($permission_id){
+    public function prepareSingleMiniPermission($permission_id)
+    {
         if ($permission_id == '' || is_null($permission_id)) {
             $permission = $this->createPermission();
         } else {
@@ -439,10 +444,10 @@ class SyncTestCase extends TestCase
         }
 
         return (object) [
-                    'ref_id' => $permission->id,
-                    'name' => $permission->name,
-                    'label' => getTranslatedContent($permission->label)
-                ];
+            'ref_id' => $permission->id,
+            'name' => $permission->name,
+            'label' => getTranslatedContent($permission->label),
+        ];
     }
 
     /**
@@ -450,7 +455,8 @@ class SyncTestCase extends TestCase
      * @return object
      * @throws Exception
      */
-    public function prepareSingleMiniRole($role_id){
+    public function prepareSingleMiniRole($role_id)
+    {
         if ($role_id == '' || is_null($role_id)) {
             $role = $this->createRole();
         } else {
@@ -463,7 +469,7 @@ class SyncTestCase extends TestCase
         return (object) [
             'ref_id' => $role->id,
             'name' => $role->name,
-            'label' => $role->label
+            'label' => $role->label,
         ];
     }
 
@@ -502,10 +508,11 @@ class SyncTestCase extends TestCase
      */
     public function getIdNull()
     {
-        return (object)[
-            'id' => null
+        return (object) [
+            'id' => null,
         ];
     }
+
     /**
      * @param string $navigation_id
      * @return false|string

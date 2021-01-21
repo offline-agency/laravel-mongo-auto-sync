@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Tests;
 
 use Tests\Models\Article;
@@ -11,7 +10,7 @@ class HelperTest extends SyncTestCase
     {
         $stringValue = '';
         $boolValue = [
-            'is-array' => true
+            'is-array' => true,
         ];
         $emptyArray = [];
         $article = new Article;
@@ -25,18 +24,18 @@ class HelperTest extends SyncTestCase
         $this->assertFalse($outNotBoolValue);
 
         //
-        $this->expectExceptionMessage($stringValue . ' is not a valid array!');
+        $this->expectExceptionMessage($stringValue.' is not a valid array!');
         $article->isArray($stringValue);
     }
 
     public function test_validateOptionValueException()
     {
         $notBoolValue = [
-            'is-array' => 'value'
+            'is-array' => 'value',
         ];
         $article = new Article;
         $expected = 'boolean';
-        $this->expectExceptionMessage($notBoolValue['is-array'] . ' is not a valid ' . $expected . ' found ' . gettype($notBoolValue['is-array']) . '! Check on your model configurations.');
+        $this->expectExceptionMessage($notBoolValue['is-array'].' is not a valid '.$expected.' found '.gettype($notBoolValue['is-array']).'! Check on your model configurations.');
         $article->isArray($notBoolValue);
     }
 
@@ -44,7 +43,7 @@ class HelperTest extends SyncTestCase
     {
         $stringValue = '';
         $boolValue = [
-            'is-carbon-date' => true
+            'is-carbon-date' => true,
         ];
         $emptyArray = [];
         $article = new Article;
@@ -58,7 +57,7 @@ class HelperTest extends SyncTestCase
         $this->assertFalse($outNotBoolValue);
 
         //
-        $this->expectExceptionMessage($stringValue . ' is not a valid array!');
+        $this->expectExceptionMessage($stringValue.' is not a valid array!');
         $article->isCarbonDate($stringValue);
     }
 }

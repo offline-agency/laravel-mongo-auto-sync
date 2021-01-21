@@ -29,7 +29,7 @@ class Permission extends MDModel
             'modelTarget' => 'Tests\Models\User',
             'methodOnTarget' => 'permissions',
             'modelOnTarget' => 'Tests\Models\MiniPermission',
-        ]
+        ],
     ];
 
     public function roles()
