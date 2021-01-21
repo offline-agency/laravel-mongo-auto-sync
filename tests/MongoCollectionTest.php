@@ -5,6 +5,9 @@ namespace Tests;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Tests\Models\Article;
 use Tests\Models\Category;
+use Tests\Models\Permission;
+use Tests\Models\Role;
+use Tests\Models\User;
 
 class MongoCollectionTest extends SyncTestCase
 {
@@ -129,7 +132,7 @@ class MongoCollectionTest extends SyncTestCase
 
         $article = Article::all()->first();
         $out = $article->categories->moveFirst($article->primarycategory->ref_id);
-        
+
         $this->assertEquals('news', getTranslatedContent($out->first()->name));
         $this->assertCount(2, $out);
 
@@ -177,9 +180,110 @@ class MongoCollectionTest extends SyncTestCase
         $this->cleanDb();
     }
 
+    public function test_findByAID(){
+        $this->cleanDb();
+        $this->prepareArticleData(['title' => 'My autoincrement title']);
+        $this->prepareArticleData([], 2);
+
+        $allArticles = Article::all();
+        $out = $allArticles->findByAID(1);
+
+        $this->assertEquals('My autoincrement title',getTranslatedContent($out->title));
+        $this->assertCount(3,$allArticles);
+        $this->cleanDb();
+
+
+        $this->cleanDb();
+        $this->prepareArticleData([], 2);
+        $this->prepareArticleData(['title' => 'My autoincrement title']);
+
+        $allArticles = Article::all();
+        $out = $allArticles->findByAID(3);
+
+        $this->assertEquals('My autoincrement title',getTranslatedContent($out->title));
+        $this->assertCount(3,$allArticles);
+        $this->cleanDb();
+    }
+
+    public function test_hasPermission()
+    {
+        $this->cleanDbUPR();
+
+        $this->prepareUserData();
+
+        $permissionNotExisting = '111';
+
+        $out = User::all()->first()->permissions->hasPermission($permissionNotExisting);
+
+        $this->assertFalse($out);
+
+        $permissionExisting = Permission::where('name', 'EditArticle')->first();
+        $out = User::all()->first()->permissions->hasPermission($permissionExisting->id);
+
+        $this->assertTrue($out);
+
+        $out = User::all()->first()->permissions->hasPermission(null);
+
+        $this->assertFalse($out);
+
+        $this->cleanDbUPR();
+    }
+
+    public function test_hasRole()
+    {
+        $this->cleanDbUPR();
+
+        $this->prepareUserData();
+
+        $out = User::all()->first()->roles->hasRole('RoleNotExisting');
+
+        $this->assertFalse($out);
+
+        $out = User::all()->first()->roles->hasRole('SuperAdmin');
+
+        $this->assertTrue($out);
+
+        $out = User::all()->first()->roles->hasRole(null);
+
+        $this->assertFalse($out);
+
+        $this->cleanDbUPR();
+    }
+
+    public function test_checkPermission()
+    {
+        $this->cleanDbUPR();
+
+        $this->prepareUserData();
+
+        $permissionNotExisting = '111';
+
+        $out = User::all()->first()->permissions->hasPermission($permissionNotExisting);
+
+        $this->assertFalse($out);
+
+        $permissionExisting = Permission::where('name', 'EditArticle')->first();
+        $out = User::all()->first()->permissions->hasPermission($permissionExisting->id);
+
+        $this->assertTrue($out);
+
+        $out = User::all()->first()->permissions->hasPermission(null);
+
+        $this->assertFalse($out);
+
+        $this->cleanDbUPR();
+    }
+
     private function cleanDb()
     {
         Category::truncate();
         Article::truncate();
+    }
+
+    private function cleanDbUPR()
+    {
+        User::truncate();
+        Permission::truncate();
+        Role::truncate();
     }
 }

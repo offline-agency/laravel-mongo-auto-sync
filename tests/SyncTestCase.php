@@ -13,7 +13,10 @@ use Tests\Models\Article;
 use Tests\Models\Category;
 use Tests\Models\Item;
 use Tests\Models\Navigation;
+use Tests\Models\Permission;
+use Tests\Models\Role;
 use Tests\Models\SubItem;
+use Tests\Models\User;
 
 class SyncTestCase extends TestCase
 {
@@ -118,9 +121,7 @@ class SyncTestCase extends TestCase
 
         $category = new Category;
 
-        $article = new Article;
-
-        $category_id = getAID($article);
+        $category_id = getAID($category);
         $name = Arr::has($data, 'name') ? Arr::get($data, 'name') : $faker->text(50);
         $slug = Arr::has($data, 'slug') ? Arr::get($data, 'slug') : Str::slug($name);
         $description = Arr::has($data, 'description') ? Arr::get($data, 'description') : $faker->text(50);
@@ -136,6 +137,64 @@ class SyncTestCase extends TestCase
         ];
 
         return $category->storeWithSync($request, $arr);
+    }
+
+    /**
+     * @param array $data
+     * @return Permission
+     * @throws Exception
+     */
+    public function createPermission(
+        array $data = []
+    ){
+        $faker = Factory::create();
+        $request = new Request;
+
+        $permission = new Permission;
+
+        $name = Arr::has($data, 'name') ? Arr::get($data, 'name') : $faker->name;
+        $label = Arr::has($data, 'label') ? Arr::get($data, 'label') :  $faker->name;
+
+        $roles = Arr::has($data, 'roles') ? Arr::get($data, 'roles') : json_encode([]);
+        $users = Arr::has($data, 'users') ? Arr::get($data, 'users') : json_encode([]);
+
+        $arr = [
+            'name' => $name,
+            'label' => $label,
+            'roles' => $roles,
+            'users' => $users,
+        ];
+
+        return $permission->storeWithSync($request, $arr);
+    }
+
+    /**
+     * @param array $data
+     * @return Role
+     * @throws Exception
+     */
+    public function createRole(
+        array $data = []
+    ){
+        $faker = Factory::create();
+        $request = new Request;
+
+        $role = new Role;
+
+        $name = Arr::has($data, 'name') ? Arr::get($data, 'name') : $faker->name;
+        $label = Arr::has($data, 'label') ? Arr::get($data, 'label') : $faker->name;
+
+        $permissions = Arr::has($data, 'permissions') ? Arr::get($data, 'permissions') : json_encode([]);
+        $users = Arr::has($data, 'users') ? Arr::get($data, 'users') : json_encode([]);
+
+        $arr = [
+            'name' => $name,
+            'label' => $label,
+            'permissions' => $permissions,
+            'users' => $users,
+        ];
+
+        return $role->storeWithSync($request, $arr);
     }
 
     /**
@@ -187,6 +246,39 @@ class SyncTestCase extends TestCase
      * @param int $size
      * @throws Exception
      */
+    public function createUsers(
+        array $data = [],
+        int $size = 1
+    ) {
+        $faker = Factory::create();
+
+        for ($i = 0; $i < $size; $i++) {
+            $request = new Request;
+            $user = new User;
+
+            $name = Arr::has($data, 'name') ? Arr::get($data, 'name') : $faker->firstName;
+            $surname = Arr::has($data, 'surname') ? Arr::get($data, 'surname') : $faker->lastName;
+            $email = Arr::has($data, 'email') ? Arr::get($data, 'email') : $faker->email;
+
+            $roles = Arr::has($data, 'roles') ? Arr::get($data, 'roles') : json_encode([]);
+            $permissions = Arr::has($data, 'permissions') ? Arr::get($data, 'permissions') : json_encode([]);
+
+            $arr = [
+                'name' => $name,
+                'surname' => $surname,
+                'email' => $email,
+                'roles' => $roles,
+                'permissions' => $permissions,
+            ];
+            $user->storeWithSync($request, $arr);
+        }
+    }
+
+    /**
+     * @param array $data
+     * @param int $size
+     * @throws Exception
+     */
     public function prepareArticleData(
         array $data = [],
         int $size = 1
@@ -202,6 +294,36 @@ class SyncTestCase extends TestCase
         $mergedData = array_merge($relationshipValues, $data);
 
         $this->createArticles($mergedData, $size);
+    }
+
+    public function prepareUserData(
+        array $data = [],
+        int $size = 1
+    ){
+        $first_permission = $this->createPermission(['name' => 'EditArticle']);
+        $second_permission = $this->createPermission(['name' => 'CreateUser']);
+
+        $first_role = $this->createRole(['name' => 'SuperAdmin']);
+        $second_role = $this->createRole(['name' => 'Editor']);
+
+        $miniPermissions = $this->getMiniPermissions([
+            $first_permission->id,
+            $second_permission->id
+        ]);
+
+        $miniRoles = $this->getMiniRoles([
+            $first_role->id,
+            $second_role->id]
+        );
+
+        $relationshipValues = [
+            'permissions' => $miniPermissions,
+            'roles' => $miniRoles,
+        ];
+
+        $mergedData = array_merge($relationshipValues, $data);
+
+        $this->createUsers($mergedData, $size);
     }
 
     public function prepareArticleDataWithTwoCategories(
@@ -243,6 +365,42 @@ class SyncTestCase extends TestCase
     }
 
     /**
+     * @param string|array $permission_id
+     * @return string|false
+     * @throws Exception
+     */
+    public function getMiniPermissions($permission_id = '')
+    {
+        if (is_array($permission_id)){
+            $out = [];
+            foreach($permission_id as $permission){
+                $out[] = $this->prepareSingleMiniPermission($permission);
+            }
+        }else{
+            $out[] = $this->prepareSingleMiniPermission($permission_id);
+        }
+        return json_encode($out);
+    }
+
+    /**
+     * @param string|array $role_id
+     * @return string|false
+     * @throws Exception
+     */
+    public function getMiniRoles($role_id = '')
+    {
+        if (is_array($role_id)){
+            $out = [];
+            foreach($role_id as $role){
+                $out[] = $this->prepareSingleMiniRole($role);
+            }
+        }else{
+            $out[] = $this->prepareSingleMiniRole($role_id);
+        }
+        return json_encode($out);
+    }
+
+    /**
      * @param $category_id
      * @return object
      * @throws Exception
@@ -263,6 +421,50 @@ class SyncTestCase extends TestCase
                     'slug' => $category->slug,
                     'description' => $category->description,
                 ];
+    }
+
+    /**
+     * @param $permission_id
+     * @return object
+     * @throws Exception
+     */
+    public function prepareSingleMiniPermission($permission_id){
+        if ($permission_id == '' || is_null($permission_id)) {
+            $permission = $this->createPermission();
+        } else {
+            $permission = Permission::find($permission_id);
+            if (is_null($permission)) {
+                return null;
+            }
+        }
+
+        return (object) [
+                    'ref_id' => $permission->id,
+                    'name' => $permission->name,
+                    'label' => getTranslatedContent($permission->label)
+                ];
+    }
+
+    /**
+     * @param $role_id
+     * @return object
+     * @throws Exception
+     */
+    public function prepareSingleMiniRole($role_id){
+        if ($role_id == '' || is_null($role_id)) {
+            $role = $this->createRole();
+        } else {
+            $role = Role::find($role_id);
+            if (is_null($role)) {
+                return null;
+            }
+        }
+
+        return (object) [
+            'ref_id' => $role->id,
+            'name' => $role->name,
+            'label' => $role->label
+        ];
     }
 
     /**
