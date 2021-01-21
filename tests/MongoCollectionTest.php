@@ -256,18 +256,18 @@ class MongoCollectionTest extends SyncTestCase
 
         $this->prepareUserData();
 
-        $permissionNotExisting = '111';
+        $permissionNotExisting = 'CreateArticle';
 
-        $out = User::all()->first()->permissions->hasPermission($permissionNotExisting);
+        $out = User::all()->first()->permissions->checkPermission($permissionNotExisting);
 
         $this->assertFalse($out);
 
-        $permissionExisting = Permission::where('name', 'EditArticle')->first();
-        $out = User::all()->first()->permissions->hasPermission($permissionExisting->id);
+        $permissionExisting = 'EditArticle';
+        $out = User::all()->first()->permissions->checkPermission($permissionExisting);
 
         $this->assertTrue($out);
 
-        $out = User::all()->first()->permissions->hasPermission(null);
+        $out = User::all()->first()->permissions->checkPermission(null);
 
         $this->assertFalse($out);
 
