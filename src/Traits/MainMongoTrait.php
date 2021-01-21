@@ -81,7 +81,7 @@ trait MainMongoTrait
                 $is_EO_target = is_EO($typeOnTarget);
                 if ($is_EO || $is_EM) {//EmbedsOne Create - EmbedsMany Create
                     //Delete EmbedsMany or EmbedsOne on Target
-                    $this->deleteTargetObj($method, $modelTarget, $methodOnTarget, $is_EO, $is_EO_target, $is_EM_target);
+                    $this->deleteTargetObj($method, $modelTarget, $methodOnTarget, $is_EO, $is_EM, $is_EO_target, $is_EM_target);
                 }
                 //TODO: Need to be implemented
                 /* elseif ($is_HM) {//HasMany
@@ -177,7 +177,7 @@ trait MainMongoTrait
     /**
      * @param string $modelTarget
      * @param stdClass $obj
-     * @return MDModel
+     * @return MDModel|null
      * @throws Exception
      */
     private function getModelTobeSync(string $modelTarget, stdClass $obj)

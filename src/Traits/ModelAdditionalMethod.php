@@ -389,9 +389,7 @@ trait ModelAdditionalMethod
         $is_EM = is_EM($type);
 
         if ($is_EO) {
-            $obj = new stdClass;
-            $obj->ref_id = $this->getObjValueToBeSaved($method, '', false);
-            $objs[] = $obj;
+            $objs[] = $this->getObjValueToBeSaved($method, '', false);
         } elseif ($is_EM) {
             if (! is_null($this->$method) > 0) {
                 foreach ($this->$method as $value) {

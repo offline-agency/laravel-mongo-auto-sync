@@ -10,7 +10,7 @@ class MongoCollection extends Collection
     public function getBySlugAndStatus($category = null, $myslug = null)
     {
         $cl = cl();
-
+        //TODO: move primarycategory, status, slug on config file
         $out = $this->filter(function ($col) use ($category, $myslug, $cl) {
             if ($col->slug[$cl] === $myslug && $col->status === 'published' && $col->primarycategory->slug[$cl] === $category) {
                 return true;
@@ -113,7 +113,7 @@ class MongoCollection extends Collection
         }
 
         $id = $obj->id;
-        //trancia
+
         $out = $this->filter(function ($col) use ($id) {
             if ($col->ref_id === $id) {
                 return true;
@@ -121,7 +121,7 @@ class MongoCollection extends Collection
                 return false;
             }
         });
-        //conta i true
+
         if ($out->count() > 0) {
             return true;
         } else {
@@ -174,7 +174,7 @@ class MongoCollection extends Collection
     public function findByAID(string $aid)
     {
         return $this->filter(function ($col) use ($aid) {
-            return $col->autoincrement_id === $aid;
+            return $col->autoincrement_id == $aid;
         })->first();
     }
 

@@ -5,3 +5,4 @@ composer.lock
 storage/
 bootstrap/
 .idea
+.phpunit.result.cache
