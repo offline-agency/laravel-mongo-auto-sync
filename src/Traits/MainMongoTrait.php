@@ -177,7 +177,7 @@ trait MainMongoTrait
     /**
      * @param string $modelTarget
      * @param stdClass $obj
-     * @return MDModel
+     * @return MDModel|null
      * @throws Exception
      */
     private function getModelTobeSync(string $modelTarget, stdClass $obj)
