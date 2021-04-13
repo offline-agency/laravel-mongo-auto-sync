@@ -9,7 +9,7 @@
         "ext-mongodb": "*",
         "illuminate/support": "^5.8|^6.0",
         "illuminate/container": "^5.8|^6.0",
-        "illuminate/database": "^5.8|^6.0",
+        "illuminate/database": "^5.8|^6.20",
         "illuminate/events": "^5.8|^6.0",
         "jenssegers/mongodb": "3.6.7"
     },
