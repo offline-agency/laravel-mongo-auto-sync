@@ -129,7 +129,9 @@ trait RelationshipMongoTrait
         if ($is_EM_target) {
             $new_values = [];
             foreach ($this->$method_on_target as $temp) {
-                $new_values[] = $temp->attributes;
+                if(!is_null($temp)){
+                    $new_values[] = $temp->attributes;
+                }
             }
             $new_values[] = $mini_model->attributes;
         } elseif ($is_EO_target) {
