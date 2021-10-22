@@ -21,8 +21,9 @@ use Tests\Models\User;
 class SyncTestCase extends TestCase
 {
     /**
-     * @param array $data
+     * @param  array  $data
      * @return SubItem
+     *
      * @throws Exception
      */
     public function createSubItems(array $data = [])
@@ -47,8 +48,9 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param array $data
+     * @param  array  $data
      * @return Item
+     *
      * @throws Exception
      */
     public function createItems(array $data = [])
@@ -74,8 +76,9 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param array $data
+     * @param  array  $data
      * @return Navigation
+     *
      * @throws Exception
      */
     public function createNavigation(
@@ -109,8 +112,9 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param array $data
+     * @param  array  $data
      * @return Category
+     *
      * @throws Exception
      */
     public function createCategory(
@@ -140,8 +144,9 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param array $data
+     * @param  array  $data
      * @return Permission
+     *
      * @throws Exception
      */
     public function createPermission(
@@ -169,8 +174,9 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param array $data
+     * @param  array  $data
      * @return Role
+     *
      * @throws Exception
      */
     public function createRole(
@@ -198,8 +204,9 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param array $data
-     * @param int $size
+     * @param  array  $data
+     * @param  int  $size
+     *
      * @throws Exception
      */
     public function createArticles(
@@ -242,8 +249,9 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param array $data
-     * @param int $size
+     * @param  array  $data
+     * @param  int  $size
+     *
      * @throws Exception
      */
     public function createUsers(
@@ -275,8 +283,9 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param array $data
-     * @param int $size
+     * @param  array  $data
+     * @param  int  $size
+     *
      * @throws Exception
      */
     public function prepareArticleData(
@@ -347,8 +356,9 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param string|array $category_id
+     * @param  string|array  $category_id
      * @return string|false
+     *
      * @throws Exception
      */
     public function getMiniCategory($category_id = '')
@@ -366,8 +376,9 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param string|array $permission_id
+     * @param  string|array  $permission_id
      * @return string|false
+     *
      * @throws Exception
      */
     public function getMiniPermissions($permission_id = '')
@@ -385,8 +396,9 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param string|array $role_id
+     * @param  string|array  $role_id
      * @return string|false
+     *
      * @throws Exception
      */
     public function getMiniRoles($role_id = '')
@@ -406,6 +418,7 @@ class SyncTestCase extends TestCase
     /**
      * @param $category_id
      * @return object
+     *
      * @throws Exception
      */
     public function prepareSingleMiniCategory($category_id)
@@ -430,6 +443,7 @@ class SyncTestCase extends TestCase
     /**
      * @param $permission_id
      * @return object
+     *
      * @throws Exception
      */
     public function prepareSingleMiniPermission($permission_id)
@@ -453,6 +467,7 @@ class SyncTestCase extends TestCase
     /**
      * @param $role_id
      * @return object
+     *
      * @throws Exception
      */
     public function prepareSingleMiniRole($role_id)
@@ -474,7 +489,7 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param string $autoincrement_id
+     * @param  string  $autoincrement_id
      * @return false|string
      */
     public function getMiniArticle(string $autoincrement_id = '')
@@ -514,8 +529,9 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param string $navigation_id
+     * @param  string  $navigation_id
      * @return false|string
+     *
      * @throws Exception
      */
     public function getMiniNavigation(string $navigation_id = '')
@@ -562,8 +578,9 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param Navigation $navigation
-     * @param SubItem $sub_item
+     * @param  Navigation  $navigation
+     * @param  SubItem  $sub_item
+     *
      * @throws Exception
      */
     public function cleanUp(Navigation $navigation, SubItem $sub_item)

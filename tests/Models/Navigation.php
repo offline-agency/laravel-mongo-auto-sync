@@ -15,10 +15,6 @@ use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
  * @property string $date
  * @property string $target
  * @property array $title
- *
- *
- * Relationships
- *
  * @property MongoCollection $sub_items
  *
  **/

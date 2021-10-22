@@ -10,11 +10,12 @@ use MongoDB\BSON\UTCDateTime;
 trait RelationshipMongoTrait
 {
     /**
-     * @param Request $request
-     * @param string $event
-     * @param string $parent
-     * @param string $counter
-     * @param array $options
+     * @param  Request  $request
+     * @param  string  $event
+     * @param  string  $parent
+     * @param  string  $counter
+     * @param  array  $options
+     *
      * @throws Exception
      */
     public function processAllRelationships(Request $request, string $event, string $parent, string $counter, array $options)
@@ -120,16 +121,16 @@ trait RelationshipMongoTrait
 
     /**
      * @param $mini_model
-     * @param string $method_on_target
-     * @param bool $is_EO_target
-     * @param bool $is_EM_target
+     * @param  string  $method_on_target
+     * @param  bool  $is_EO_target
+     * @param  bool  $is_EM_target
      */
     public function updateRelationWithSync($mini_model, string $method_on_target, $is_EO_target, $is_EM_target)
     {
         if ($is_EM_target) {
             $new_values = [];
             foreach ($this->$method_on_target as $temp) {
-                if(!is_null($temp)){
+                if (! is_null($temp)) {
                     $new_values[] = $temp->attributes;
                 }
             }
@@ -143,7 +144,7 @@ trait RelationshipMongoTrait
     }
 
     /**
-     * @param Request $request
+     * @param  Request  $request
      * @param $obj
      * @param $type
      * @param $model
@@ -153,13 +154,14 @@ trait RelationshipMongoTrait
      * @param $modelOnTarget
      * @param $event
      * @param $hasTarget
-     * @param bool $is_EO
-     * @param bool $is_EM
-     * @param bool $is_EO_target
-     * @param bool $is_EM_target
+     * @param  bool  $is_EO
+     * @param  bool  $is_EM
+     * @param  bool  $is_EO_target
+     * @param  bool  $is_EM_target
      * @param $i
-     * @param bool $is_embeds_has_to_be_updated
+     * @param  bool  $is_embeds_has_to_be_updated
      * @param $options
+     *
      * @throws Exception
      */
     public function processOneEmbeddedRelationship(Request $request, $obj, $type, $model, $method, $modelTarget, $methodOnTarget, $modelOnTarget, $event, $hasTarget, $is_EO, $is_EM, $is_EO_target, $is_EM_target, $i, $is_embeds_has_to_be_updated, $options)
@@ -174,13 +176,13 @@ trait RelationshipMongoTrait
     }
 
     /**
-     * @param string $method
-     * @param string $modelTarget
-     * @param string $methodOnTarget
-     * @param bool $is_EO
-     * @param bool $is_EM
-     * @param bool $is_EO_target
-     * @param bool $is_EM_target
+     * @param  string  $method
+     * @param  string  $modelTarget
+     * @param  string  $methodOnTarget
+     * @param  bool  $is_EO
+     * @param  bool  $is_EM
+     * @param  bool  $is_EO_target
+     * @param  bool  $is_EM_target
      */
     public function deleteTargetObj($method, $modelTarget, $methodOnTarget, bool $is_EO, bool $is_EM, bool $is_EO_target, bool $is_EM_target)
     {
@@ -198,11 +200,11 @@ trait RelationshipMongoTrait
     }
 
     /**
-     * @param string|null $target_id
-     * @param string $modelTarget
-     * @param string $methodOnTarget
-     * @param bool $is_EO_target
-     * @param bool $is_EM_target
+     * @param  string|null  $target_id
+     * @param  string  $modelTarget
+     * @param  string  $methodOnTarget
+     * @param  bool  $is_EO_target
+     * @param  bool  $is_EM_target
      */
     public function handleSubTarget(?string $target_id, string $modelTarget, string $methodOnTarget, bool $is_EO_target, bool $is_EM_target)
     {
@@ -225,7 +227,7 @@ trait RelationshipMongoTrait
     }
 
     /**
-     * @param Request $request
+     * @param  Request  $request
      * @param $obj
      * @param $type
      * @param $model
@@ -235,6 +237,7 @@ trait RelationshipMongoTrait
      * @param $is_EM
      * @param $i
      * @param $options
+     *
      * @throws Exception
      */
     private function processEmbedOnCurrentCollection(Request $request, $obj, $type, $model, $method, $event, $is_EO, $is_EM, $i, $options)
@@ -287,8 +290,9 @@ trait RelationshipMongoTrait
      * @param $obj
      * @param $methodOnTarget
      * @param $modelOnTarget
-     * @param bool $is_EO_target
-     * @param bool $is_EM_target
+     * @param  bool  $is_EO_target
+     * @param  bool  $is_EM_target
+     *
      * @throws Exception
      */
     private function processEmbedOnTargetCollection($modelTarget, $obj, $methodOnTarget, $modelOnTarget, bool $is_EO_target, bool $is_EM_target)

@@ -10,9 +10,10 @@ use MongoDB\BSON\UTCDateTime;
 trait PlainMongoTrait
 {
     /**
-     * @param Request $request
-     * @param string $event
-     * @param array $options
+     * @param  Request  $request
+     * @param  string  $event
+     * @param  array  $options
+     *
      * @throws Exception
      */
     public function storeEditAllItems(Request $request, string $event, array $options)

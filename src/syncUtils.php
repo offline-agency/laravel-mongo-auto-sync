@@ -8,8 +8,7 @@ use Jenssegers\Mongodb\Eloquent\Model;
 if (! function_exists('getTranslatedContent')) {
 
     /**
-     * @param array $mlCollection
-     *
+     * @param  array  $mlCollection
      * @return string
      */
     function getTranslatedContent($mlCollection)
@@ -40,9 +39,8 @@ if (! function_exists('cl')) {
 if (! function_exists('ml')) {
     //save a localized field
     /**
-     * @param array $destination
-     * @param string $input
-     *
+     * @param  array  $destination
+     * @param  string  $input
      * @return array ready to be saved
      */
     function ml($destination, $input)
@@ -156,8 +154,7 @@ if (! function_exists('getRequestToBeSync')) {
     /**
      * @param $ref_id
      * @param $modelOnTarget
-     * @param Request $request
-     *
+     * @param  Request  $request
      * @return Request
      */
     function getRequestToBeSync($ref_id, $modelOnTarget, Request $request, $methodOnTarget)
@@ -185,8 +182,7 @@ if (! function_exists('getRequestToBeSync')) {
 
 if (! function_exists('getPrimaryRequest')) {
     /**
-     * @param string $request
-     *
+     * @param  string  $request
      * @return string
      */
     function getPrimaryRequest($request)
@@ -212,7 +208,7 @@ if (! function_exists('getPrimaryRequest')) {
 
 if (! function_exists('getAID')) {
     /**
-     * @param Model $model
+     * @param  Model  $model
      * @return string
      */
     function getAID(Model $model)
@@ -251,9 +247,8 @@ if (! function_exists('removeSubCollectionInput')) {
 if (! function_exists('prepareRequest')) {
 
     /**
-     * @param Request $request
-     * @param array $additionalData
-     *
+     * @param  Request  $request
+     * @param  array  $additionalData
      * @return Request
      */
     function prepareRequest(Request $request, array $additionalData)
@@ -274,7 +269,6 @@ if (! function_exists('getArrayWithEmptyObj')) {
 
     /**
      * @param $model
-     *
      * @return array
      */
     function getArrayWithEmptyObj($model, $is_EO, $is_EM)
@@ -304,7 +298,6 @@ if (! function_exists('getCounterForRelationships')) {
      * @param $is_EO
      * @param $is_EM
      * @param $i
-     *
      * @return string
      */
     function getCounterForRelationships($method, $is_EO, $is_EM, $i)
