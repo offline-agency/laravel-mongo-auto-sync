@@ -35,6 +35,7 @@ class DropCollection extends Command
 
     /**
      * @return void |null
+     *
      * @throws Exception
      */
     public function handle()
@@ -68,6 +69,7 @@ class DropCollection extends Command
     /**
      * @param $collection_name
      * @return string
+     *
      * @throws Exception
      */
     public function getModelPathByName($collection_name)
@@ -81,6 +83,7 @@ class DropCollection extends Command
      * @param $path
      * @param $collection_name
      * @return string
+     *
      * @throws Exception
      */
     public function checkOaModels($path, $collection_name)
@@ -115,8 +118,9 @@ class DropCollection extends Command
     }
 
     /**
-     * @param string $modelPath
+     * @param  string  $modelPath
      * @return MDModel
+     *
      * @throws Exception
      */
     private function getModel(string $modelPath)

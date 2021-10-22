@@ -11,10 +11,6 @@ use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
  * @property array $text
  * @property string $code
  * @property string $href
- *
- *
- * Relationships
- *
  * @property MiniNavigation $navigation
  *
  **/

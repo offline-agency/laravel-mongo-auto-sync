@@ -193,9 +193,9 @@ trait ModelAdditionalMethod
     }
 
     /**
-     * @param int $numberOfRandomRow
-     *
+     * @param  int  $numberOfRandomRow
      * @return mixed
+     *
      * @throws Exception
      */
     public function getRandomRow(int $numberOfRandomRow = 0)
@@ -214,6 +214,7 @@ trait ModelAdditionalMethod
 
     /**
      * @return void
+     *
      * @throws Exception
      */
     public function setMiniModels()
@@ -232,6 +233,7 @@ trait ModelAdditionalMethod
 
     /**
      * @return array
+     *
      * @throws Exception
      */
     public function getUniqueMiniModelList()
@@ -259,8 +261,9 @@ trait ModelAdditionalMethod
     }
 
     /**
-     * @param array $miniModelList
+     * @param  array  $miniModelList
      * @return mixed
+     *
      * @throws Exception
      */
     public function populateMiniModels(array $miniModelList)
@@ -274,8 +277,9 @@ trait ModelAdditionalMethod
     }
 
     /**
-     * @param string $mini_model_path
+     * @param  string  $mini_model_path
      * @return MDModel
+     *
      * @throws Exception
      */
     public function getFreshMiniModel(string $mini_model_path)
@@ -290,10 +294,11 @@ trait ModelAdditionalMethod
     }
 
     /**
-     * @param string $key
+     * @param  string  $key
      * @param $item
-     * @param string $mini_model_path
+     * @param  string  $mini_model_path
      * @return array|mixed|UTCDateTime|null
+     *
      * @throws Exception
      */
     public function castValueToBeSaved(string $key, $item, string $mini_model_path)
@@ -322,7 +327,7 @@ trait ModelAdditionalMethod
     }
 
     /**
-     * @param string $mini_model_path
+     * @param  string  $mini_model_path
      * @return MDModel
      */
     public function getModelInstanceFromPath(string $mini_model_path)
@@ -331,9 +336,9 @@ trait ModelAdditionalMethod
     }
 
     /**
-     * @param string $key
-     * @param string $mini_model_path
-     * @param bool $rewrite_ref_id_key
+     * @param  string  $key
+     * @param  string  $mini_model_path
+     * @param  bool  $rewrite_ref_id_key
      * @return mixed
      */
     public function getObjValueToBeSaved(string $key, string $mini_model_path, $rewrite_ref_id_key = true)
@@ -350,7 +355,7 @@ trait ModelAdditionalMethod
     }
 
     /**
-     * @param string $key
+     * @param  string  $key
      * @return mixed
      */
     private function getDbValue(string $key)
@@ -359,8 +364,9 @@ trait ModelAdditionalMethod
     }
 
     /**
-     * @param string $key
+     * @param  string  $key
      * @return array
+     *
      * @throws Exception
      */
     public function getEmbedModel(string $key)
@@ -375,9 +381,10 @@ trait ModelAdditionalMethod
     }
 
     /**
-     * @param string $method
-     * @param array $relationship
+     * @param  string  $method
+     * @param  array  $relationship
      * @return false|string
+     *
      * @throws Exception
      */
     public function getObjWithRefId(string $method, array $relationship)

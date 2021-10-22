@@ -17,11 +17,12 @@ trait MainMongoTrait
     protected $tempEM;
 
     /**
-     * @param Request $request
-     * @param array $additionalData
-     * @param array $options
-     * @param array $target_additional_data
+     * @param  Request  $request
+     * @param  array  $additionalData
+     * @param  array  $options
+     * @param  array  $target_additional_data
      * @return $this
+     *
      * @throws Exception
      */
     public function storeWithSync(Request $request, array $additionalData = [], array $options = [], array $target_additional_data = [])
@@ -37,11 +38,12 @@ trait MainMongoTrait
     }
 
     /**
-     * @param Request $request
-     * @param array $additionalData
-     * @param array $options
-     * @param array $target_additional_data
+     * @param  Request  $request
+     * @param  array  $additionalData
+     * @param  array  $options
+     * @param  array  $target_additional_data
      * @return $this
+     *
      * @throws Exception
      */
     public function updateWithSync(Request $request, array $additionalData = [], array $options = [], array $target_additional_data = [])
@@ -98,8 +100,8 @@ trait MainMongoTrait
     }
 
     /**
-     * @param array $options
-     * @param string $key
+     * @param  array  $options
+     * @param  string  $key
      * @return bool|mixed
      */
     private function getOptionValue(array $options, string $key)
@@ -109,9 +111,10 @@ trait MainMongoTrait
 
     /**
      * @param $obj
-     * @param string $EOkey
-     * @param string $method
-     * @param string $model
+     * @param  string  $EOkey
+     * @param  string  $method
+     * @param  string  $model
+     *
      * @throws Exception
      */
     public function checkPropertyExistence($obj, string $EOkey, $method = '', $model = '')
@@ -124,7 +127,8 @@ trait MainMongoTrait
 
     /**
      * @param $arr
-     * @param string $key
+     * @param  string  $key
+     *
      * @throws Exception
      */
     public function checkArrayExistence($arr, string $key)
@@ -136,8 +140,9 @@ trait MainMongoTrait
     }
 
     /**
-     * @param Request $request
-     * @param string $key
+     * @param  Request  $request
+     * @param  string  $key
+     *
      * @throws Exception
      */
     private function checkRequestExistence(Request $request, string $key)
@@ -149,8 +154,8 @@ trait MainMongoTrait
     }
 
     /**
-     * @param bool $request_has_key
-     * @param bool $hasTarget
+     * @param  bool  $request_has_key
+     * @param  bool  $hasTarget
      * @return bool
      */
     public function getIsSkippable($request_has_key, $hasTarget = false)
@@ -175,9 +180,10 @@ trait MainMongoTrait
     }
 
     /**
-     * @param string $modelTarget
-     * @param stdClass $obj
+     * @param  string  $modelTarget
+     * @param  stdClass  $obj
      * @return MDModel|null
+     *
      * @throws Exception
      */
     private function getModelTobeSync(string $modelTarget, stdClass $obj)
@@ -192,9 +198,10 @@ trait MainMongoTrait
     }
 
     /**
-     * @param string $key
-     * @param Request $request
+     * @param  string  $key
+     * @param  Request  $request
      * @return mixed
+     *
      * @throws Exception
      */
     private function getRelationshipRequest(string $key, Request $request)
@@ -216,8 +223,8 @@ trait MainMongoTrait
     }
 
     /**
-     * @param Request $request
-     * @param array $additionalData
+     * @param  Request  $request
+     * @param  array  $additionalData
      */
     public function setRequest(Request $request, array $additionalData): void
     {
@@ -234,7 +241,7 @@ trait MainMongoTrait
     }
 
     /**
-     * @param array $arr
+     * @param  array  $arr
      */
     public function setPartialGeneratedRequest(array $arr): void
     {
@@ -253,7 +260,7 @@ trait MainMongoTrait
     }
 
     /**
-     * @param array $options
+     * @param  array  $options
      */
     public function setOptions(array $options): void
     {
@@ -269,7 +276,7 @@ trait MainMongoTrait
     }
 
     /**
-     * @param array $target_additional_data
+     * @param  array  $target_additional_data
      */
     public function setTargetAdditionalData($target_additional_data): void
     {
@@ -277,10 +284,10 @@ trait MainMongoTrait
     }
 
     /**
-     * @param Request $request
-     * @param array $additionalData
-     * @param array $options
-     * @param array $target_additional_data
+     * @param  Request  $request
+     * @param  array  $additionalData
+     * @param  array  $options
+     * @param  array  $target_additional_data
      */
     public function initDataForSync(Request $request, array $additionalData, array $options, array $target_additional_data)
     {

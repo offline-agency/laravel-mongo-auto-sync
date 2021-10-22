@@ -28,8 +28,7 @@ class MongoCollection extends Collection
     }
 
     /**
-     * @param null $myslug
-     *
+     * @param  null  $myslug
      * @return mixed
      */
     public function getBySlug($myslug = null)
@@ -101,7 +100,6 @@ class MongoCollection extends Collection
 
     /**
      * @param $obj
-     *
      * @return bool
      */
     public function hasItem($obj)
@@ -133,7 +131,6 @@ class MongoCollection extends Collection
 
     /**
      * @param $id
-     *
      * @return $this
      */
     public function moveFirst($id)
@@ -168,8 +165,7 @@ class MongoCollection extends Collection
     }
 
     /**
-     * @param string $aid
-     *
+     * @param  string  $aid
      * @return mixed
      */
     public function findByAID(string $aid)

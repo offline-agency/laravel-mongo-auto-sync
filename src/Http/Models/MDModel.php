@@ -37,8 +37,7 @@ class MDModel extends Eloquent
     }
 
     /**
-     * @param int $size
-     *
+     * @param  int  $size
      * @return mixed
      */
     public function getRandom($size = 3)
