@@ -120,28 +120,50 @@ trait RelationshipMongoTrait
     }
 
     /**
-     * @param $mini_model
-     * @param  string  $method_on_target
-     * @param  bool  $is_EO_target
-     * @param  bool  $is_EM_target
-     */
-    public function updateRelationWithSync($mini_model, string $method_on_target, $is_EO_target, $is_EM_target)
-    {
-        if ($is_EM_target) {
-            $new_values = [];
-            foreach ($this->$method_on_target as $temp) {
-                if (! is_null($temp)) {
-                    $new_values[] = $temp->attributes;
-                }
+ * @param $mini_model
+ * @param string $method_on_target
+ * @param bool $is_EO_target
+ * @param bool $is_EM_target
+ * @throws \Throwable
+ */
+public function updateRelationWithSync($mini_model, string $method_on_target, $is_EO_target, $is_EM_target)
+{
+    if ($is_EM_target) {
+        $new_values = [];
+            throw_if(
+                !isset($this->$method_on_target),
+                new Exception(
+                    'Error during target update. Remember to init the attribute ' . $method_on_target .
+                    ' on collection ' . $this->getCollection()
+                )
+            );
+        foreach ($this->$method_on_target as $temp) {
+            throw_if(
+                is_array($temp),
+                new Exception(
+                    'Error during target update. Remember to declare ' . $method_on_target . ' as ' . 
+                    'EmbedsMany relationship on model ' . get_class($this)
+                )
+            );
+            if (! is_null($temp)) {
+                $new_values[] = $temp->attributes;
             }
-            $new_values[] = $mini_model->attributes;
-        } elseif ($is_EO_target) {
-            $new_values = $mini_model->attributes;
         }
-
-        $this->$method_on_target = $new_values;
-        $this->save();
+        $new_values[] = $mini_model->attributes;
+    } elseif ($is_EO_target) {
+        throw_if(
+            is_array($mini_model),
+            new Exception(
+                'Error during target update. Remember to declare ' . $method_on_target . ' as ' .
+                'EmbedOne relationship on model ' . get_class($this)
+            )
+        );
+        $new_values = $mini_model->attributes;
     }
+
+    $this->$method_on_target = $new_values;
+    $this->save();
+}
 
     /**
      * @param  Request  $request
