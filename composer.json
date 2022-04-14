@@ -7,11 +7,11 @@
         "php": ">=7.1",
         "ext-json": "*",
         "ext-mongodb": "*",
-        "illuminate/support": "^5.8|^6.0",
-        "illuminate/container": "^5.8|^6.0",
-        "illuminate/database": "^5.8|^6.20",
-        "illuminate/events": "^5.8|^6.0",
-        "jenssegers/mongodb": "3.6.7"
+        "illuminate/support": "^5.8|^6.0|^7.0|^8.0",
+        "illuminate/container": "^5.8|^6.0|^7.0|^8.0",
+        "illuminate/database": "^5.8|^6.20|^7.0|^8.0",
+        "illuminate/events": "^5.8|^6.0|^7.0|^8.0",
+        "jenssegers/mongodb": "3.6.7|^3.7|^3.8"
     },
     "require-dev": {
         "phpunit/phpunit": "^6.0|^7.0|^8.0",
