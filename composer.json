@@ -11,11 +11,11 @@
         "illuminate/container": "^6.0|^7.0|^8.0",
         "illuminate/database": "^6.20|^7.0|^8.0",
         "illuminate/events": "^6.0|^7.0|^8.0",
-        "jenssegers/mongodb": "3.6.7|^3.7|^3.8"
+        "jenssegers/mongodb": "^3.6|^3.7|^3.8"
     },
     "require-dev": {
         "phpunit/phpunit": "^6.0|^7.0|^8.0",
-        "orchestra/testbench": "^3.1|^4.0|6.0",
+        "orchestra/testbench": "^3.1|^4.0|^6.0",
         "phpunit/phpcov": "^6.0"
     },
     "license": "MIT",
