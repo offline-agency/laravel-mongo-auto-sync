@@ -4,13 +4,12 @@ namespace Tests;
 
 use Jenssegers\Mongodb\MongodbQueueServiceProvider;
 use Jenssegers\Mongodb\MongodbServiceProvider;
-use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use OfflineAgency\MongoAutoSync\MongoAutoSyncServiceProvider;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
 {
-    use CreatesApplication, MockeryPHPUnitIntegration;
+    use CreatesApplication;
 
     protected function setUp(): void
     {
