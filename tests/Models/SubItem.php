@@ -2,12 +2,10 @@
 
 namespace Tests\Models;
 
-use Illuminate\Database\Eloquent\Builder;
 use Jenssegers\Mongodb\Relations\EmbedsOne;
 use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 
 /**
- *
  * Plain Fields.
  *
  * @property string $id
