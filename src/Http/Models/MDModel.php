@@ -11,7 +11,6 @@ use OfflineAgency\MongoAutoSync\Traits\PlainMongoTrait;
 use OfflineAgency\MongoAutoSync\Traits\RelationshipMongoTrait;
 
 /**
- *
  * @mixin Builder
  *
  **/
