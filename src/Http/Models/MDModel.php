@@ -2,6 +2,7 @@
 
 namespace OfflineAgency\MongoAutoSync\Http\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Jenssegers\Mongodb\Eloquent\Model as Eloquent;
 use OfflineAgency\MongoAutoSync\Traits\Helper;
 use OfflineAgency\MongoAutoSync\Traits\MainMongoTrait;
@@ -9,6 +10,11 @@ use OfflineAgency\MongoAutoSync\Traits\ModelAdditionalMethod;
 use OfflineAgency\MongoAutoSync\Traits\PlainMongoTrait;
 use OfflineAgency\MongoAutoSync\Traits\RelationshipMongoTrait;
 
+/**
+ *
+ * @mixin Builder
+ *
+ **/
 class MDModel extends Eloquent
 {
     use MainMongoTrait, ModelAdditionalMethod, Helper, PlainMongoTrait, RelationshipMongoTrait;

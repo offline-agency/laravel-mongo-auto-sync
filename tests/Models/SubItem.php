@@ -2,9 +2,12 @@
 
 namespace Tests\Models;
 
+use Illuminate\Database\Eloquent\Builder;
+use Jenssegers\Mongodb\Relations\EmbedsOne;
 use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 
 /**
+ *
  * Plain Fields.
  *
  * @property string $id
@@ -35,7 +38,7 @@ class SubItem extends MDModel
         ],
     ];
 
-    public function navigation()
+    public function navigation(): EmbedsOne
     {
         return $this->embedsOne('Tests\Models\MiniNavigation');
     }
