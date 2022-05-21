@@ -13,7 +13,7 @@ use Tests\Models\SubItem;
 
 class UpdateWithSyncTest extends SyncTestCase
 {
-    public function test_update_with_embeds_one_on_target()
+    public function test_update_with_embeds_one_on_target(): void
     {
         //Sub Item Test
         $sub_item = $this->createSubItems(
