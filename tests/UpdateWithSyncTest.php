@@ -358,7 +358,7 @@ class UpdateWithSyncTest extends SyncTestCase
 
         $this->assertTrue($navigation->sub_items->where('ref_id', $sub_item_updated->id)->count() === 0);
         
-        $this->assertEquals($updated_count_subitems, $original_count_subitems);
+        $this->assertEquals(1, $updated_count_subitems);
 
         $sub_item_original->delete();
         $navigation->delete();
