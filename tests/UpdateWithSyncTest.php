@@ -364,7 +364,7 @@ class UpdateWithSyncTest extends SyncTestCase
         
         $mini_navigation = $this->getMiniNavigation($navigation->id);
         $data = [
-            'text' => 'text_updated',
+            'code' => 'code_updated',
         ];
 
         $options = [
@@ -377,7 +377,7 @@ class UpdateWithSyncTest extends SyncTestCase
         $navigation = Navigation::find($navigation->id);
         $updated_count_subitems = $navigation->sub_items->count();
         
-        $this->assertEquals($sub_item_updated->text, 'text_updated');
+        $this->assertEquals($sub_item_updated->code, 'code_updated');
         $this->assertEquals(1, $updated_count_subitems);
         
         $sub_item_original->delete();
