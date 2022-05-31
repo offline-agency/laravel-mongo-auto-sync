@@ -377,7 +377,7 @@ class UpdateWithSyncTest extends SyncTestCase
         $navigation = Navigation::find($navigation->id);
         $updated_count_subitems = $navigation->sub_items->count();
         
-        $this->assertEquals($sub_item_updated->text, 'text_updated')
+        $this->assertEquals($sub_item_updated->text, 'text_updated');
         $this->assertEquals(1, $updated_count_subitems);
         
         $sub_item_original->delete();
