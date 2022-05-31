@@ -380,6 +380,9 @@ class UpdateWithSyncTest extends SyncTestCase
         $this->assertEquals($sub_item_updated->code, 'code_updated');
         $this->assertEquals(1, $updated_count_subitems);
         
+        $subitem = $navigation->sub_items->first();
+        $this->equals($subitem->code, 'code_updated');
+        
         $sub_item_original->delete();
         $navigation->delete();
     }
