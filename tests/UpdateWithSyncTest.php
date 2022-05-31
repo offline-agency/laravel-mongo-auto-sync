@@ -347,7 +347,7 @@ class UpdateWithSyncTest extends SyncTestCase
         //check target - Navigation
         $navigation = Navigation::all()->where('id', $navigation->id)->first();
 
-        $this->assertTrue($navigation->sub_items->where('ref_id', $sub_item_updated->id)->count() > 0);
+        $this->assertTrue($navigation->sub_items->where('ref_id', $sub_item_updated->id)->count() === 1);
 
         //check target - Navigation subitem has been detached from navigation original?
         $navigation = Navigation::all()->where('id', $navigation_original->id)->first();
