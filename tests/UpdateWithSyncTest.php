@@ -360,6 +360,26 @@ class UpdateWithSyncTest extends SyncTestCase
         
         $this->assertEquals(1, $updated_count_subitems);
 
+        //Update with a target already populated
+        
+        $mini_navigation = $this->getMiniNavigation($navigation->id);
+        $data = [
+            'text' => 'text_updated',
+        ];
+
+        $options = [
+            'request_type' => 'partial',
+        ];
+        $request = new Request;
+
+        $sub_item_updated = $sub_item_original->updateWithSync($request, $data, $options);
+        
+        $navigation = Navigation::find($navigation->id);
+        $updated_count_subitems = $navigation->sub_items->count();
+        
+        $this->assertEquals($sub_item_updated->text, 'text_updated')
+        $this->assertEquals(1, $updated_count_subitems);
+        
         $sub_item_original->delete();
         $navigation->delete();
     }
