@@ -13,7 +13,7 @@ At low level all CRUD operations has been handled by [jenssegers/laravel-mongodb
 ## Installation
 
 ```bash
-composer require offlineagency/laravel-mongo-auto-sync
+composer require offline-agency/laravel-mongo-auto-sync
 ```
 
 ### Prerequisites
