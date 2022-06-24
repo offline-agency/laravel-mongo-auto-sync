@@ -317,6 +317,7 @@ class UpdateWithSyncTest extends SyncTestCase
         $sub_item_original = $this->createSubItems(['navigation' => $mini_navigation_original]);
         $navigation = $this->createNavigation();
 
+        $original_count_subitems = $navigation->sub_items->count();
         //Test Update from SubItem
         $mini_navigation = $this->getMiniNavigation($navigation->id);
         $data = [
@@ -334,6 +335,9 @@ class UpdateWithSyncTest extends SyncTestCase
         $this->assertNotEquals($sub_item_original->navigation->getAttributes(), $sub_item_updated->navigation->getAttributes());
         $this->assertNotNull($sub_item_updated->navigation);
 
+        $navigation = Navigation::find($navigation->id);
+        $updated_count_subitems = $navigation->sub_items->count();
+
         $this->assertEquals($navigation->id, $sub_item_updated->navigation->ref_id);
         $this->assertEquals($navigation->text, $sub_item_updated->navigation->text);
         $this->assertEquals($navigation->code, $sub_item_updated->navigation->code);
@@ -345,14 +349,38 @@ class UpdateWithSyncTest extends SyncTestCase
         $this->assertEquals($sub_item_original->href, $sub_item_updated->href);
 
         //check target - Navigation
-        $navigation = Navigation::all()->where('id', $navigation->id)->first();
 
-        $this->assertTrue($navigation->sub_items->where('ref_id', $sub_item_updated->id)->count() > 0);
+        $this->assertTrue($navigation->sub_items->where('ref_id', $sub_item_updated->id)->count() === 1);
 
         //check target - Navigation subitem has been detached from navigation original?
         $navigation = Navigation::all()->where('id', $navigation_original->id)->first();
 
         $this->assertTrue($navigation->sub_items->where('ref_id', $sub_item_updated->id)->count() === 0);
+
+        $this->assertEquals(1, $updated_count_subitems);
+
+        //Update with a target already populated
+
+        $mini_navigation = $this->getMiniNavigation($navigation->id);
+        $data = [
+            'code' => 'code_updated',
+        ];
+
+        $options = [
+            'request_type' => 'partial',
+        ];
+        $request = new Request;
+
+        $sub_item_updated = $sub_item_original->updateWithSync($request, $data, $options);
+
+        $navigation = Navigation::find($navigation->id);
+        $updated_count_subitems = $navigation->sub_items->count();
+
+        $this->assertEquals($sub_item_updated->code, 'code_updated');
+        $this->assertEquals(1, $updated_count_subitems);
+
+        $subitem = $navigation->sub_items->first();
+        $this->assertEquals($subitem->code, 'code_updated');
 
         $sub_item_original->delete();
         $navigation->delete();

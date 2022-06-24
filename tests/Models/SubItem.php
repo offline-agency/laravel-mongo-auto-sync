@@ -32,6 +32,7 @@ class SubItem extends MDModel
             'modelTarget' => 'Tests\Models\Navigation',
             'methodOnTarget' => 'sub_items',
             'modelOnTarget' => 'Tests\Models\MiniSubItem',
+            'typeOnTarget' => 'EmbedsMany',
         ],
     ];
 
