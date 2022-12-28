@@ -62,7 +62,7 @@ class ModelAdditionalMethodTest extends SyncTestCase
 
         $this->assertEquals($this->getMd(), $parsed_value);
 
-        // ''
+        // '' empty string
 
         $this->setMd('');
 
@@ -98,6 +98,16 @@ class ModelAdditionalMethodTest extends SyncTestCase
         ], 'Tests\Models\MiniSubItem');
 
         $this->assertEquals($now_utc, $parsed_value);
+
+        // '' empty string
+
+        $this->setCarbonDate('');
+
+        $parsed_value = $this->castValueToBeSaved('carbon_date', [
+            'is-carbon-date' => true
+        ], 'Tests\Models\MiniSubItem');
+
+        $this->assertInstanceOf(UTCDateTime::class, $parsed_value);
 
         // null
 
