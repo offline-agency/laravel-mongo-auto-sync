@@ -4,6 +4,7 @@ namespace Tests;
 
 use Carbon\Carbon;
 use DateTime;
+use Exception;
 use Illuminate\Http\Request;
 use MongoDB\BSON\UTCDateTime;
 use OfflineAgency\MongoAutoSync\Traits\Helper;
@@ -20,6 +21,8 @@ class ModelAdditionalMethodTest extends SyncTestCase
     protected $array;
 
     protected $request;
+
+    protected $mongoRelation;
 
     public function test_cast_ml()
     {
@@ -81,6 +84,16 @@ class ModelAdditionalMethodTest extends SyncTestCase
         ], 'Tests\Models\MiniSubItem');
 
         $this->assertNull($parsed_value);
+
+        // carbon
+
+        $this->setMd(Carbon::now());
+
+        $parsed_value = $this->castValueToBeSaved('md', [
+            'is-md' => true
+        ], 'Tests\Models\MiniSubItem');
+
+        $this->assertInstanceOf(UTCDateTime::class, $parsed_value);
     }
 
     public function test_cast_carbon_date()
@@ -157,6 +170,32 @@ class ModelAdditionalMethodTest extends SyncTestCase
         $this->assertIsArray($parsed_value);
     }
 
+    public function test_unique_mini_model()
+    {
+        $this->setMongoRelation([
+            'relation' => array(
+                'type' => 'EmbedsMany',
+                'mode' => 'classic',
+                'model' => 'App\Models\MiniRelation',
+                'modelTarget' => 'App\Models\Relation',
+                'methodOnTarget' => 'Related'
+            )
+        ]);
+
+        $this->expectException(Exception::class);
+
+        $this->getUniqueMiniModelList();
+    }
+
+    public function test_obj_with_ref_id()
+    {
+        $this->expectException(Exception::class);
+
+        $this->getObjWithRefId('', [
+            'type' => 'fake'
+        ]);
+    }
+
     /* GETTERs & SETTERs */
 
     public function getMl()
@@ -170,9 +209,9 @@ class ModelAdditionalMethodTest extends SyncTestCase
     }
 
     public function getMd()
-{
-    return $this->md;
-}
+    {
+        return $this->md;
+    }
 
     public function setMd($md): void
     {
@@ -202,5 +241,10 @@ class ModelAdditionalMethodTest extends SyncTestCase
     private function setRequest()
     {
         $this->request = new Request();
+    }
+
+    private function setMongoRelation($mongoRelation)
+    {
+        $this->mongoRelation = $mongoRelation;
     }
 }
