@@ -297,7 +297,7 @@ trait ModelAdditionalMethod
      * @param  string  $key
      * @param $item
      * @param  string  $mini_model_path
-     * @return array|mixed|UTCDateTime|null|void
+     * @return array|mixed|UTCDateTime|null
      *
      * @throws Exception
      */
@@ -312,15 +312,11 @@ trait ModelAdditionalMethod
         if ($is_ML) {
             return is_array($value) ? $value : ml([], $value);
         } elseif ($is_MD) {
-            if (get_class($value) == 'MongoDB\BSON\UTCDateTime') {
-                return $value;
-            }
-
-            if ($value == '') {
+            if ($value == '' || is_null($value)) {
                 return;
+            } else {
+                return new UTCDateTime(new DateTime($value));
             }
-
-            return new UTCDateTime(new DateTime($value));
         } elseif ($is_carbon_date) {
             return new UTCDateTime($value);
         } elseif ($is_array) {
