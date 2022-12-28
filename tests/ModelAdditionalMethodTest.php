@@ -45,7 +45,7 @@ class ModelAdditionalMethodTest extends SyncTestCase
         ], 'Tests\Models\MiniSubItem');
 
         $this->assertIsArray($parsed_value);
-        $this->assertEquals(['it_IT' => null], $parsed_value);
+        $this->assertCount(1, $parsed_value);
     }
 
     public function test_cast_md()
