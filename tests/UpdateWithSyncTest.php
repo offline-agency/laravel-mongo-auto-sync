@@ -263,6 +263,27 @@ class UpdateWithSyncTest extends SyncTestCase
         $sub_item_new->delete();
     }
 
+    private function test_is_skippable_on_processAllRelationships()
+    {
+        $this->markTestSkipped('to be implemented');
+
+        /*
+         *
+            Relation type
+            "relation" => [
+                "type" => "EmbedsMany",
+                "mode" => "classic",
+                "model" => "App\Models\MiniRelation",
+                "has-target" => false
+            ]
+
+            Request type
+            [
+                'request_type' => 'partial'
+            ]
+        * */
+    }
+
     private function partialUpdateNavigationRelationship()
     {
         //Create a sub_items and associated to the navigation on update
