@@ -15,7 +15,7 @@ class MainMongoTraitTest extends SyncTestCase
         $this->expectException(Exception::class);
 
         $this->checkPropertyExistence(
-            (object)['key' => 'value'],
+            (object) ['key' => 'value'],
             'fake_key'
         );
     }

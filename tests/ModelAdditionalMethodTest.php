@@ -37,7 +37,7 @@ class ModelAdditionalMethodTest extends SyncTestCase
         $this->setMl([]);
 
         $parsed_value = $this->castValueToBeSaved('ml', [
-            'is-ml' => true
+            'is-ml' => true,
         ], 'Tests\Models\MiniSubItem');
 
         $this->assertIsArray($parsed_value);
@@ -48,7 +48,7 @@ class ModelAdditionalMethodTest extends SyncTestCase
         $this->setMl(null);
 
         $parsed_value = $this->castValueToBeSaved('ml', [
-            'is-ml' => true
+            'is-ml' => true,
         ], 'Tests\Models\MiniSubItem');
 
         $this->assertIsArray($parsed_value);
@@ -64,7 +64,7 @@ class ModelAdditionalMethodTest extends SyncTestCase
         $this->setMd(new UTCDateTime(new DateTime()));
 
         $parsed_value = $this->castValueToBeSaved('md', [
-            'is-md' => true
+            'is-md' => true,
         ], 'Tests\Models\MiniSubItem');
 
         $this->assertEquals($this->getMd(), $parsed_value);
@@ -74,7 +74,7 @@ class ModelAdditionalMethodTest extends SyncTestCase
         $this->setMd('');
 
         $parsed_value = $this->castValueToBeSaved('md', [
-            'is-md' => true
+            'is-md' => true,
         ], 'Tests\Models\MiniSubItem');
 
         $this->assertNull($parsed_value);
@@ -84,7 +84,7 @@ class ModelAdditionalMethodTest extends SyncTestCase
         $this->setMd(null);
 
         $parsed_value = $this->castValueToBeSaved('md', [
-            'is-md' => true
+            'is-md' => true,
         ], 'Tests\Models\MiniSubItem');
 
         $this->assertNull($parsed_value);
@@ -94,7 +94,7 @@ class ModelAdditionalMethodTest extends SyncTestCase
         $this->setMd(Carbon::now());
 
         $parsed_value = $this->castValueToBeSaved('md', [
-            'is-md' => true
+            'is-md' => true,
         ], 'Tests\Models\MiniSubItem');
 
         $this->assertInstanceOf(UTCDateTime::class, $parsed_value);
@@ -111,7 +111,7 @@ class ModelAdditionalMethodTest extends SyncTestCase
         $now_utc = new UTCDateTime($now);
 
         $parsed_value = $this->castValueToBeSaved('carbon_date', [
-            'is-carbon-date' => true
+            'is-carbon-date' => true,
         ], 'Tests\Models\MiniSubItem');
 
         $this->assertEquals($now_utc, $parsed_value);
@@ -121,7 +121,7 @@ class ModelAdditionalMethodTest extends SyncTestCase
         $this->setCarbonDate('');
 
         $parsed_value = $this->castValueToBeSaved('carbon_date', [
-            'is-carbon-date' => true
+            'is-carbon-date' => true,
         ], 'Tests\Models\MiniSubItem');
 
         $this->assertInstanceOf(UTCDateTime::class, $parsed_value);
@@ -131,7 +131,7 @@ class ModelAdditionalMethodTest extends SyncTestCase
         $this->setCarbonDate(null);
 
         $parsed_value = $this->castValueToBeSaved('carbon_date', [
-            'is-carbon-date' => true
+            'is-carbon-date' => true,
         ], 'Tests\Models\MiniSubItem');
 
         $this->assertInstanceOf(UTCDateTime::class, $parsed_value);
@@ -146,7 +146,7 @@ class ModelAdditionalMethodTest extends SyncTestCase
         $this->setArray(['key' => 'value']);
 
         $parsed_value = $this->castValueToBeSaved('array', [
-            'is-array' => true
+            'is-array' => true,
         ], 'Tests\Models\MiniSubItem');
 
         $this->assertArrayHasKey('key', $parsed_value);
@@ -157,7 +157,7 @@ class ModelAdditionalMethodTest extends SyncTestCase
         $this->setArray(null);
 
         $parsed_value = $this->castValueToBeSaved('array', [
-            'is-array' => true
+            'is-array' => true,
         ], 'Tests\Models\MiniSubItem');
 
         $this->assertIsArray($parsed_value);
@@ -168,7 +168,7 @@ class ModelAdditionalMethodTest extends SyncTestCase
         $this->setArray($this->createSubItems());
 
         $parsed_value = $this->castValueToBeSaved('array', [
-            'is-array' => true
+            'is-array' => true,
         ], 'Tests\Models\MiniSubItem');
 
         $this->assertIsArray($parsed_value);
@@ -177,13 +177,13 @@ class ModelAdditionalMethodTest extends SyncTestCase
     public function test_unique_mini_model()
     {
         $this->setMongoRelation([
-            'relation' => array(
+            'relation' => [
                 'type' => 'EmbedsMany',
                 'mode' => 'classic',
                 'model' => 'App\Models\MiniRelation',
                 'modelTarget' => 'App\Models\Relation',
-                'methodOnTarget' => 'Related'
-            )
+                'methodOnTarget' => 'Related',
+            ],
         ]);
 
         $this->expectException(Exception::class);
@@ -196,14 +196,14 @@ class ModelAdditionalMethodTest extends SyncTestCase
         $this->expectException(Exception::class);
 
         $this->getObjWithRefId('', [
-            'type' => 'fake'
+            'type' => 'fake',
         ]);
     }
 
     public function test_embed_model()
     {
         $this->setMiniModels([
-            'modelTargets' => 'App\Models\Relation'
+            'modelTargets' => 'App\Models\Relation',
         ]);
 
         $this->expectException(Exception::class);
