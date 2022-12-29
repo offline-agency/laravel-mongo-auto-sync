@@ -13,7 +13,9 @@ use OfflineAgency\MongoAutoSync\Traits\ModelAdditionalMethod;
 
 class ModelAdditionalMethodTest extends SyncTestCase
 {
-    use ModelAdditionalMethod, Helper, MainMongoTrait;
+    use ModelAdditionalMethod,
+        Helper,
+        MainMongoTrait;
 
     protected $ml;
     protected $md;
@@ -23,6 +25,8 @@ class ModelAdditionalMethodTest extends SyncTestCase
     protected $request;
 
     protected $mongoRelation;
+
+    protected $mini_models;
 
     public function test_cast_ml()
     {
@@ -196,6 +200,17 @@ class ModelAdditionalMethodTest extends SyncTestCase
         ]);
     }
 
+    public function test_embed_model()
+    {
+        $this->setMiniModels([
+            'modelTargets' => 'App\Models\Relation'
+        ]);
+
+        $this->expectException(Exception::class);
+
+        $this->getEmbedModel('modelTarget');
+    }
+
     /* GETTERs & SETTERs */
 
     public function getMl()
@@ -246,5 +261,10 @@ class ModelAdditionalMethodTest extends SyncTestCase
     private function setMongoRelation($mongoRelation)
     {
         $this->mongoRelation = $mongoRelation;
+    }
+
+    private function setMiniModels($mini_models)
+    {
+        $this->mini_models = $mini_models;
     }
 }
