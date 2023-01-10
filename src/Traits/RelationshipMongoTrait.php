@@ -10,6 +10,8 @@ use MongoDB\BSON\UTCDateTime;
 
 trait RelationshipMongoTrait
 {
+    public $is_partial_request;
+
     /**
      * @param  Request  $request
      * @param  string  $event
@@ -21,6 +23,7 @@ trait RelationshipMongoTrait
      */
     public function processAllRelationships(Request $request, string $event, string $parent, string $counter, array $options)
     {
+        $this->setIsPartialRequest($options);
         $this->setMiniModels(); // For target Sync
 
         //Get the relation info
@@ -151,7 +154,7 @@ trait RelationshipMongoTrait
                 );
 
                 if (!is_null($temp)) {
-                    if ($this->getHasPartialRequest()) {
+                    if ($this->getIsPartialRequest()) {
                         if (Arr::get($temp->attributes, 'ref_id') !== Arr::get($mini_model->attributes, 'ref_id')) {
                             $new_values[] = $temp->attributes;
                         } else {
@@ -339,9 +342,30 @@ trait RelationshipMongoTrait
         $modelToBeSync = $this->getModelTobeSync($modelTarget, $obj);
         if (! is_null($modelToBeSync)) {
             $miniModel = $this->getEmbedModel($modelOnTarget);
+            $modelToBeSync->setIsPartialRequest([], $this->getIsPartialRequest());
             $modelToBeSync->updateRelationWithSync($miniModel, $methodOnTarget, $is_EO_target, $is_EM_target);
             //TODO:Sync target on level > 1
             //$modelToBeSync->processAllRelationships($request, $event, $methodOnTarget, $methodOnTarget . "-");
         }
+    }
+
+    public function getIsPartialRequest()
+    {
+        return $this->is_partial_request;
+    }
+
+    public function setIsPartialRequest(array $options, $is_partial_request = null): void
+    {
+        if (!is_null($is_partial_request)) {
+            $this->is_partial_request = $is_partial_request;
+            return;
+        }
+
+        if (Arr::has($options, 'request_type')) {
+            $this->is_partial_request = Arr::get($options, 'request_type') == 'partial';
+            return;
+        }
+
+        $this->is_partial_request = false;
     }
 }

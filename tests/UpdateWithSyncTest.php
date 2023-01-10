@@ -238,7 +238,7 @@ class UpdateWithSyncTest extends SyncTestCase
         $navigation = Navigation::find($navigation->id);
         $this->assertEquals(2, $navigation->sub_items->count());
 
-        // 1 navigation with 1 sub item and 1 sub item with 1 navigation
+        // 1 navigation with 2 sub items and 1 sub item with 1 navigation
 
         $sub_item->updateWithSync(new Request, [
             'text' => 'partial_update'
@@ -255,7 +255,7 @@ class UpdateWithSyncTest extends SyncTestCase
             }
         }
 
-        // 1 navigation with 1 updated sub item and 1 sub item with 1 navigation
+        // 1 navigation with 2 sub items (1 of these updated) and 1 sub item with 1 navigation
 
         //clean data
         $navigation->delete();
