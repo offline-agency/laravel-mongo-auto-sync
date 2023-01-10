@@ -186,6 +186,82 @@ class UpdateWithSyncTest extends SyncTestCase
         $sub_item->delete();
     }
 
+    public function test_update_with_partial_request_updating_embeds_many_on_target()
+    {
+        $faker = Factory::create();
+
+        $navigation = new Navigation;
+        $navigation = $navigation->storeWithSync(new Request, [
+            'text' => $faker->text(50),
+            'code' => $faker->creditCardNumber,
+            'href' => $faker->url,
+            'date' => Date::now(),
+            'target' => $faker->text(50),
+            'title' => null,
+            'sub_items' => json_encode([]),
+        ]);
+
+        $this->assertTrue($this->isNavigationCreated($navigation));
+        $this->assertInstanceOf(MongoCollection::class, $navigation->sub_items);
+
+        // 1 navigation
+
+        $sub_item = $this->createSubItems([
+            'navigation' => $this->getMiniNavigation($navigation->id),
+        ]);
+
+        $this->assertEquals($navigation->id, $sub_item->navigation->ref_id);
+        $this->assertInstanceOf(MiniNavigation::class, $sub_item->navigation);
+
+        // 1 navigation and 1 sub item with navigation
+
+        $navigation_original = Navigation::find($navigation->id);
+
+        $sub_items = $this->getMiniSubItem($sub_item->id);
+
+        $navigation_updated = $navigation_original->updateWithSync(new Request, [
+            'text' => 'text_updated',
+            'title' => 'title_updated',
+            'code' => 'code_updated',
+            'href' => 'href_updated',
+            'date' => Carbon::now(),
+            'target' => 'target_updated',
+            'sub_items' => $sub_items,
+        ], []);
+
+        $this->assertEquals(1, $navigation_updated->sub_items->count());
+
+        $sub_item = $this->createSubItems([
+            'navigation' => $this->getMiniNavigation($navigation->id),
+        ]);
+
+        $navigation = Navigation::find($navigation->id);
+        $this->assertEquals(2, $navigation->sub_items->count());
+
+        // 1 navigation with 2 sub items and 1 sub item with 1 navigation
+
+        $sub_item->updateWithSync(new Request, [
+            'text' => 'partial_update'
+        ], [
+            'request_type' => 'partial'
+        ]);
+
+        $navigation = Navigation::find($navigation->id);
+        $this->assertEquals(2, $navigation->sub_items->count());
+
+        foreach ($navigation->sub_items as $navigation_sub_item) {
+            if ($navigation_sub_item->ref_id == $sub_item->id) {
+                $this->assertEquals('partial_update', $navigation_sub_item->text);
+            }
+        }
+
+        // 1 navigation with 2 sub items (one of these updated) and 1 sub item with 1 navigation
+
+        //clean data
+        $navigation->delete();
+        $sub_item->delete();
+    }
+
     public function test_update_with_partial_request_plain_field()
     {
         //Navigation

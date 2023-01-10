@@ -5,6 +5,7 @@ namespace OfflineAgency\MongoAutoSync\Traits;
 use DateTime;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use MongoDB\BSON\UTCDateTime;
 
 trait RelationshipMongoTrait
@@ -138,27 +139,38 @@ trait RelationshipMongoTrait
                     ' on collection '.$this->getCollection()
                 )
             );
+
+            $is_update_operation = false;
             foreach ($this->$method_on_target as $temp) {
                 throw_if(
-                is_array($temp),
-                new Exception(
-                    'Error during target update. Remember to declare '.$method_on_target.' as '.
-                    'EmbedsMany relationship on model '.get_class($this)
-                )
-            );
-                if (! is_null($temp)) {
-                    $new_values[] = $temp->attributes;
+                    is_array($temp),
+                    new Exception(
+                        'Error during target update. Remember to declare '.$method_on_target.' as '.
+                        'EmbedsMany relationship on model '.get_class($this)
+                    )
+                );
+
+                if (!is_null($temp)) {
+                    if ($this->getHasPartialRequest() && Arr::get($temp->attributes, 'ref_id') !== Arr::get($mini_model->attributes, 'ref_id')) {
+                        $new_values[] = $temp->attributes;
+                    } else {
+                        $new_values[] = $mini_model->attributes;
+                        $is_update_operation = true;
+                    }
                 }
             }
-            $new_values[] = $mini_model->attributes;
+
+            if (!$is_update_operation) {
+                $new_values[] = $mini_model->attributes;
+            }
         } elseif ($is_EO_target) {
             throw_if(
-            is_array($mini_model),
-            new Exception(
-                'Error during target update. Remember to declare '.$method_on_target.' as '.
-                'EmbedOne relationship on model '.get_class($this)
-            )
-        );
+                is_array($mini_model),
+                new Exception(
+                    'Error during target update. Remember to declare '.$method_on_target.' as '.
+                    'EmbedOne relationship on model '.get_class($this)
+                )
+            );
             $new_values = $mini_model->attributes;
         }
 
