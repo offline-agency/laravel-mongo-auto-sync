@@ -151,11 +151,15 @@ trait RelationshipMongoTrait
                 );
 
                 if (!is_null($temp)) {
-                    if ($this->getHasPartialRequest() && Arr::get($temp->attributes, 'ref_id') !== Arr::get($mini_model->attributes, 'ref_id')) {
-                        $new_values[] = $temp->attributes;
+                    if ($this->getHasPartialRequest()) {
+                        if (Arr::get($temp->attributes, 'ref_id') !== Arr::get($mini_model->attributes, 'ref_id')) {
+                            $new_values[] = $temp->attributes;
+                        } else {
+                            $new_values[] = $mini_model->attributes;
+                            $is_update_operation = true;
+                        }
                     } else {
                         $new_values[] = $mini_model->attributes;
-                        $is_update_operation = true;
                     }
                 }
             }

@@ -236,7 +236,7 @@ class UpdateWithSyncTest extends SyncTestCase
         ]);
 
         $navigation = Navigation::find($navigation->id);
-        $this->assertEquals(1, $navigation->sub_items->count());
+        $this->assertEquals(2, $navigation->sub_items->count());
 
         // 1 navigation with 1 sub item and 1 sub item with 1 navigation
 
@@ -247,7 +247,7 @@ class UpdateWithSyncTest extends SyncTestCase
         ]);
 
         $navigation = Navigation::find($navigation->id);
-        $this->assertEquals(1, $navigation->sub_items->count());
+        $this->assertEquals(2, $navigation->sub_items->count());
 
         foreach ($navigation->sub_items as $navigation_sub_item) {
             if ($navigation_sub_item->ref_id == $sub_item->id) {
