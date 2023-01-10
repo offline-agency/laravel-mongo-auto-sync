@@ -241,7 +241,7 @@ class UpdateWithSyncTest extends SyncTestCase
         // 1 navigation with 2 sub items and 1 sub item with 1 navigation
 
         $sub_item->updateWithSync(new Request, [
-            'text' => 'partial_update'
+            'code' => 'partial_code_update'
         ], [
             'request_type' => 'partial'
         ]);
@@ -251,7 +251,8 @@ class UpdateWithSyncTest extends SyncTestCase
 
         foreach ($navigation->sub_items as $navigation_sub_item) {
             if ($navigation_sub_item->ref_id == $sub_item->id) {
-                $this->assertEquals('partial_update', $navigation_sub_item->text);
+                $this->assertEquals([], $navigation_sub_item->code);
+                $this->assertEquals('partial_code_update', $navigation_sub_item->code);
             }
         }
 
