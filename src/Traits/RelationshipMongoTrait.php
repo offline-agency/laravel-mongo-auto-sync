@@ -5,10 +5,13 @@ namespace OfflineAgency\MongoAutoSync\Traits;
 use DateTime;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use MongoDB\BSON\UTCDateTime;
 
 trait RelationshipMongoTrait
 {
+    public $is_partial_request;
+
     /**
      * @param  Request  $request
      * @param  string  $event
@@ -20,6 +23,7 @@ trait RelationshipMongoTrait
      */
     public function processAllRelationships(Request $request, string $event, string $parent, string $counter, array $options)
     {
+        $this->setIsPartialRequest($options);
         $this->setMiniModels(); // For target Sync
 
         //Get the relation info
@@ -138,27 +142,42 @@ trait RelationshipMongoTrait
                     ' on collection '.$this->getCollection()
                 )
             );
+
+            $is_update_operation = false;
             foreach ($this->$method_on_target as $temp) {
                 throw_if(
-                is_array($temp),
-                new Exception(
-                    'Error during target update. Remember to declare '.$method_on_target.' as '.
-                    'EmbedsMany relationship on model '.get_class($this)
-                )
-            );
+                    is_array($temp),
+                    new Exception(
+                        'Error during target update. Remember to declare '.$method_on_target.' as '.
+                        'EmbedsMany relationship on model '.get_class($this)
+                    )
+                );
+
                 if (! is_null($temp)) {
-                    $new_values[] = $temp->attributes;
+                    if ($this->getIsPartialRequest()) {
+                        if (Arr::get($temp->attributes, 'ref_id') !== Arr::get($mini_model->attributes, 'ref_id')) {
+                            $new_values[] = $temp->attributes;
+                        } else {
+                            $new_values[] = $mini_model->attributes;
+                            $is_update_operation = true;
+                        }
+                    } else {
+                        $new_values[] = $mini_model->attributes;
+                    }
                 }
             }
-            $new_values[] = $mini_model->attributes;
+
+            if (! $is_update_operation) {
+                $new_values[] = $mini_model->attributes;
+            }
         } elseif ($is_EO_target) {
             throw_if(
-            is_array($mini_model),
-            new Exception(
-                'Error during target update. Remember to declare '.$method_on_target.' as '.
-                'EmbedOne relationship on model '.get_class($this)
-            )
-        );
+                is_array($mini_model),
+                new Exception(
+                    'Error during target update. Remember to declare '.$method_on_target.' as '.
+                    'EmbedOne relationship on model '.get_class($this)
+                )
+            );
             $new_values = $mini_model->attributes;
         }
 
@@ -323,9 +342,32 @@ trait RelationshipMongoTrait
         $modelToBeSync = $this->getModelTobeSync($modelTarget, $obj);
         if (! is_null($modelToBeSync)) {
             $miniModel = $this->getEmbedModel($modelOnTarget);
+            $modelToBeSync->setIsPartialRequest([], $this->getIsPartialRequest());
             $modelToBeSync->updateRelationWithSync($miniModel, $methodOnTarget, $is_EO_target, $is_EM_target);
             //TODO:Sync target on level > 1
             //$modelToBeSync->processAllRelationships($request, $event, $methodOnTarget, $methodOnTarget . "-");
         }
+    }
+
+    public function getIsPartialRequest()
+    {
+        return $this->is_partial_request;
+    }
+
+    public function setIsPartialRequest(array $options, $is_partial_request = null): void
+    {
+        if (! is_null($is_partial_request)) {
+            $this->is_partial_request = $is_partial_request;
+
+            return;
+        }
+
+        if (Arr::has($options, 'request_type')) {
+            $this->is_partial_request = Arr::get($options, 'request_type') == 'partial';
+
+            return;
+        }
+
+        $this->is_partial_request = false;
     }
 }

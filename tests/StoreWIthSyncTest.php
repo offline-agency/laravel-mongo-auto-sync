@@ -143,7 +143,7 @@ class StoreWIthSyncTest extends SyncTestCase
         $sub_item = $this->createSubItems($data);
         $navigation = Navigation::find($navigation->id);
 
-        $this->assertTrue($navigation->sub_items->count() == 4);
+        $this->assertEquals(4, $navigation->sub_items->count());
 
         $sub_item_mini = $navigation->sub_items->where('ref_id', $sub_item->id)->first();
 
