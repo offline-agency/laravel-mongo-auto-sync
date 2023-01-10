@@ -251,7 +251,6 @@ class UpdateWithSyncTest extends SyncTestCase
 
         foreach ($navigation->sub_items as $navigation_sub_item) {
             if ($navigation_sub_item->ref_id == $sub_item->id) {
-                $this->assertEquals([], $navigation_sub_item->code);
                 $this->assertEquals('partial_code_update', $navigation_sub_item->code);
             }
         }
