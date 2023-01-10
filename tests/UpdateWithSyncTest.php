@@ -241,9 +241,9 @@ class UpdateWithSyncTest extends SyncTestCase
         // 1 navigation with 2 sub items and 1 sub item with 1 navigation
 
         $sub_item->updateWithSync(new Request, [
-            'code' => 'partial_code_update'
+            'code' => 'partial_code_update',
         ], [
-            'request_type' => 'partial'
+            'request_type' => 'partial',
         ]);
 
         $navigation = Navigation::find($navigation->id);

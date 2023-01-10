@@ -153,7 +153,7 @@ trait RelationshipMongoTrait
                     )
                 );
 
-                if (!is_null($temp)) {
+                if (! is_null($temp)) {
                     if ($this->getIsPartialRequest()) {
                         if (Arr::get($temp->attributes, 'ref_id') !== Arr::get($mini_model->attributes, 'ref_id')) {
                             $new_values[] = $temp->attributes;
@@ -167,7 +167,7 @@ trait RelationshipMongoTrait
                 }
             }
 
-            if (!$is_update_operation) {
+            if (! $is_update_operation) {
                 $new_values[] = $mini_model->attributes;
             }
         } elseif ($is_EO_target) {
@@ -356,13 +356,15 @@ trait RelationshipMongoTrait
 
     public function setIsPartialRequest(array $options, $is_partial_request = null): void
     {
-        if (!is_null($is_partial_request)) {
+        if (! is_null($is_partial_request)) {
             $this->is_partial_request = $is_partial_request;
+
             return;
         }
 
         if (Arr::has($options, 'request_type')) {
             $this->is_partial_request = Arr::get($options, 'request_type') == 'partial';
+
             return;
         }
 
