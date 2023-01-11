@@ -201,6 +201,14 @@ class StoreWIthSyncTest extends SyncTestCase
 
         // 1 navigation with 2 sub items and 1 sub item with navigation
 
-        $this->assertEquals('HFGRT12345', $first_sub_item->code);
+        $navigation = Navigation::find($navigation->id);
+
+        $this->assertCount(2, $navigation->sub_items);
+        $this->assertEquals('HFGRT12345', $navigation->sub_items[0]->code);
+        $this->assertEquals('HFGRT12346', $navigation->sub_items[1]->code);
+
+        $navigation->delete();
+        $first_sub_item->delete();
+        $second_sub_item->delete();
     }
 }
