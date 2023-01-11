@@ -22,7 +22,7 @@ Make sure you have the MongoDB PHP driver installed. You can find installation i
 ### Package version Compatibility
 
 | This package | Laravel | Laravel MongoDB |
-| ------------ | ------- | --------------- |
+|--------------|---------|-----------------|
 | 1.x          | 5.8.x   | 3.5.x           |
 | 1.x          | 6.x     | 3.6.x           |
 | 2.x          | 5.8.x   | 3.5.x           |
@@ -30,10 +30,16 @@ Make sure you have the MongoDB PHP driver installed. You can find installation i
 | 2.x          | 7.x     | 3.7.x           |
 | 2.x          | 8.x     | 3.8.x           |
 | 2.x          | 9.x     | 3.9.x           |
+| 3.x          | 5.8.x   | 3.5.x           |
+| 3.x          | 6.x     | 3.6.x           |
+| 3.x          | 7.x     | 3.7.x           |
+| 3.x          | 8.x     | 3.8.x           |
+| 3.x          | 9.x     | 3.9.x           |
 
 ### PHP Version Compatibility
 - Version 1: PHP 7.1, 7.2, 7.3
 - Version 2: PHP 7.4+
+- Version 3: PHP 7.4+
 
 ## Features
 - Sync changes between collection with relationships after CRUD operations
