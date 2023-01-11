@@ -144,6 +144,7 @@ trait RelationshipMongoTrait
             );
 
             $is_update_operation = false;
+
             foreach ($this->$method_on_target as $temp) {
                 throw_if(
                     is_array($temp),
@@ -162,7 +163,7 @@ trait RelationshipMongoTrait
                             $is_update_operation = true;
                         }
                     } else {
-                        $new_values[] = $mini_model->attributes;
+                        $new_values[] = $temp->attributes;
                     }
                 }
             }
