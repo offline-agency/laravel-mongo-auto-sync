@@ -3,8 +3,10 @@
 namespace Tests;
 
 use Faker\Factory;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use OfflineAgency\MongoAutoSync\Extensions\MongoCollection;
+use Tests\Models\MiniNavigation;
 use Tests\Models\Navigation;
 use Tests\Models\SubItem;
 
@@ -155,5 +157,58 @@ class StoreWIthSyncTest extends SyncTestCase
         //clean data
         $navigation->delete();
         $sub_item->delete();
+    }
+
+    public function test_store_with_embeds_one_on_target_just_filled()
+    {
+        $faker = Factory::create();
+
+        $navigation = new Navigation;
+        $navigation = $navigation->storeWithSync(new Request, [
+            'text' => $faker->text(50),
+            'code' => $faker->creditCardNumber,
+            'href' => $faker->url,
+            'date' => Date::now(),
+            'target' => $faker->text(50),
+            'title' => null,
+            'sub_items' => json_encode([]),
+        ]);
+
+        $this->assertTrue($this->isNavigationCreated($navigation));
+        $this->assertInstanceOf(MongoCollection::class, $navigation->sub_items);
+
+        // 1 navigation
+
+        $first_sub_item = $this->createSubItems([
+            'code' => 'HFGRT12345',
+            'navigation' => $this->getMiniNavigation($navigation->id),
+        ]);
+
+        $this->assertEquals('HFGRT12345', $first_sub_item->code);
+        $this->assertEquals($navigation->id, $first_sub_item->navigation->ref_id);
+        $this->assertInstanceOf(MiniNavigation::class, $first_sub_item->navigation);
+
+        // 1 navigation with 1 sub item and 1 sub item with navigation
+
+        $second_sub_item = $this->createSubItems([
+            'code' => 'HFGRT12346',
+            'navigation' => $this->getMiniNavigation($navigation->id),
+        ]);
+
+        $this->assertEquals('HFGRT12346', $second_sub_item->code);
+        $this->assertEquals($navigation->id, $second_sub_item->navigation->ref_id);
+        $this->assertInstanceOf(MiniNavigation::class, $second_sub_item->navigation);
+
+        // 1 navigation with 2 sub items and 1 sub item with navigation
+
+        $navigation = Navigation::find($navigation->id);
+
+        $this->assertCount(2, $navigation->sub_items);
+        $this->assertEquals('HFGRT12345', $navigation->sub_items[0]->code);
+        $this->assertEquals('HFGRT12346', $navigation->sub_items[1]->code);
+
+        $navigation->delete();
+        $first_sub_item->delete();
+        $second_sub_item->delete();
     }
 }
