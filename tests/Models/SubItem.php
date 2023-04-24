@@ -2,6 +2,7 @@
 
 namespace Tests\Models;
 
+use Jenssegers\Mongodb\Relations\EmbedsOne;
 use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 
 /**
@@ -36,7 +37,7 @@ class SubItem extends MDModel
         ],
     ];
 
-    public function navigation()
+    public function navigation(): EmbedsOne
     {
         return $this->embedsOne('Tests\Models\MiniNavigation');
     }
