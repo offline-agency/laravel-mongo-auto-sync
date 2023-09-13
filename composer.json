@@ -11,7 +11,7 @@
         "illuminate/container": "^9.0|^10.0",
         "illuminate/database": "^9.0|^10.0",
         "illuminate/events": "^9.0|^10.0",
-        "jenssegers/mongodb": "dev-master#v4.0.0-ALPHA2"
+        "jenssegers/mongodb": "dev-master#4.0.0-rc1"
     },
     "minimum-stability": "dev",
     "require-dev": {
