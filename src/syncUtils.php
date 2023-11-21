@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Config;
-use Jenssegers\Mongodb\Eloquent\Model;
+use MongoDB\Laravel\Eloquent\Model;
 
 if (! function_exists('getTranslatedContent')) {
 
