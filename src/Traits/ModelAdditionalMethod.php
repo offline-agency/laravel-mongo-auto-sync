@@ -185,7 +185,7 @@ trait ModelAdditionalMethod
         $db_value = $this->getDbValue($key);
 
         return Arr::has($target_additional_data, $mini_model_path.'.'.$key) ? Arr::get($target_additional_data, $mini_model_path.'.'.$key) : // Search on target_additional_data [] 4th parameter of updateWithSync() / storeWithSync()
-            ($request->has($key) ? $request->input($key) : $db_value); // Search on Main Request 1st parameter of updateWithSync() / storeWithSync() or directly on database
+            (Arr::has($request, $key) ? Arr::get($request, $key) : $db_value); // Search on Main Request 1st parameter of updateWithSync() / storeWithSync() or directly on database
         //TODO: Add default value from Item Model
     }
 

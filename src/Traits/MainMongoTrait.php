@@ -17,16 +17,17 @@ trait MainMongoTrait
     protected $tempEM;
 
     /**
-     * @param  Request  $request
-     * @param  array  $additionalData
-     * @param  array  $options
-     * @param  array  $target_additional_data
+     * @param Request $request
+     * @param array $additionalData
+     * @param array $options
+     * @param array $target_additional_data
      * @return $this
      *
      * @throws Exception
      */
     public function storeWithSync(Request $request, array $additionalData = [], array $options = [], array $target_additional_data = [])
     {
+    $request = $request->toArray();
         $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
         $this->storeEditAllItems($request, 'add', $options);
         $this->processAllRelationships($request, 'add', '', '', $options);
@@ -38,10 +39,10 @@ trait MainMongoTrait
     }
 
     /**
-     * @param  Request  $request
-     * @param  array  $additionalData
-     * @param  array  $options
-     * @param  array  $target_additional_data
+     * @param Request $request
+     * @param array $additionalData
+     * @param array $options
+     * @param array $target_additional_data
      * @return $this
      *
      * @throws Exception
@@ -140,15 +141,15 @@ trait MainMongoTrait
     }
 
     /**
-     * @param  Request  $request
+     * @param  array  $request
      * @param  string  $key
      *
      * @throws Exception
      */
-    private function checkRequestExistence(Request $request, string $key)
+    private function checkRequestExistence(array $request, string $key)
     {
-        if (! $request->has($key)) {
-            $msg = ('Error - '.$key.' attribute not found in Request '.json_encode($request->all()));
+        if (! Arr::has($request, $key)) {
+            $msg = ('Error - '.$key.' attribute not found in Request '.json_encode($request));
             throw new Exception($msg);
         }
     }
@@ -199,19 +200,19 @@ trait MainMongoTrait
 
     /**
      * @param  string  $key
-     * @param  Request  $request
+     * @param  array  $request
      * @return mixed
      *
      * @throws Exception
      */
-    private function getRelationshipRequest(string $key, Request $request)
+    private function getRelationshipRequest(string $key, array $request)
     {
         $this->checkRequestExistence(
             $request,
             $key
         );
 
-        return $request->input($key);
+        return Arr::get($request, $key);
     }
 
     /**
@@ -223,12 +224,12 @@ trait MainMongoTrait
     }
 
     /**
-     * @param  Request  $request
+     * @param  array  $request
      * @param  array  $additionalData
      */
-    public function setRequest(Request $request, array $additionalData): void
+    public function setRequest(array $request, array $additionalData): void
     {
-        $request = $request->merge($additionalData);
+        $request = array_merge($request, $additionalData);
         $this->request = $request;
     }
 
@@ -284,12 +285,12 @@ trait MainMongoTrait
     }
 
     /**
-     * @param  Request  $request
+     * @param  array  $request
      * @param  array  $additionalData
      * @param  array  $options
      * @param  array  $target_additional_data
      */
-    public function initDataForSync(Request $request, array $additionalData, array $options, array $target_additional_data)
+    public function initDataForSync(array $request, array $additionalData, array $options, array $target_additional_data)
     {
         $this->setRequest($request, $additionalData);
         $this->setTargetAdditionalData($target_additional_data);

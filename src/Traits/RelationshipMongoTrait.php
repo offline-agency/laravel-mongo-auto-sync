@@ -13,15 +13,15 @@ trait RelationshipMongoTrait
     public $is_partial_request;
 
     /**
-     * @param  Request  $request
-     * @param  string  $event
-     * @param  string  $parent
-     * @param  string  $counter
-     * @param  array  $options
+     * @param array $request
+     * @param string $event
+     * @param string $parent
+     * @param string $counter
+     * @param array $options
      *
      * @throws Exception
      */
-    public function processAllRelationships(Request $request, string $event, string $parent, string $counter, array $options)
+    public function processAllRelationships(array $request, string $event, string $parent, string $counter, array $options)
     {
         $this->setIsPartialRequest($options);
         $this->setMiniModels(); // For target Sync
@@ -54,16 +54,16 @@ trait RelationshipMongoTrait
             $is_EO_target = is_EO($typeOnTarget);
 
             $key = $parent.$method.$counter;
-            $is_skippable = $this->getIsSkippable($request->has($key), $hasTarget);
+            $is_skippable = $this->getIsSkippable(Arr::has($request, $key), $hasTarget);
 
             if ($is_skippable) {
                 continue;
             }
-            $current_request = $request->has($key) ? $request : $this->getPartialGeneratedRequest();
+            $current_request = Arr::has($request, $key) ? $request : $this->getPartialGeneratedRequest();
 
             $value = $this->getRelationshipRequest($key, $current_request);
 
-            $is_embeds_has_to_be_updated = $request->has($key);
+            $is_embeds_has_to_be_updated = Arr::has($request, $key);
 
             if (! is_null($value) && ! ($value == '') && ! ($value == '[]')) {
                 $objs = json_decode($value);
@@ -187,7 +187,7 @@ trait RelationshipMongoTrait
     }
 
     /**
-     * @param  Request  $request
+     * @param array $request
      * @param $obj
      * @param $type
      * @param $model
@@ -197,17 +197,17 @@ trait RelationshipMongoTrait
      * @param $modelOnTarget
      * @param $event
      * @param $hasTarget
-     * @param  bool  $is_EO
-     * @param  bool  $is_EM
-     * @param  bool  $is_EO_target
-     * @param  bool  $is_EM_target
+     * @param bool $is_EO
+     * @param bool $is_EM
+     * @param bool $is_EO_target
+     * @param bool $is_EM_target
      * @param $i
-     * @param  bool  $is_embeds_has_to_be_updated
+     * @param bool $is_embeds_has_to_be_updated
      * @param $options
      *
      * @throws Exception
      */
-    public function processOneEmbeddedRelationship(Request $request, $obj, $type, $model, $method, $modelTarget, $methodOnTarget, $modelOnTarget, $event, $hasTarget, $is_EO, $is_EM, $is_EO_target, $is_EM_target, $i, $is_embeds_has_to_be_updated, $options)
+    public function processOneEmbeddedRelationship(array $request, $obj, $type, $model, $method, $modelTarget, $methodOnTarget, $modelOnTarget, $event, $hasTarget, $is_EO, $is_EM, $is_EO_target, $is_EM_target, $i, $is_embeds_has_to_be_updated, $options)
     {
         if ($is_embeds_has_to_be_updated) {
             $this->processEmbedOnCurrentCollection($request, $obj, $type, $model, $method, $event, $is_EO, $is_EM, $i, $options);
@@ -270,7 +270,7 @@ trait RelationshipMongoTrait
     }
 
     /**
-     * @param  Request  $request
+     * @param array $request
      * @param $obj
      * @param $type
      * @param $model
@@ -283,7 +283,7 @@ trait RelationshipMongoTrait
      *
      * @throws Exception
      */
-    private function processEmbedOnCurrentCollection(Request $request, $obj, $type, $model, $method, $event, $is_EO, $is_EM, $i, $options)
+    private function processEmbedOnCurrentCollection(array $request, $obj, $type, $model, $method, $event, $is_EO, $is_EM, $i, $options)
     {
         //Init the embed one model
         $embedObj = new $model;
