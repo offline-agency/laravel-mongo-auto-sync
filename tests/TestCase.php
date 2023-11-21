@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use MongoDB\Laravel\MongoDBServiceProvider;
 use OfflineAgency\MongoAutoSync\MongoAutoSyncServiceProvider;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 
@@ -17,6 +18,7 @@ abstract class TestCase extends BaseTestCase
     protected function getPackageProviders($app)
     {
         return [
+            MongoDBServiceProvider::class,
             MongoAutoSyncServiceProvider::class,
         ];
     }
