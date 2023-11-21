@@ -5,6 +5,7 @@ namespace OfflineAgency\MongoAutoSync\Traits;
 use DateTime;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use MongoDB\BSON\UTCDateTime;
 
 trait PlainMongoTrait
@@ -45,15 +46,15 @@ trait PlainMongoTrait
                     } else {
                         $old_value = $this->$key;
                     }
-                    $this->$key = ml($old_value, $request->input($key));
+                    $this->$key = ml($old_value, Arr::get($request, $key));
                 } elseif ($is_MD) {
-                    if ($request->input($key) == '' || $request->input($key) == null) {
+                    if (Arr::get($request, $key) == '' || Arr::get($request, $key) == null) {
                         $this->$key = null;
                     } else {
-                        $this->$key = new UTCDateTime(new DateTime($request->input($key)));
+                        $this->$key = new UTCDateTime(new DateTime(Arr::get($request, $key)));
                     }
                 } else {
-                    $this->$key = $request->input($key);
+                    $this->$key = Arr::get($request, $key);
                 }
             }
         }

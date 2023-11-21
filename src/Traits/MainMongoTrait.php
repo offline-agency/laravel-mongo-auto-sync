@@ -211,7 +211,7 @@ trait MainMongoTrait
             $key
         );
 
-        return $request->input($key);
+        return Arr::get($request, $key);
     }
 
     /**
@@ -228,7 +228,7 @@ trait MainMongoTrait
      */
     public function setRequest(Request $request, array $additionalData): void
     {
-        $request = $request->merge($additionalData);
+        $request = array_merge($request->toArray(), $additionalData);
         $this->request = $request;
     }
 

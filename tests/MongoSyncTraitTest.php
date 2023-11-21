@@ -43,7 +43,7 @@ class MongoSyncTraitTest extends SyncTestCase
             'href' => $faker->url,
             'title' => $faker->text(30),
             'date' => new UTCDateTime(new DateTime()),
-            'target' => [
+            'target' => (object) [
                 'name' => $faker->text(20),
                 'code' => $faker->slug(2),
             ],
@@ -68,7 +68,7 @@ class MongoSyncTraitTest extends SyncTestCase
             'href' => null,
             'title' => $faker->text(30),
             'date' => new UTCDateTime(new DateTime()),
-            'target' => [],
+            'target' => (object) [],
         ];
 
         $navigation->storeWithSync($request, $arr);
@@ -98,7 +98,7 @@ class MongoSyncTraitTest extends SyncTestCase
             'href' => $faker->imageUrl(),
             'title' => $faker->text(30),
             'date' => null,
-            'target' => []
+            'target' => (object) [],
         ];
 
         $navigation->updateWithSync($request, $arr, $options);
@@ -124,7 +124,7 @@ class MongoSyncTraitTest extends SyncTestCase
             'href' => $faker->imageUrl(),
             'title' => $faker->text(30),
             'date' => null,
-            'target' => []
+            'target' => (object) [],
         ];
 
         $navigation->updateWithSync($request, $arr, $options);
@@ -150,7 +150,7 @@ class MongoSyncTraitTest extends SyncTestCase
             'href' => $faker->text(50),
             'title' => $faker->text(30),
             'date' => new UTCDateTime(new DateTime()),
-            'target' => []
+            'target' => (object) [],
         ];
 
         $navigation->updateWithSync($request, $arr, $options);
