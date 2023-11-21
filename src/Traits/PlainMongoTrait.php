@@ -11,13 +11,13 @@ use MongoDB\BSON\UTCDateTime;
 trait PlainMongoTrait
 {
     /**
-     * @param  Request  $request
+     * @param  array  $request
      * @param  string  $event
      * @param  array  $options
      *
      * @throws Exception
      */
-    public function storeEditAllItems(Request $request, string $event, array $options)
+    public function storeEditAllItems(array $request, string $event, array $options)
     {
         //Get the item name
         $items = $this->getItems();
@@ -28,7 +28,7 @@ trait PlainMongoTrait
             $is_MD = isMD($item);
 
             $is_fillable = isFillable($item, $event);
-            $is_skippable = $this->getIsSkippable($request->has($key));
+            $is_skippable = $this->getIsSkippable(Arr::has($request, $key));
 
             if ($is_skippable) {
                 continue;
