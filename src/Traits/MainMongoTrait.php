@@ -149,7 +149,7 @@ trait MainMongoTrait
     private function checkRequestExistence(array $request, string $key)
     {
         if (! Arr::has($request, $key)) {
-            $msg = ('Error - '.$key.' attribute not found in Request '.json_encode($request->all()));
+            $msg = ('Error - '.$key.' attribute not found in Request '.json_encode($request));
             throw new Exception($msg);
         }
     }
