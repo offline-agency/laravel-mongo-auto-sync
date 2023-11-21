@@ -17,7 +17,7 @@ trait MainMongoTrait
     protected $tempEM;
 
     /**
-     * @param array $request
+     * @param Request $request
      * @param array $additionalData
      * @param array $options
      * @param array $target_additional_data
@@ -25,8 +25,9 @@ trait MainMongoTrait
      *
      * @throws Exception
      */
-    public function storeWithSync(array $request, array $additionalData = [], array $options = [], array $target_additional_data = [])
+    public function storeWithSync(Request $request, array $additionalData = [], array $options = [], array $target_additional_data = [])
     {
+    $request = $request->toArray();
         $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
         $this->storeEditAllItems($request, 'add', $options);
         $this->processAllRelationships($request, 'add', '', '', $options);
@@ -38,7 +39,7 @@ trait MainMongoTrait
     }
 
     /**
-     * @param array $request
+     * @param Request $request
      * @param array $additionalData
      * @param array $options
      * @param array $target_additional_data
@@ -46,7 +47,7 @@ trait MainMongoTrait
      *
      * @throws Exception
      */
-    public function updateWithSync(array $request, array $additionalData = [], array $options = [], array $target_additional_data = [])
+    public function updateWithSync(Request $request, array $additionalData = [], array $options = [], array $target_additional_data = [])
     {
         $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
         $this->storeEditAllItems($request, 'update', $options);
@@ -228,7 +229,7 @@ trait MainMongoTrait
      */
     public function setRequest(array $request, array $additionalData): void
     {
-        $request = array_merge($request->toArray(), $additionalData);
+        $request = array_merge($request, $additionalData);
         $this->request = $request;
     }
 
