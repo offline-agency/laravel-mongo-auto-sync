@@ -189,7 +189,6 @@ if (! function_exists('getArrayWithEmptyObj')) {
 }
 
 if (! function_exists('getCounterForRelationships')) {
-
     /**
      * @param  $method
      * @param  $is_EO
