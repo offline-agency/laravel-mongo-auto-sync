@@ -110,7 +110,7 @@ trait MainMongoTrait
     }
 
     /**
-     * @param $obj
+     * @param  $obj
      * @param  string  $EOkey
      * @param  string  $method
      * @param  string  $model
@@ -126,7 +126,7 @@ trait MainMongoTrait
     }
 
     /**
-     * @param $arr
+     * @param  $arr
      * @param  string  $key
      *
      * @throws Exception
@@ -174,9 +174,9 @@ trait MainMongoTrait
     public function setHasPartialRequest(): void
     {
         $this->has_partial_request = $this->getOptionValue(
-                $this->getOptions(),
-                'request_type'
-            ) == 'partial';
+            $this->getOptions(),
+            'request_type'
+        ) == 'partial';
     }
 
     /**

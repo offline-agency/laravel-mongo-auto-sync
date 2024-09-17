@@ -5,7 +5,6 @@ use Illuminate\Support\Facades\Config;
 use Jenssegers\Mongodb\Eloquent\Model;
 
 if (! function_exists('getTranslatedContent')) {
-
     /**
      * @param  array  $mlCollection
      * @return string
@@ -24,7 +23,6 @@ if (! function_exists('getTranslatedContent')) {
 }
 
 if (! function_exists('cl')) {
-
     /**
      * @return string current Lang
      */
@@ -166,9 +164,8 @@ if (! function_exists('getAID')) {
 }
 
 if (! function_exists('getArrayWithEmptyObj')) {
-
     /**
-     * @param $model
+     * @param  $model
      * @return array
      */
     function getArrayWithEmptyObj($model, $is_EO, $is_EM)
@@ -194,10 +191,10 @@ if (! function_exists('getArrayWithEmptyObj')) {
 if (! function_exists('getCounterForRelationships')) {
 
     /**
-     * @param $method
-     * @param $is_EO
-     * @param $is_EM
-     * @param $i
+     * @param  $method
+     * @param  $is_EO
+     * @param  $is_EM
+     * @param  $i
      * @return string
      */
     function getCounterForRelationships($method, $is_EO, $is_EM, $i)
