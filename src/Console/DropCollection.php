@@ -67,7 +67,7 @@ class DropCollection extends Command
     }
 
     /**
-     * @param $collection_name
+     * @param  $collection_name
      * @return string
      *
      * @throws Exception
@@ -80,8 +80,8 @@ class DropCollection extends Command
     }
 
     /**
-     * @param $path
-     * @param $collection_name
+     * @param  $path
+     * @param  $collection_name
      * @return string
      *
      * @throws Exception
