@@ -38,8 +38,8 @@ Make sure you have the MongoDB PHP driver installed. You can find installation i
 
 ### PHP Version Compatibility
 - Version 1: PHP 7.1, 7.2, 7.3
-- Version 2: PHP 7.4+
-- Version 3: PHP 7.4+
+- Version 2: PHP 7.4
+- Version 3: PHP 7.4-8.1
 
 ## Features
 - Sync changes between collection with relationships after CRUD operations
