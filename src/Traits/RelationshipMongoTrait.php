@@ -73,7 +73,6 @@ trait RelationshipMongoTrait
 
             if ($is_EO || $is_EM) {//EmbedsOne Create - EmbedsMany Create
                 if ($event == 'update' && $is_embeds_has_to_be_updated) {
-
                     //Delete EmbedsMany or EmbedsOne on Target - TODO: check if it is necessary to run deleteTargetObj method
                     if ($hasTarget) {
                         $this->deleteTargetObj($method, $modelTarget, $methodOnTarget, $is_EO, $is_EM, $is_EO_target, $is_EM_target);
@@ -124,7 +123,7 @@ trait RelationshipMongoTrait
     }
 
     /**
-     * @param $mini_model
+     * @param  $mini_model
      * @param  string  $method_on_target
      * @param  bool  $is_EO_target
      * @param  bool  $is_EM_target
@@ -188,22 +187,22 @@ trait RelationshipMongoTrait
 
     /**
      * @param  Request  $request
-     * @param $obj
-     * @param $type
-     * @param $model
-     * @param $method
-     * @param $modelTarget
-     * @param $methodOnTarget
-     * @param $modelOnTarget
-     * @param $event
-     * @param $hasTarget
+     * @param  $obj
+     * @param  $type
+     * @param  $model
+     * @param  $method
+     * @param  $modelTarget
+     * @param  $methodOnTarget
+     * @param  $modelOnTarget
+     * @param  $event
+     * @param  $hasTarget
      * @param  bool  $is_EO
      * @param  bool  $is_EM
      * @param  bool  $is_EO_target
      * @param  bool  $is_EM_target
-     * @param $i
+     * @param  $i
      * @param  bool  $is_embeds_has_to_be_updated
-     * @param $options
+     * @param  $options
      *
      * @throws Exception
      */
@@ -271,15 +270,15 @@ trait RelationshipMongoTrait
 
     /**
      * @param  Request  $request
-     * @param $obj
-     * @param $type
-     * @param $model
-     * @param $method
-     * @param $event
-     * @param $is_EO
-     * @param $is_EM
-     * @param $i
-     * @param $options
+     * @param  $obj
+     * @param  $type
+     * @param  $model
+     * @param  $method
+     * @param  $event
+     * @param  $is_EO
+     * @param  $is_EM
+     * @param  $i
+     * @param  $options
      *
      * @throws Exception
      */
@@ -329,10 +328,10 @@ trait RelationshipMongoTrait
     }
 
     /**
-     * @param $modelTarget
-     * @param $obj
-     * @param $methodOnTarget
-     * @param $modelOnTarget
+     * @param  $modelTarget
+     * @param  $obj
+     * @param  $methodOnTarget
+     * @param  $modelOnTarget
      * @param  bool  $is_EO_target
      * @param  bool  $is_EM_target
      *

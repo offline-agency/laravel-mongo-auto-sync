@@ -122,7 +122,7 @@ trait ModelAdditionalMethod
 
     /**
      * @param  string  $key
-     * @param $item
+     * @param  $item
      * @param  string  $mini_model_path
      * @return array|mixed|UTCDateTime|null
      *

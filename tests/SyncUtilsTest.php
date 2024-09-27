@@ -41,7 +41,6 @@ class SyncUtilsTest extends SyncTestCase
 
     public function test_ml()
     {
-
         // Input expected to be [ "en" => "1" ] from $out
 
         $destination = null;
