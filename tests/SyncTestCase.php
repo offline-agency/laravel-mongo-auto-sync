@@ -416,7 +416,7 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param $category_id
+     * @param  $category_id
      * @return object
      *
      * @throws Exception
@@ -441,7 +441,7 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param $permission_id
+     * @param  $permission_id
      * @return object
      *
      * @throws Exception
@@ -465,7 +465,7 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param $role_id
+     * @param  $role_id
      * @return object
      *
      * @throws Exception
@@ -560,7 +560,7 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param $navigation
+     * @param  $navigation
      * @return bool
      */
     public function isNavigationCreated($navigation)
@@ -569,7 +569,7 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param $item
+     * @param  $item
      * @return bool
      */
     public function isItemCreated($item)
@@ -590,7 +590,7 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param $item
+     * @param  $item
      * @return bool
      */
     public function isItemUpdatedCorrectly($item)
@@ -599,7 +599,7 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param $navigation
+     * @param  $navigation
      * @return bool
      */
     public function isNavigationUpdatedCorrectly($navigation)
@@ -608,7 +608,7 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param $navigation
+     * @param  $navigation
      * @return bool
      */
     public function isUpdated($navigation)
@@ -617,8 +617,8 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param $navigation_id
-     * @param $item_id
+     * @param  $navigation_id
+     * @param  $item_id
      * @return bool
      */
     public function isItemAddedInNavigationCollection($navigation_id, $item_id)
@@ -635,7 +635,7 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param $navigation_code
+     * @param  $navigation_code
      * @return false|string
      */
     public function getNavigation($navigation_code)

@@ -8,7 +8,7 @@ use Illuminate\Support\Arr;
 trait Helper
 {
     /**
-     * @param $options
+     * @param  $options
      * @return bool|mixed
      *
      * @throws Exception
@@ -21,7 +21,7 @@ trait Helper
     }
 
     /**
-     * @param $options
+     * @param  $options
      * @return bool|mixed
      *
      * @throws Exception
@@ -34,7 +34,7 @@ trait Helper
     }
 
     /**
-     * @param $options
+     * @param  $options
      *
      * @throws Exception
      */
@@ -46,7 +46,7 @@ trait Helper
     }
 
     /**
-     * @param $value
+     * @param  $value
      * @param  string  $expected
      *
      * @throws Exception

@@ -99,7 +99,7 @@ class MongoCollection extends Collection
     //Check if the collection has an item with ref_id equal to id of the obj pass in to the parameter, useful to mark a category already selected in edit
 
     /**
-     * @param $obj
+     * @param  $obj
      * @return bool
      */
     public function hasItem($obj)
@@ -130,7 +130,7 @@ class MongoCollection extends Collection
     //Move the item with ref_id equal to the parameter, useful for edit primary category
 
     /**
-     * @param $id
+     * @param  $id
      * @return $this
      */
     public function moveFirst($id)
@@ -176,7 +176,7 @@ class MongoCollection extends Collection
     }
 
     /**
-     * @param $id
+     * @param  $id
      * @return bool
      */
     public function hasPermission($id)
@@ -199,7 +199,7 @@ class MongoCollection extends Collection
     }
 
     /**
-     * @param $name
+     * @param  $name
      * @return bool
      */
     public function hasRole($name)
@@ -222,7 +222,7 @@ class MongoCollection extends Collection
     }
 
     /**
-     * @param $name
+     * @param  $name
      * @return bool
      */
     public function checkPermission($name)
