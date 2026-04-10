@@ -4,9 +4,9 @@ namespace Tests;
 
 use Tests\Models\Article;
 
-class HelperTest extends SyncTestCase
+class HelperTest extends TestCase
 {
-    public function test_isArray()
+    public function test_is_array()
     {
         $stringValue = '';
         $boolValue = [
@@ -15,11 +15,11 @@ class HelperTest extends SyncTestCase
         $emptyArray = [];
         $article = new Article;
 
-        //Check return true
+        // Check return true
         $outBoolValue = $article->isArray($boolValue);
         $this->assertTrue($outBoolValue);
 
-        //Check return false
+        // Check return false
         $outNotBoolValue = $article->isArray($emptyArray);
         $this->assertFalse($outNotBoolValue);
 
@@ -28,7 +28,7 @@ class HelperTest extends SyncTestCase
         $article->isArray($stringValue);
     }
 
-    public function test_validateOptionValueException()
+    public function test_validate_option_value_exception()
     {
         $notBoolValue = [
             'is-array' => 'value',
@@ -39,7 +39,7 @@ class HelperTest extends SyncTestCase
         $article->isArray($notBoolValue);
     }
 
-    public function test_isCarbonDate()
+    public function test_is_carbon_date()
     {
         $stringValue = '';
         $boolValue = [
@@ -48,11 +48,11 @@ class HelperTest extends SyncTestCase
         $emptyArray = [];
         $article = new Article;
 
-        //Check return true
+        // Check return true
         $outBoolValue = $article->isCarbonDate($boolValue);
         $this->assertTrue($outBoolValue);
 
-        //Check return false
+        // Check return false
         $outNotBoolValue = $article->isCarbonDate($emptyArray);
         $this->assertFalse($outNotBoolValue);
 

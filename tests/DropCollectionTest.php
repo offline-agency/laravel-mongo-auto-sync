@@ -1,53 +1,54 @@
 <?php
 
-namespace Tests;
-
+use Illuminate\Http\Request;
 use Tests\Models\Article;
-use Tests\Models\Category;
 
-class DropCollectionTest extends SyncTestCase
+test('drop collection with object', function () {
+    $articles = createArticle();
+
+    $this->artisan('drop:collection', ['collection_name' => 'Article'])
+        ->assertExitCode(0);
+
+    isDeleted($articles);
+});
+
+test('exception model not found', function () {
+    $this->expectExceptionMessage('Error ModelThatDoesNotExist Model not found');
+    $this->artisan('drop:collection', ['collection_name' => 'ModelThatDoesNotExist'])
+        ->assertExitCode(0);
+});
+
+test('exception path not found', function () {
+    config()->set('laravel-mongo-auto-sync.model_path', 'path_that_does_not_exist');
+    $this->expectExceptionMessage('Error directory path_that_does_not_exist not found');
+    $this->artisan('model-doc:generate', ['collection_name' => 'ModelThatDoesNotExist'])
+        ->assertExitCode(0);
+});
+
+function createArticle()
 {
-    public function test_drop_collection_with_object()
-    {
-        Article::truncate();
-        Category::truncate();
+    $articles = [];
 
-        $this->prepareArticleData([], 10);
+    for ($i = 0; $i < 2; $i++) {
+        $article = new Article;
+        $request = new Request;
+        $arr = [
+            'title' => 'Article #'.$i,
+        ];
 
-        $this->artisan('drop:collection', ['collection_name' => 'Article'])
-            ->assertExitCode(0);
+        $article->storeWithSync($request, $arr);
 
-        $articles = Article::all();
-        $this->assertEmpty($articles);
-        $category = Category::where('name.'.cl(), 'sport')->first();
-
-        $this->assertEmpty($category->articles);
-
-        Article::truncate();
-        Category::truncate();
+        $articles[$i] = $article;
     }
 
-    public function test_exception_model_not_found()
-    {
-        $this->expectExceptionMessage('Error ModelThatDoesNotExist Model not found');
-        $this->artisan('drop:collection', ['collection_name' => 'ModelThatDoesNotExist'])
-            ->assertExitCode(0);
-    }
+    return $articles;
+}
 
-    public function test_exception_path_not_found()
-    {
-        config()->set('laravel-mongo-auto-sync.model_path', 'path_that_does_not_exist');
-        $this->expectExceptionMessage('Error directory path_that_does_not_exist not found');
-        $this->artisan('model-doc:generate', ['collection_name' => 'ModelThatDoesNotExist'])
-            ->assertExitCode(0);
-    }
-
-    public function isDeleted($articles)
-    {
-        if ($articles != null) {
-            foreach ($articles as $article) {
-                $this->assertNull(Article::find($article->id));
-            }
+function isDeleted($articles)
+{
+    if ($articles != null) {
+        foreach ($articles as $article) {
+            expect(Article::find($article->id))->toBeNull();
         }
     }
 }

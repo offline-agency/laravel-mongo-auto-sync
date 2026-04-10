@@ -5,6 +5,8 @@ namespace OfflineAgency\MongoAutoSync\Console;
 use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
+use OfflineAgency\MongoAutoSync\Exceptions\InvalidConfigurationException;
+use OfflineAgency\MongoAutoSync\Exceptions\ModelNotFoundException;
 use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 
 class DropCollection extends Command
@@ -40,6 +42,7 @@ class DropCollection extends Command
      */
     public function handle()
     {
+        /** @var string */
         $collection_name = $this->argument('collection_name');
 
         $modelPath = $this->getModelPathByName($collection_name);
@@ -47,16 +50,16 @@ class DropCollection extends Command
         $model = $this->getModel($modelPath);
 
         if (! is_null($model)) {
-            $model = $model->all();
-
             $count = $model->count();
             $bar = $this->output->createProgressBar($count);
 
             if ($count > 0) {
-                for ($i = 0; $i <= $count - 1; $i++) {
+                $i = 0;
+                foreach ($model->cursor() as $item) {
                     $bar->advance();
-                    $model[$i]->destroyWithSync();
-                    $this->line($i + 1 .') Destroy item document with id #'.$model[$i]->getId());
+                    $item->destroyWithSync();
+                    $this->line(($i + 1).') Destroy item document with id #'.$item->getId());
+                    $i++;
                 }
             } else {
                 $this->warn('No record found on collection '.strtolower($collection_name));
@@ -67,7 +70,7 @@ class DropCollection extends Command
     }
 
     /**
-     * @param  $collection_name
+     * @param  string  $collection_name
      * @return string
      *
      * @throws Exception
@@ -76,15 +79,19 @@ class DropCollection extends Command
     {
         $path = config('laravel-mongo-auto-sync.model_path');
 
+        if (! is_string($path)) {
+            throw new Exception('Config laravel-mongo-auto-sync.model_path is not set or invalid');
+        }
+
         return $this->checkOaModels($path, $collection_name);
     }
 
     /**
-     * @param  $path
-     * @param  $collection_name
+     * @param  string  $path
+     * @param  string  $collection_name
      * @return string
      *
-     * @throws Exception
+     * @throws InvalidConfigurationException
      */
     public function checkOaModels($path, $collection_name)
     {
@@ -93,7 +100,11 @@ class DropCollection extends Command
         try {
             $results = scandir($path);
         } catch (Exception $e) {
-            throw new Exception('Error directory '.config('laravel-mongo-auto-sync.model_path').' not found');
+            throw new InvalidConfigurationException('Error directory '.config('laravel-mongo-auto-sync.model_path').' not found');
+        }
+
+        if ($results === false) {
+            return '';
         }
 
         foreach ($results as $result) {
@@ -118,17 +129,19 @@ class DropCollection extends Command
     }
 
     /**
-     * @param  string  $modelPath
      * @return MDModel
      *
-     * @throws Exception
+     * @throws ModelNotFoundException
      */
     private function getModel(string $modelPath)
     {
         if (class_exists($modelPath)) {
+            /** @var MDModel */
             return new $modelPath;
         } else {
-            throw new Exception('Error '.$this->argument('collection_name').' Model not found');
+            $collection_name = $this->argument('collection_name');
+            $name = is_string($collection_name) ? $collection_name : 'unknown';
+            throw new ModelNotFoundException('Error '.$name.' Model not found');
         }
     }
 }

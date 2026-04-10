@@ -10,9 +10,9 @@ use Tests\Models\Role;
 use Tests\Models\User;
 use Throwable;
 
-class MongoCollectionTest extends SyncTestCase
+class MongoCollectionTest extends TestCase
 {
-    public function test_getBySlugAndStatus()
+    public function test_get_by_slug_and_status()
     {
         $this->cleanDb();
 
@@ -20,7 +20,7 @@ class MongoCollectionTest extends SyncTestCase
 
         $this->prepareArticleData(['status' => 'draft'], 5);
 
-        //Not found by slug 404
+        // Not found by slug 404
 
         try {
             Article::all()->getBySlugAndStatus('sport', 'articolo');
@@ -31,7 +31,7 @@ class MongoCollectionTest extends SyncTestCase
             );
         }
 
-        //Not found by all parameters null 404
+        // Not found by all parameters null 404
         try {
             Article::all()->getBySlugAndStatus(null, null);
         } catch (Throwable $e) {
@@ -41,7 +41,7 @@ class MongoCollectionTest extends SyncTestCase
             );
         }
 
-        //Not found by category null  404
+        // Not found by category null  404
         try {
             Article::all()->getBySlugAndStatus(null, 'articolo-1');
         } catch (Throwable $e) {
@@ -51,7 +51,7 @@ class MongoCollectionTest extends SyncTestCase
             );
         }
 
-        //Not found by title null 404
+        // Not found by title null 404
         try {
             Article::all()->getBySlugAndStatus('sport', null);
         } catch (Throwable $e) {
@@ -61,7 +61,7 @@ class MongoCollectionTest extends SyncTestCase
             );
         }
 
-        //Not found by category not existing 404
+        // Not found by category not existing 404
         try {
             Article::all()->getBySlugAndStatus('category-not-existing', 'articolo-1');
         } catch (Throwable $e) {
@@ -71,7 +71,7 @@ class MongoCollectionTest extends SyncTestCase
             );
         }
 
-        //Not found draft article not existing 404
+        // Not found draft article not existing 404
         try {
             Article::all()->getBySlugAndStatus('sport', 'articolo-16');
         } catch (Throwable $e) {
@@ -81,7 +81,7 @@ class MongoCollectionTest extends SyncTestCase
             );
         }
 
-        //Check if instance of Article is passed
+        // Check if instance of Article is passed
         $outPublished = Article::all()->getBySlugAndStatus('sport', 'articolo-1');
         $this->assertInstanceOf(Article::class, $outPublished);
         $this->assertEquals('articolo 1', getTranslatedContent($outPublished->title));
@@ -91,7 +91,7 @@ class MongoCollectionTest extends SyncTestCase
         $this->cleanDb();
     }
 
-    public function test_getBySlug()
+    public function test_get_by_slug()
     {
         $this->cleanDb();
 
@@ -108,7 +108,7 @@ class MongoCollectionTest extends SyncTestCase
         $this->cleanDb();
     }
 
-    public function test_getNotDeleted()
+    public function test_get_not_deleted()
     {
         $this->cleanDb();
 
@@ -124,7 +124,7 @@ class MongoCollectionTest extends SyncTestCase
         $this->cleanDb();
     }
 
-    public function test_getPublished()
+    public function test_get_published()
     {
         $this->cleanDb();
 
@@ -140,7 +140,7 @@ class MongoCollectionTest extends SyncTestCase
         $this->cleanDb();
     }
 
-    public function test_getPublic()
+    public function test_get_public()
     {
         $this->cleanDb();
 
@@ -156,7 +156,7 @@ class MongoCollectionTest extends SyncTestCase
         $this->cleanDb();
     }
 
-    public function test_hasItem()
+    public function test_has_item()
     {
         $this->cleanDb();
 
@@ -182,7 +182,7 @@ class MongoCollectionTest extends SyncTestCase
         $this->cleanDb();
     }
 
-    public function test_moveFirst()
+    public function test_move_first()
     {
         $this->cleanDb();
 
@@ -197,7 +197,7 @@ class MongoCollectionTest extends SyncTestCase
         $this->cleanDb();
     }
 
-    public function test_getActive()
+    public function test_get_active()
     {
         $this->cleanDb();
 
@@ -219,14 +219,14 @@ class MongoCollectionTest extends SyncTestCase
     {
         $this->cleanDb();
 
-        //Test not Exist - return value false
+        // Test not Exist - return value false
         $allArticles = Article::all();
         $out = $allArticles->exist();
 
         $this->assertFalse($out, $out);
         $this->assertCount(0, $allArticles);
 
-        //Test Exist - return value true
+        // Test Exist - return value true
         $this->prepareArticleData([], 2);
 
         $allArticles = Article::all();
@@ -238,7 +238,7 @@ class MongoCollectionTest extends SyncTestCase
         $this->cleanDb();
     }
 
-    public function test_findByAID()
+    public function test_find_by_aid()
     {
         $this->cleanDb();
         $this->prepareArticleData(['title' => 'My autoincrement title']);
@@ -263,7 +263,7 @@ class MongoCollectionTest extends SyncTestCase
         $this->cleanDb();
     }
 
-    public function test_hasPermission()
+    public function test_has_permission()
     {
         $this->cleanDbUPR();
 
@@ -287,7 +287,7 @@ class MongoCollectionTest extends SyncTestCase
         $this->cleanDbUPR();
     }
 
-    public function test_hasRole()
+    public function test_has_role()
     {
         $this->cleanDbUPR();
 
@@ -308,7 +308,7 @@ class MongoCollectionTest extends SyncTestCase
         $this->cleanDbUPR();
     }
 
-    public function test_checkPermission()
+    public function test_check_permission()
     {
         $this->cleanDbUPR();
 

@@ -1,45 +1,11 @@
 # Laravel MongoDB Relationships
 [![Latest Stable Version](https://poser.pugx.org/offline-agency/laravel-mongo-auto-sync/v/stable)](https://packagist.org/packages/offline-agency/laravel-mongo-auto-sync)
 [![Total Downloads](https://img.shields.io/packagist/dt/offline-agency/laravel-mongo-auto-sync.svg?style=flat-square)](https://packagist.org/packages/offline-agency/laravel-mongo-auto-sync)
-[![Build Status](https://github.com/offline-agency/laravel-mongo-auto-sync/actions/workflows/build-ci.yml/badge.svg)](https://github.com/offline-agency/laravel-mongo-auto-sync/actions/workflows/build-ci.yml)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/offline-agency/laravel-mongo-auto-sync/build-ci.yml)](https://github.com/offline-agency/laravel-mongo-auto-sync/actions)
 [![MIT Licensed](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
-[![Quality Score](https://img.shields.io/scrutinizer/g/offline-agency/laravel-mongo-auto-sync.svg?style=flat-square)](https://scrutinizer-ci.com/g/offline-agency/laravel-mongo-auto-sync)
-[![StyleCI](https://github.styleci.io/repos/167277388/shield)](https://styleci.io/repos/167277388)
-[![codecov](https://codecov.io/gh/offline-agency/laravel-mongo-auto-sync/branch/master/graph/badge.svg?token=0BHADJQYAW)](https://codecov.io/gh/offline-agency/laravel-mongo-auto-sync)
 
 This package provides a better support for [MongoDB](https://www.mongodb.com) relationships in [Laravel](https://laravel.com/) Projects.
-At low level all CRUD operations has been handled by [jenssegers/laravel-mongodb](https://github.com/jenssegers/laravel-mongodb)
-
-## Installation
-
-```bash
-composer require offline-agency/laravel-mongo-auto-sync
-```
-
-### Prerequisites
-Make sure you have the MongoDB PHP driver installed. You can find installation instructions at [http://php.net/manual/en/mongodb.installation.php](http://php.net/manual/en/mongodb.installation.php)
-
-### Package version Compatibility
-
-| This package | Laravel | Laravel MongoDB |
-|--------------|---------|-----------------|
-| 1.x          | 5.8.x   | 3.5.x           |
-| 1.x          | 6.x     | 3.6.x           |
-| 2.x          | 5.8.x   | 3.5.x           |
-| 2.x          | 6.x     | 3.6.x           |
-| 2.x          | 7.x     | 3.7.x           |
-| 2.x          | 8.x     | 3.8.x           |
-| 2.x          | 9.x     | 3.9.x           |
-| 3.x          | 5.8.x   | 3.5.x           |
-| 3.x          | 6.x     | 3.6.x           |
-| 3.x          | 7.x     | 3.7.x           |
-| 3.x          | 8.x     | 3.8.x           |
-| 3.x          | 9.x     | 3.9.x           |
-
-### PHP Version Compatibility
-- Version 1: PHP 7.1, 7.2, 7.3
-- Version 2: PHP 7.4
-- Version 3: PHP 7.4-8.1
+At low level all CRUD operations has been handled by [mongodb/laravel-mongodb](https://github.com/mongodb/laravel-mongodb)
 
 ## Features
 - Sync changes between collection with relationships after CRUD operations
@@ -102,6 +68,7 @@ As you can see the lines of extra code can rapidly increase, and you will write 
   ```
 The sub document article has been updated with the new article, with no need of extra code :tada: 
 
+
 You can see the new article on the category page because the package synchronizes the information for you by reading the Model Setup.
   
 **These example can be applied for all write operations on the database.**
@@ -116,17 +83,65 @@ You can see the new article on the category page because the package synchronize
 - API System for mobile application o for generated static site
 - Any projects that require fast read operations and (slow) write operations that can be run on background
 
+## Installation
+
+```bash
+composer require offlineagency/laravel-mongo-auto-sync
+```
+### Laravel version Compatibility
+
+| Laravel     | Package     |
+| ----------- | ----------- |
+| 11.x / 12.x | 4.x         |
+| 10.x        | 3.x         |
+| 5.8.x - 9.x | 1.x / 2.x   |
+
 ## Documentation
 You can find the documentation [here](https://docs.offlineagency.com/laravel-mongo-auto-sync/)
 
-## Testing
+## Configuration
 
-Run this command inside your project's route
-``` bash
-docker-compose up
+Publish the configuration file using:
+```bash
+php artisan vendor:publish --provider="OfflineAgency\MongoAutoSync\MongoAutoSyncServiceProvider" --tag="config"
 ```
 
-Now run the tests with:
+Available options:
+- `request_type`: Set to `partial` to handle partial requests.
+- `use_background_sync`: Set to `true` to disable sync on target models (useful if handled by jobs).
+- `model_path`: Path to your models.
+- `model_namespace`: Namespace of your models.
+
+## Console Commands
+
+### Check Model Configuration
+Validate your model configurations and relationships:
+```bash
+php artisan mongo-sync:check-config
+```
+
+### Generate Model Documentation
+Generate PHPDoc for your models:
+```bash
+php artisan model-doc:generate {collection_name}
+```
+
+## Exceptions
+
+The package throws specific exceptions for better error handling:
+- `InvalidConfigurationException`: Model or relationship configuration errors.
+- `ModelNotFoundException`: Target model cannot be found.
+- `InvalidRelationshipException`: Invalid relationship type.
+- `InvalidRequestException`: Invalid request data.
+
+## Troubleshooting
+
+- **Sync not working?** Check `laravel.log` for logs starting with `storeWithSync` or `updateWithSync`.
+- **Model not found?** Ensure your `model_path` and `model_namespace` in config are correct.
+- **Invalid configuration?** Run `php artisan mongo-sync:check-config` to identify issues.
+
+## Testing
+Run the tests with:
 ``` bash
 composer test
 ```
@@ -149,8 +164,6 @@ Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
 
 ## Security
 If you discover any security-related issues, please email support@offlineagency.com instead of using the issue tracker.
-
-
 
 ## Credits
 - [Giacomo Fabbian](https://github.com/Giacomo92)

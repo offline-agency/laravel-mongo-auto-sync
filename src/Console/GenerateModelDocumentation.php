@@ -5,6 +5,9 @@ namespace OfflineAgency\MongoAutoSync\Console;
 use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
+use OfflineAgency\MongoAutoSync\Exceptions\InvalidConfigurationException;
+use OfflineAgency\MongoAutoSync\Exceptions\ModelNotFoundException;
+use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
 use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 
 class GenerateModelDocumentation extends Command
@@ -40,6 +43,7 @@ class GenerateModelDocumentation extends Command
      */
     public function handle()
     {
+        /** @var string */
         $collection_name = $this->argument('collection_name');
 
         $modelPath = $this->getModelPathByName($collection_name);
@@ -53,7 +57,7 @@ class GenerateModelDocumentation extends Command
         $output .= "* @property string \$id\n";
 
         foreach ($items as $key => $item) {
-            if (isML($item)) {
+            if (SyncHelper::isML($item)) {
                 $output .= '* @property array $'.$key."\n";
             } else {
                 $output .= '* @property string $'.$key."\n";
@@ -76,7 +80,7 @@ class GenerateModelDocumentation extends Command
     }
 
     /**
-     * @param  $collection_name
+     * @param  string  $collection_name
      * @return string
      *
      * @throws Exception
@@ -85,15 +89,19 @@ class GenerateModelDocumentation extends Command
     {
         $path = config('laravel-mongo-auto-sync.model_path');
 
+        if (! is_string($path)) {
+            throw new Exception('Config laravel-mongo-auto-sync.model_path is not set or invalid');
+        }
+
         return $this->checkOaModels($path, $collection_name);
     }
 
     /**
-     * @param  $path
-     * @param  $collection_name
+     * @param  string  $path
+     * @param  string  $collection_name
      * @return string
      *
-     * @throws Exception
+     * @throws InvalidConfigurationException
      */
     public function checkOaModels($path, $collection_name)
     {
@@ -102,7 +110,11 @@ class GenerateModelDocumentation extends Command
         try {
             $results = scandir($path);
         } catch (Exception $e) {
-            throw new Exception('Error directory '.config('laravel-mongo-auto-sync.model_path').' not found');
+            throw new InvalidConfigurationException('Error directory '.config('laravel-mongo-auto-sync.model_path').' not found');
+        }
+
+        if ($results === false) {
+            return '';
         }
 
         foreach ($results as $result) {
@@ -126,17 +138,19 @@ class GenerateModelDocumentation extends Command
     }
 
     /**
-     * @param  string  $modelPath
      * @return MDModel
      *
-     * @throws Exception
+     * @throws ModelNotFoundException
      */
     private function getModel(string $modelPath)
     {
         if (class_exists($modelPath)) {
+            /** @var MDModel */
             return new $modelPath;
         } else {
-            throw new Exception('Error '.$this->argument('collection_name').' Model not found');
+            $collection_name = $this->argument('collection_name');
+            $name = is_string($collection_name) ? $collection_name : 'unknown';
+            throw new ModelNotFoundException('Error '.$name.' Model not found');
         }
     }
 }

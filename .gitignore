@@ -5,3 +5,5 @@ storage/
 bootstrap/
 .idea
 .phpunit.result.cache
+.phpunit.cache
+build/phpstan

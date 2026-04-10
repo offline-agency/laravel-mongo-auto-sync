@@ -2,7 +2,7 @@
 
 namespace OfflineAgency\MongoAutoSync\Http\Models;
 
-use Jenssegers\Mongodb\Eloquent\Model as Eloquent;
+use OfflineAgency\MongoAutoSync\Eloquent\Model as Eloquent;
 use OfflineAgency\MongoAutoSync\Traits\Helper;
 use OfflineAgency\MongoAutoSync\Traits\MainMongoTrait;
 use OfflineAgency\MongoAutoSync\Traits\ModelAdditionalMethod;
@@ -11,9 +11,13 @@ use OfflineAgency\MongoAutoSync\Traits\RelationshipMongoTrait;
 
 class MDModel extends Eloquent
 {
-    use MainMongoTrait, ModelAdditionalMethod, Helper, PlainMongoTrait, RelationshipMongoTrait;
+    use Helper, MainMongoTrait, ModelAdditionalMethod, PlainMongoTrait, RelationshipMongoTrait;
 
     protected $connection = 'mongodb';
+
+    /**
+     * @var array<int, string>
+     */
     protected $dates = [
         'deleted_at',
         'created_at',
@@ -33,7 +37,7 @@ class MDModel extends Eloquent
      */
     public function getCollection()
     {
-        return $this->collection;
+        return $this->getTable();
     }
 
     /**

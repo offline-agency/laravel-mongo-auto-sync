@@ -1,214 +1,234 @@
 <?php
 
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Config;
-use Jenssegers\Mongodb\Eloquent\Model;
+use Illuminate\Http\Request;
+use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
 
 if (! function_exists('getTranslatedContent')) {
+
     /**
-     * @param  array  $mlCollection
+     * @param  array<string, mixed>|null  $mlCollection
      * @return string
      */
     function getTranslatedContent($mlCollection)
     {
-        //Get current Lang
-        $cl = Config::get('app.locale');
-
-        if (is_array($mlCollection) && (array_key_exists('en_EN', $mlCollection) || array_key_exists('it_IT', $mlCollection) || ! is_null($mlCollection || ! isset($destination)))) {
-            return $mlCollection[$cl];
-        } else {
-            return '';
-        }
+        return SyncHelper::getTranslatedContent($mlCollection);
     }
 }
 
 if (! function_exists('cl')) {
+
     /**
      * @return string current Lang
      */
     function cl()
     {
-        //Get current Lang
-        return Config::get('app.locale');
+        return SyncHelper::cl();
     }
 }
 
 if (! function_exists('ml')) {
-    //save a localized field
+    // save a localized field
     /**
-     * @param  array  $destination
+     * @param  array<string, mixed>|null  $destination
      * @param  string  $input
-     * @return array ready to be saved
+     * @return array<string, mixed>
      */
     function ml($destination, $input)
     {
-        if (is_null($destination)) {
-            $destination = [];
-        }
-
-        return array_merge($destination, [cl() => $input]);
+        return SyncHelper::ml($destination, $input);
     }
 }
 
 if (! function_exists('isML')) {
+    /**
+     * @param  mixed  $value
+     * @return bool
+     */
     function isML($value)
     {
-        if (array_key_exists('is-ml', $value)) {
-            return $value['is-ml'];
-        } else {
-            return false;
-        }
+        return SyncHelper::isML($value);
     }
 }
 
 if (! function_exists('isMD')) {
+    /**
+     * @param  mixed  $value
+     * @return bool
+     */
     function isMD($value)
     {
-        if (array_key_exists('is-md', $value)) {
-            return $value['is-md'];
-        } else {
-            return false;
-        }
+        return SyncHelper::isMD($value);
     }
 }
-
 if (! function_exists('is_EM')) {
+    /**
+     * @param  mixed  $value
+     * @return bool
+     */
     function is_EM($value)
     {
-        if ($value === 'EmbedsMany') {
-            return true;
-        } else {
-            return false;
-        }
+        return SyncHelper::is_EM($value);
     }
 }
 
 if (! function_exists('is_EO')) {
+    /**
+     * @param  mixed  $value
+     * @return bool
+     */
     function is_EO($value)
     {
-        if ($value === 'EmbedsOne') {
-            return true;
-        } else {
-            return false;
-        }
+        return SyncHelper::is_EO($value);
     }
 }
 
 if (! function_exists('is_HM')) {
+    /**
+     * @param  mixed  $value
+     * @return bool
+     */
     function is_HM($value)
     {
-        if ($value === 'HasMany') {
-            return true;
-        } else {
-            return false;
-        }
+        return SyncHelper::is_HM($value);
     }
 }
 
 if (! function_exists('is_HO')) {
+    /**
+     * @param  mixed  $value
+     * @return bool
+     */
     function is_HO($value)
     {
-        if ($value === 'HasOne') {
-            return true;
-        } else {
-            return false;
-        }
+        return SyncHelper::is_HO($value);
     }
 }
 
 if (! function_exists('isEditable')) {
+    /**
+     * @param  mixed  $value
+     * @return bool
+     */
     function isEditable($value)
     {
-        if (array_key_exists('is-editable', $value)) {
-            return $value['is-editable'];
-        } else {
-            return true;
-        }
+        return SyncHelper::isEditable($value);
     }
 }
 
 if (! function_exists('hasTarget')) {
+    /**
+     * @param  mixed  $value
+     * @return bool
+     */
     function hasTarget($value)
     {
-        if (array_key_exists('has-target', $value)) {
-            return $value['has-target'];
-        } else {
-            return true;
-        }
+        return SyncHelper::hasTarget($value);
     }
 }
-
 if (! function_exists('isFillable')) {
+    /**
+     * @param  mixed  $value
+     * @param  string  $event
+     * @return bool
+     */
     function isFillable($value, $event)
     {
-        if ($event === 'add') {
-            return true;
-        } else {
-            return isEditable($value);
-        }
+        return SyncHelper::isFillable($value, $event);
     }
 }
 
-if (! function_exists('getAID')) {
+if (! function_exists('getRequestToBeSync')) {
     /**
-     * @param  Model  $model
-     * @return string
+     * @param  string|mixed  $ref_id
+     * @param  string  $modelOnTarget
+     * @param  string  $methodOnTarget
+     * @return Request
      */
-    function getAID(Model $model)
+    function getRequestToBeSync($ref_id, $modelOnTarget, Request $request, $methodOnTarget)
     {
-        //Get Last Obj
-        $obj = $model->orderBy('created_at', 'desc')->first();
+        return SyncHelper::getRequestToBeSync($ref_id, $modelOnTarget, $request, $methodOnTarget);
+    }
+}
 
-        return is_null($obj) ? 1 : $obj->autoincrement_id + 1;
+if (! function_exists('isRequestReadyToBeProcessed')) {
+    /**
+     * @return bool
+     */
+    function isRequestReadyToBeProcessed(Request $request)
+    {
+        return SyncHelper::isRequestReadyToBeProcessed($request);
+    }
+}
+
+if (! function_exists('removeSubCollectionInput')) {
+    /**
+     * @return Request
+     */
+    function removeSubCollectionInput(Request $request)
+    {
+        return SyncHelper::removeSubCollectionInput($request);
+    }
+}
+
+if (! function_exists('prepareRequest')) {
+
+    /**
+     * @param  array<string, mixed>  $additionalData
+     * @return Request
+     */
+    function prepareRequest(Request $request, array $additionalData)
+    {
+        return SyncHelper::prepareRequest($request, $additionalData);
     }
 }
 
 if (! function_exists('getArrayWithEmptyObj')) {
+
     /**
-     * @param  $model
-     * @return array
+     * @param  string  $model
+     * @param  bool  $is_EO
+     * @param  bool  $is_EM
+     * @return array<int, object>
      */
     function getArrayWithEmptyObj($model, $is_EO, $is_EM)
     {
-        $arr = [];
-        if ($is_EO) {
-            $obj = new stdClass();
-            $embedObj = new $model;
-            $EOitems = $embedObj->getItems();
-
-            //Current Obj Create
-            foreach ($EOitems as $EOkey => $item) {
-                $obj->$EOkey = null;
-            }
-
-            $arr[] = $obj;
-        }// $is_EM == empty array
-
-        return $arr;
+        return SyncHelper::getArrayWithEmptyObj($model, $is_EO, $is_EM);
     }
 }
 
 if (! function_exists('getCounterForRelationships')) {
+
     /**
-     * @param  $method
-     * @param  $is_EO
-     * @param  $is_EM
-     * @param  $i
+     * @param  string  $method
+     * @param  bool  $is_EO
+     * @param  bool  $is_EM
+     * @param  int|string  $i
      * @return string
      */
     function getCounterForRelationships($method, $is_EO, $is_EM, $i)
     {
-        if ($method === '' || ($method !== '' && $is_EO) || ($method === '' && $is_EM)) {
-            return '';
-        } else {
-            return '-'.$i;
-        }
+        return SyncHelper::getCounterForRelationships($method, $is_EO, $is_EM, $i);
     }
+}
 
-    if (! function_exists('getTypeOnTarget')) {
-        function getTypeOnTarget($relation)
-        {
-            return Arr::has($relation, 'typeOnTarget') ? Arr::get($relation, 'typeOnTarget') : 'EmbedsMany';
-        }
+if (! function_exists('getFullUrlImgByKey')) {
+    /**
+     * @param  string|null  $key
+     * @return string
+     */
+    function getFullUrlImgByKey($key)
+    {
+        return '';
+    }
+}
+
+if (! function_exists('getSiteGeneralValueByKey')) {
+    /**
+     * @param  string  $key
+     * @return string
+     */
+    function getSiteGeneralValueByKey($key)
+    {
+        return '';
     }
 }

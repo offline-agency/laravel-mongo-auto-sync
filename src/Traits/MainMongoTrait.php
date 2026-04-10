@@ -2,106 +2,157 @@
 
 namespace OfflineAgency\MongoAutoSync\Traits;
 
-use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Log;
+use OfflineAgency\MongoAutoSync\Exceptions\InvalidConfigurationException;
+use OfflineAgency\MongoAutoSync\Exceptions\InvalidRequestException;
+use OfflineAgency\MongoAutoSync\Exceptions\MongoAutoSyncException;
+use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
+use OfflineAgency\MongoAutoSync\Observers\MongoAutoSyncObserver;
 use stdClass;
 
 trait MainMongoTrait
 {
+    /**
+     * @return void
+     */
+    public static function bootMainMongoTrait()
+    {
+        static::observe(MongoAutoSyncObserver::class);
+    }
+
+    /**
+     * @var bool
+     */
     protected $has_partial_request;
+
+    /**
+     * @var Request|null
+     */
     protected $request;
+
+    /**
+     * @var array<string, mixed>|null
+     */
     protected $target_additional_data;
+
+    /**
+     * @var Request|null
+     */
     protected $partial_generated_request;
+
+    /**
+     * @var array<string, mixed>|null
+     */
     protected $options;
+
+    /**
+     * @var array<int, array<string, mixed>>|null
+     */
     protected $tempEM;
 
     /**
-     * @param  Request  $request
-     * @param  array  $additionalData
-     * @param  array  $options
-     * @param  array  $target_additional_data
-     * @return $this
+     * @param  array<string, mixed>  $additionalData
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $target_additional_data
+     * @return static
      *
-     * @throws Exception
+     * @throws MongoAutoSyncException
      */
     public function storeWithSync(Request $request, array $additionalData = [], array $options = [], array $target_additional_data = [])
     {
+        Log::info('storeWithSync started for model: '.get_class($this));
+
         $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
         $this->storeEditAllItems($request, 'add', $options);
         $this->processAllRelationships($request, 'add', '', '', $options);
 
-        //Dispatch the creation event
+        // Dispatch the creation event
         $this->fireModelEvent('storeWithSync');
 
-        return $this->fresh();
+        $fresh = $this->fresh();
+        if ($fresh === null) {
+            return $this;
+        }
+
+        return $fresh;
     }
 
     /**
-     * @param  Request  $request
-     * @param  array  $additionalData
-     * @param  array  $options
-     * @param  array  $target_additional_data
-     * @return $this
+     * @param  array<string, mixed>  $additionalData
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $target_additional_data
+     * @return static
      *
-     * @throws Exception
+     * @throws MongoAutoSyncException
      */
     public function updateWithSync(Request $request, array $additionalData = [], array $options = [], array $target_additional_data = [])
     {
+        Log::info('updateWithSync started for model: '.get_class($this).' with ID: '.$this->id);
+
         $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
         $this->storeEditAllItems($request, 'update', $options);
         $this->processAllRelationships($request, 'update', '', '', $options);
 
-        //Dispatch the update event
+        // Dispatch the update event
         $this->fireModelEvent('updateWithSync');
 
-        return $this->fresh();
+        $fresh = $this->fresh();
+        if ($fresh === null) {
+            return $this;
+        }
+
+        return $fresh;
     }
 
     /**
+     * @param  bool  $syncTargets
      * @return $this
      */
-    public function destroyWithSync()
+    public function destroyWithSync($syncTargets = true)
     {
-        //Get the relation info
+        // Get the relation info
         $relations = $this->getMongoRelation();
-        //Process all relationships
+
+        // Process all relationships
         foreach ($relations as $method => $relation) {
-            //Get Relation Save Mode
+            // Get Relation Save Mode
             $type = $relation['type'];
-            $hasTarget = hasTarget($relation);
-            if ($hasTarget) {
+            $hasTarget = SyncHelper::hasTarget($relation);
+            if ($hasTarget && $syncTargets) {
                 $modelTarget = $relation['modelTarget'];
                 $methodOnTarget = $relation['methodOnTarget'];
                 $modelOnTarget = $relation['modelOnTarget'];
-                $is_EO = is_EO($type);
-                $is_EM = is_EM($type);
-                $is_HO = is_HO($type);
-                $is_HM = is_HM($type);
-                $typeOnTarget = getTypeOnTarget($relation);
-                $is_EM_target = is_EM($typeOnTarget);
-                $is_EO_target = is_EO($typeOnTarget);
-                if ($is_EO || $is_EM) {//EmbedsOne Create - EmbedsMany Create
-                    //Delete EmbedsMany or EmbedsOne on Target
-                    $this->deleteTargetObj($method, $modelTarget, $methodOnTarget, $is_EO, $is_EM, $is_EO_target, $is_EM_target);
+                $typeOnTarget = Arr::has($relation, 'typeOnTarget') ? Arr::get($relation, 'typeOnTarget') : 'EmbedsMany';
+
+                $is_EO = SyncHelper::is_EO($type);
+                $is_EM = SyncHelper::is_EM($type);
+                $is_HO = SyncHelper::is_HO($type);
+                $is_HM = SyncHelper::is_HM($type);
+
+                $is_EO_target = SyncHelper::is_EO($typeOnTarget);
+                $is_EM_target = SyncHelper::is_EM($typeOnTarget);
+
+                if ($is_EO || $is_EM) {// EmbedsOne Create - EmbedsMany Create
+                    // Delete EmbedsMany or EmbedsOne on Target
+                    $this->deleteTargetObj($method, $modelTarget, $methodOnTarget, $is_EO, $is_EO_target, $is_EM_target);
+                } elseif ($is_HM || $is_HO) {
+                    $this->deleteReferencedObj($method, $is_HO);
                 }
-                //TODO: Need to be implemented
-                /* elseif ($is_HM) {//HasMany
-                 } elseif ($is_HO) {//HasOne Create
-                 }*/
             }
         }
-        //Delete current object
+        // Delete current object
         $this->delete();
-        //Dispatch the destroy event
+
+        // Dispatch the destroy event
         $this->fireModelEvent('destroyWithSync');
 
         return $this;
     }
 
     /**
-     * @param  array  $options
-     * @param  string  $key
+     * @param  array<string, mixed>  $options
      * @return bool|mixed
      */
     private function getOptionValue(array $options, string $key)
@@ -110,46 +161,45 @@ trait MainMongoTrait
     }
 
     /**
-     * @param  $obj
-     * @param  string  $EOkey
+     * @param  object  $obj
      * @param  string  $method
      * @param  string  $model
+     * @return void
      *
-     * @throws Exception
+     * @throws InvalidConfigurationException
      */
     public function checkPropertyExistence($obj, string $EOkey, $method = '', $model = '')
     {
         if (! property_exists($obj, $EOkey)) {
             $msg = 'Error - '.$EOkey.' attribute not found on obj '.json_encode($obj).' during save of model: '.$model.' and attribute: '.$method;
-            throw new Exception($msg);
+            throw new InvalidConfigurationException($msg);
         }
     }
 
     /**
-     * @param  $arr
-     * @param  string  $key
+     * @param  array<string, mixed>  $arr
+     * @return void
      *
-     * @throws Exception
+     * @throws InvalidConfigurationException
      */
     public function checkArrayExistence($arr, string $key)
     {
         if (! Arr::has($arr, $key)) {
             $msg = ('Error - '.$key.' attribute not found on obj '.json_encode($arr));
-            throw new Exception($msg);
+            throw new InvalidConfigurationException($msg);
         }
     }
 
     /**
-     * @param  Request  $request
-     * @param  string  $key
+     * @return void
      *
-     * @throws Exception
+     * @throws InvalidRequestException
      */
     private function checkRequestExistence(Request $request, string $key)
     {
         if (! $request->has($key)) {
             $msg = ('Error - '.$key.' attribute not found in Request '.json_encode($request->all()));
-            throw new Exception($msg);
+            throw new InvalidRequestException($msg);
         }
     }
 
@@ -180,29 +230,31 @@ trait MainMongoTrait
     }
 
     /**
-     * @param  string  $modelTarget
-     * @param  stdClass  $obj
-     * @return MDModel|null
+     * @return \OfflineAgency\MongoAutoSync\Http\Models\MDModel|null
      *
-     * @throws Exception
+     * @throws InvalidConfigurationException
      */
     private function getModelTobeSync(string $modelTarget, stdClass $obj)
     {
         $this->checkPropertyExistence($obj, 'ref_id');
         $target_id = $obj->ref_id;
 
-        //Init the Target Model
+        // Init the Target Model
+        /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $modelToBeSync */
         $modelToBeSync = new $modelTarget;
 
-        return $modelToBeSync->find($target_id);
+        $found = $modelToBeSync->find($target_id);
+        if ($found instanceof \OfflineAgency\MongoAutoSync\Http\Models\MDModel) {
+            return $found;
+        }
+
+        return null;
     }
 
     /**
-     * @param  string  $key
-     * @param  Request  $request
      * @return mixed
      *
-     * @throws Exception
+     * @throws InvalidRequestException
      */
     private function getRelationshipRequest(string $key, Request $request)
     {
@@ -215,7 +267,7 @@ trait MainMongoTrait
     }
 
     /**
-     * @return Request
+     * @return Request|null
      */
     public function getRequest()
     {
@@ -223,8 +275,7 @@ trait MainMongoTrait
     }
 
     /**
-     * @param  Request  $request
-     * @param  array  $additionalData
+     * @param  array<string, mixed>  $additionalData
      */
     public function setRequest(Request $request, array $additionalData): void
     {
@@ -233,7 +284,7 @@ trait MainMongoTrait
     }
 
     /**
-     * @return Request
+     * @return Request|null
      */
     public function getPartialGeneratedRequest()
     {
@@ -241,7 +292,7 @@ trait MainMongoTrait
     }
 
     /**
-     * @param  array  $arr
+     * @param  array<string, mixed>  $arr
      */
     public function setPartialGeneratedRequest(array $arr): void
     {
@@ -252,15 +303,19 @@ trait MainMongoTrait
     }
 
     /**
-     * @return array
+     * @return array<string, mixed>
      */
     public function getOptions()
     {
+        if ($this->options === null) {
+            return [];
+        }
+
         return $this->options;
     }
 
     /**
-     * @param  array  $options
+     * @param  array<string, mixed>  $options
      */
     public function setOptions(array $options): void
     {
@@ -268,15 +323,19 @@ trait MainMongoTrait
     }
 
     /**
-     * @return array
+     * @return array<string, mixed>
      */
     public function getTargetAdditionalData()
     {
+        if ($this->target_additional_data === null) {
+            return [];
+        }
+
         return $this->target_additional_data;
     }
 
     /**
-     * @param  array  $target_additional_data
+     * @param  array<string, mixed>  $target_additional_data
      */
     public function setTargetAdditionalData($target_additional_data): void
     {
@@ -284,10 +343,10 @@ trait MainMongoTrait
     }
 
     /**
-     * @param  Request  $request
-     * @param  array  $additionalData
-     * @param  array  $options
-     * @param  array  $target_additional_data
+     * @param  array<string, mixed>  $additionalData
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $target_additional_data
+     * @return void
      */
     public function initDataForSync(Request $request, array $additionalData, array $options, array $target_additional_data)
     {

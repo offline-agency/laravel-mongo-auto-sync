@@ -1,5 +1,9 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
 parameters:
-	level: 7
-	paths: ['src/']
-	autoload_files:
-		- vendor/autoload.php
+    level: 8
+    paths:
+        - src/
+    tmpDir: build/phpstan
+    treatPhpDocTypesAsCertain: false

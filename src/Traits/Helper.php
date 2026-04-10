@@ -2,16 +2,16 @@
 
 namespace OfflineAgency\MongoAutoSync\Traits;
 
-use Exception;
 use Illuminate\Support\Arr;
+use OfflineAgency\MongoAutoSync\Exceptions\InvalidConfigurationException;
 
 trait Helper
 {
     /**
-     * @param  $options
+     * @param  array<string, mixed>  $options
      * @return bool|mixed
      *
-     * @throws Exception
+     * @throws InvalidConfigurationException
      */
     public function isArray($options)
     {
@@ -21,10 +21,10 @@ trait Helper
     }
 
     /**
-     * @param  $options
+     * @param  array<string, mixed>  $options
      * @return bool|mixed
      *
-     * @throws Exception
+     * @throws InvalidConfigurationException
      */
     public function isCarbonDate($options)
     {
@@ -34,37 +34,36 @@ trait Helper
     }
 
     /**
-     * @param  $options
+     * @param  mixed  $options
+     * @return void
      *
-     * @throws Exception
+     * @throws InvalidConfigurationException
      */
     private function validateOptions($options)
     {
         if (gettype($options) !== 'array') {
-            throw new Exception($options.' is not a valid array!');
+            throw new InvalidConfigurationException($options.' is not a valid array!');
         }
     }
 
     /**
-     * @param  $value
-     * @param  string  $expected
+     * @param  mixed  $value
+     * @return void
      *
-     * @throws Exception
+     * @throws InvalidConfigurationException
      */
     private function validateOptionValue($value, string $expected)
     {
         if (gettype($value) !== $expected) {
-            throw new Exception($value.' is not a valid '.$expected.' found '.gettype($value).'! Check on your model configurations.');
+            throw new InvalidConfigurationException($value.' is not a valid '.$expected.' found '.gettype($value).'! Check on your model configurations.');
         }
     }
 
     /**
-     * @param  array  $options
-     * @param  string  $key
-     * @param  string  $expected
+     * @param  array<string, mixed>  $options
      * @return bool|mixed
      *
-     * @throws Exception
+     * @throws InvalidConfigurationException
      */
     private function getFieldTypeOptionsValue(array $options, string $key, string $expected)
     {

@@ -5,9 +5,9 @@ namespace Tests;
 use OfflineAgency\MongoAutoSync\Extensions\MongoCollection;
 use Tests\Models\Navigation;
 
-class MDModelTest extends SyncTestCase
+class MDModelTest extends TestCase
 {
-    public function test_getId()
+    public function test_get_id()
     {
         $modelTest = $this->createNavigation();
 
@@ -16,16 +16,16 @@ class MDModelTest extends SyncTestCase
         $this->assertNotNull($out);
     }
 
-    public function test_getCollection()
+    public function test_get_collection()
     {
-        $navigation = new Navigation();
+        $navigation = new Navigation;
 
         $out = $navigation->getCollection();
 
         $this->assertEquals('navigation', $out);
     }
 
-    public function test_getRandom()
+    public function test_get_random()
     {
         Navigation::truncate();
 
@@ -33,7 +33,7 @@ class MDModelTest extends SyncTestCase
             $this->createNavigation();
         }
 
-        $navigation = new Navigation();
+        $navigation = new Navigation;
         $out = $navigation->getRandom();
         $this->assertInstanceOf(MongoCollection::class, $out);
         $this->assertCount(3, $out);
