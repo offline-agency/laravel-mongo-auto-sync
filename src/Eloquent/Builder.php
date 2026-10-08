@@ -2,12 +2,15 @@
 
 namespace OfflineAgency\MongoAutoSync\Eloquent;
 
+use Closure;
 use Illuminate\Contracts\Database\Query\Expression;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Collection;
+use LogicException;
 use MongoDB\Driver\Cursor;
 use MongoDB\Laravel\Eloquent\Builder as MongoDbEloquentBuilder;
 use MongoDB\Laravel\Eloquent\Model;
+use MongoDB\Laravel\Query\Builder as QueryBuilder;
 use MongoDB\Model\BSONDocument;
 use OfflineAgency\MongoAutoSync\Relationships\EmbedsOneOrMany;
 
@@ -182,12 +185,17 @@ class Builder extends MongoDbEloquentBuilder
     /**
      * {@inheritdoc}
      *
+     * @param  (Closure(\MongoDB\Collection): mixed)|\Illuminate\Database\Query\Expression<literal-string|int|float>|null  $expression
      * @return Collection<int, TModel>|BSONDocument|TModel|array<mixed>|mixed
      */
     public function raw($expression = null)
     {
-        // Get raw results from the query builder.
-        $results = $this->query->raw($expression);
+        // Get raw results from the MongoDB query builder (its raw() accepts a closure or an expression).
+        $query = $this->getQuery();
+        if (! $query instanceof QueryBuilder) {
+            throw new LogicException('raw() requires a MongoDB query builder, got '.get_class($query));
+        }
+        $results = $query->raw($expression);
 
         // Convert MongoCursor results to a collection of models.
         if ($results instanceof Cursor) {

@@ -7,7 +7,9 @@ use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use LogicException;
 use MongoDB\BSON\UTCDateTime;
+use OfflineAgency\MongoAutoSync\Eloquent\Builder;
 use OfflineAgency\MongoAutoSync\Exceptions\InvalidConfigurationException;
 use OfflineAgency\MongoAutoSync\Exceptions\InvalidRelationshipException;
 use OfflineAgency\MongoAutoSync\Exceptions\InvalidRequestException;
@@ -74,7 +76,12 @@ trait ModelAdditionalMethod
             throw new InvalidRequestException('You have requested a number of record bigger than the count collection record ( '.$totalRow.')');
         }
 
-        $raw = $this->raw(function ($collection) use ($numberOfRandomRow) {
+        $query = $this->newQuery();
+        if (! $query instanceof Builder) {
+            throw new LogicException('getRandomRow() requires the MongoAutoSync Eloquent builder');
+        }
+
+        $raw = $query->raw(function ($collection) use ($numberOfRandomRow) {
             return $collection->aggregate([
                 ['$sample' => ['size' => $numberOfRandomRow]],
             ]);
