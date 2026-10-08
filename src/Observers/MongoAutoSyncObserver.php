@@ -3,6 +3,7 @@
 namespace OfflineAgency\MongoAutoSync\Observers;
 
 use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
+use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 use OfflineAgency\MongoAutoSync\Jobs\SyncTargetJob;
 
 class MongoAutoSyncObserver
@@ -26,7 +27,7 @@ class MongoAutoSyncObserver
     {
         if (config('laravel-mongo-auto-sync.use_background_sync')) {
             if (method_exists($model, 'getMongoRelation')) {
-                /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $model */
+                /** @var MDModel $model */
                 $relations = $model->getMongoRelation();
                 foreach ($relations as $method => $relation) {
                     if (SyncHelper::hasTarget($relation)) {
@@ -59,7 +60,7 @@ class MongoAutoSyncObserver
             return;
         }
 
-        /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $model */
+        /** @var MDModel $model */
         $relations = $model->getMongoRelation();
         $requestData = method_exists($model, 'getRequest') && $model->getRequest() ? $model->getRequest()->all() : [];
         $targetAdditionalData = method_exists($model, 'getTargetAdditionalData') ? $model->getTargetAdditionalData() : [];

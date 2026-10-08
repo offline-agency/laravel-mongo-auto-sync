@@ -2,10 +2,14 @@
 
 namespace OfflineAgency\MongoAutoSync\Eloquent;
 
+use Illuminate\Contracts\Database\Query\Expression;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Database\Eloquent\Collection;
 use MongoDB\Driver\Cursor;
 use MongoDB\Laravel\Eloquent\Builder as MongoDbEloquentBuilder;
+use MongoDB\Laravel\Eloquent\Model;
 use MongoDB\Model\BSONDocument;
+use OfflineAgency\MongoAutoSync\Relationships\EmbedsOneOrMany;
 
 /**
  * @template TModel of \Illuminate\Database\Eloquent\Model
@@ -25,8 +29,8 @@ class Builder extends MongoDbEloquentBuilder
         // Intercept operations on embedded models and delegate logic
         // to the parent relation instance.
         if (method_exists($this->model, 'getParentRelation') && $relation = $this->model->getParentRelation()) {
-            /** @var \OfflineAgency\MongoAutoSync\Relationships\EmbedsOneOrMany<\MongoDB\Laravel\Eloquent\Model, \MongoDB\Laravel\Eloquent\Model, \Illuminate\Database\Eloquent\Collection<int, \MongoDB\Laravel\Eloquent\Model>> $relation */
-            /** @var \MongoDB\Laravel\Eloquent\Model $model */
+            /** @var EmbedsOneOrMany<Model, Model, Collection<int, Model>> $relation */
+            /** @var Model $model */
             $model = $this->model;
             $relation->performUpdate($model, $values);
 
@@ -94,7 +98,7 @@ class Builder extends MongoDbEloquentBuilder
     /**
      * {@inheritdoc}
      *
-     * @param  string|\Illuminate\Contracts\Database\Query\Expression  $column
+     * @param  string|Expression  $column
      * @param  float|int  $amount
      * @param  array<mixed>  $extra
      * @return int
@@ -104,7 +108,7 @@ class Builder extends MongoDbEloquentBuilder
         // Intercept operations on embedded models and delegate logic
         // to the parent relation instance.
         if (method_exists($this->model, 'getParentRelation') && $relation = $this->model->getParentRelation()) {
-            /** @var \OfflineAgency\MongoAutoSync\Relationships\EmbedsOneOrMany $relation */
+            /** @var EmbedsOneOrMany $relation */
             /** @var mixed $value */
             $value = $this->model->{$column};
 
@@ -134,7 +138,7 @@ class Builder extends MongoDbEloquentBuilder
     /**
      * {@inheritdoc}
      *
-     * @param  string|\Illuminate\Contracts\Database\Query\Expression  $column
+     * @param  string|Expression  $column
      * @param  float|int  $amount
      * @param  array<mixed>  $extra
      * @return int
@@ -144,7 +148,7 @@ class Builder extends MongoDbEloquentBuilder
         // Intercept operations on embedded models and delegate logic
         // to the parent relation instance.
         if (method_exists($this->model, 'getParentRelation') && $relation = $this->model->getParentRelation()) {
-            /** @var \OfflineAgency\MongoAutoSync\Relationships\EmbedsOneOrMany $relation */
+            /** @var EmbedsOneOrMany $relation */
             /** @var mixed $value */
             $value = $this->model->{$column};
 
@@ -178,7 +182,7 @@ class Builder extends MongoDbEloquentBuilder
     /**
      * {@inheritdoc}
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, TModel>|BSONDocument|TModel|array<mixed>|mixed
+     * @return Collection<int, TModel>|BSONDocument|TModel|array<mixed>|mixed
      */
     public function raw($expression = null)
     {
@@ -189,7 +193,7 @@ class Builder extends MongoDbEloquentBuilder
         if ($results instanceof Cursor) {
             $results = iterator_to_array($results, false);
 
-            /** @var \Illuminate\Database\Eloquent\Collection<int, TModel> */
+            /** @var Collection<int, TModel> */
             return $this->model->hydrate($results);
         } // Convert Mongo BSONDocument to a single object.
         elseif ($results instanceof BSONDocument) {

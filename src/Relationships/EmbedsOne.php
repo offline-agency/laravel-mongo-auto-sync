@@ -5,6 +5,7 @@ namespace OfflineAgency\MongoAutoSync\Relationships;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 use MongoDB\BSON\ObjectId;
+use MongoDB\Laravel\Query\Builder;
 
 /**
  * @extends EmbedsOneOrMany<\MongoDB\Laravel\Eloquent\Model, \MongoDB\Laravel\Eloquent\Model, \MongoDB\Laravel\Eloquent\Model>
@@ -103,7 +104,7 @@ class EmbedsOne extends EmbedsOneOrMany
         }
 
         // Overwrite the local key with null.
-        /** @var \MongoDB\Laravel\Query\Builder $baseQuery */
+        /** @var Builder $baseQuery */
         $baseQuery = $this->getBaseQuery();
         $result = $baseQuery->update([$this->localKey => null]);
 
@@ -118,7 +119,7 @@ class EmbedsOne extends EmbedsOneOrMany
     /**
      * Attach the model to its parent.
      *
-     * @return \Illuminate\Database\Eloquent\Model
+     * @return EloquentModel
      */
     public function associate(Model $model)
     {
@@ -130,7 +131,7 @@ class EmbedsOne extends EmbedsOneOrMany
     /**
      * Detach the model from its parent.
      *
-     * @return \Illuminate\Database\Eloquent\Model|null
+     * @return EloquentModel|null
      */
     public function dissociate()
     {

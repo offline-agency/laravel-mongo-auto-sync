@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Arr;
+use MongoDB\Laravel\Eloquent\Model;
 use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
 
 class SyncTargetJob implements ShouldQueue
@@ -147,7 +148,7 @@ class SyncTargetJob implements ShouldQueue
             return;
         }
 
-        /** @var \MongoDB\Laravel\Eloquent\Model $targetModel */
+        /** @var Model $targetModel */
         $targetModel = new $modelTarget;
         // Batch load
         // MongoDB IDs can be strings or ObjectId.
@@ -193,7 +194,7 @@ class SyncTargetJob implements ShouldQueue
             return;
         }
 
-        /** @var \MongoDB\Laravel\Eloquent\Model $targetModel */
+        /** @var Model $targetModel */
         $targetModel = new $modelTarget;
         $targets = $targetModel::whereIn('_id', $ids)->get();
 

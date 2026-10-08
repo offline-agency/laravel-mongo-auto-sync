@@ -15,14 +15,14 @@ class Model extends MongoDbModel
     /**
      * The parent relation instance.
      *
-     * @var Relation<\Illuminate\Database\Eloquent\Model, \Illuminate\Database\Eloquent\Model, mixed>|null
+     * @var Relation<BaseModel, BaseModel, mixed>|null
      */
     protected $parentRelation;
 
     /**
      * Set the parent relation.
      *
-     * @param  Relation<\Illuminate\Database\Eloquent\Model, \Illuminate\Database\Eloquent\Model, mixed>  $relation
+     * @param  Relation<BaseModel, BaseModel, mixed>  $relation
      * @return void
      */
     public function setParentRelation(Relation $relation)
@@ -33,7 +33,7 @@ class Model extends MongoDbModel
     /**
      * Get the parent relation.
      *
-     * @return Relation<\Illuminate\Database\Eloquent\Model, \Illuminate\Database\Eloquent\Model, mixed>|null
+     * @return Relation<BaseModel, BaseModel, mixed>|null
      */
     public function getParentRelation(): ?Relation
     {

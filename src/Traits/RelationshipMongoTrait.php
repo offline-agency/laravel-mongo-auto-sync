@@ -8,6 +8,7 @@ use Illuminate\Support\Arr;
 use MongoDB\BSON\UTCDateTime;
 use OfflineAgency\MongoAutoSync\Exceptions\MongoAutoSyncException;
 use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
+use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 
 trait RelationshipMongoTrait
 {
@@ -140,13 +141,13 @@ trait RelationshipMongoTrait
         if ($is_EM_target) {
             $new_values = [];
             foreach ($this->$method_on_target as $temp) {
-                /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $temp */
+                /** @var MDModel $temp */
                 $new_values[] = $temp->attributes;
             }
-            /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $mini_model */
+            /** @var MDModel $mini_model */
             $new_values[] = $mini_model->attributes;
         } else {
-            /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $mini_model */
+            /** @var MDModel $mini_model */
             $new_values = $mini_model->attributes;
         }
 
@@ -222,7 +223,7 @@ trait RelationshipMongoTrait
     public function batchHandleSubTarget(array $targetIds, string $modelTarget, string $methodOnTarget, bool $is_EO_target, bool $is_EM_target)
     {
         if ($is_EM_target) {
-            /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $modelInstance */
+            /** @var MDModel $modelInstance */
             $modelInstance = new $modelTarget;
             // Use whereIn for batch retrieval
             $targets = $modelInstance->whereIn('id', $targetIds)->get();
@@ -328,17 +329,17 @@ trait RelationshipMongoTrait
             $attributes = (array) $obj;
             $id = $attributes['id'] ?? ($attributes['_id'] ?? null);
 
-            /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $child */
+            /** @var MDModel $child */
             $child = new $modelClass;
             if ($id) {
                 $found = $child->find($id);
                 if ($found !== null) {
-                    /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $child */
+                    /** @var MDModel $child */
                     $child = $found;
                 }
             }
 
-            if ($child instanceof \OfflineAgency\MongoAutoSync\Http\Models\MDModel) {
+            if ($child instanceof MDModel) {
                 foreach ($attributes as $k => $v) {
                     if ($k !== 'id' && $k !== '_id') {
                         $child->$k = $v;
@@ -400,7 +401,7 @@ trait RelationshipMongoTrait
     private function processEmbedOnCurrentCollection(Request $request, $obj, $type, $model, $method, $event, $is_EO, $is_EM, $i, array $options)
     {
         // Init the embed one model
-        /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $embedObj */
+        /** @var MDModel $embedObj */
         $embedObj = new $model;
 
         $EOitems = $embedObj->getItems();
@@ -472,8 +473,8 @@ trait RelationshipMongoTrait
         /** @var \stdClass $obj */
         $modelToBeSync = $this->getModelTobeSync($modelTarget, $obj);
         if (! is_null($modelToBeSync)) {
-            /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $modelToBeSync */
-            /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $miniModel */
+            /** @var MDModel $modelToBeSync */
+            /** @var MDModel $miniModel */
             $miniModel = $this->getEmbedModel($modelOnTarget);
             $modelToBeSync->updateRelationWithSync($miniModel, $methodOnTarget, $is_EO_target, $is_EM_target);
             // Sync target on level > 1

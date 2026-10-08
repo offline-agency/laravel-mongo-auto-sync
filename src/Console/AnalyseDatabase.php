@@ -4,7 +4,9 @@ namespace OfflineAgency\MongoAutoSync\Console;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use MongoDB\Laravel\Eloquent\Model;
 use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
+use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 use OfflineAgency\MongoAutoSync\Jobs\SyncTargetJob;
 
 use function Termwind\render;
@@ -28,7 +30,7 @@ class AnalyseDatabase extends Command
             $model = new $modelClass;
             try {
                 if (method_exists($model, 'getMongoRelation')) {
-                    /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $model */
+                    /** @var MDModel $model */
                     $relations = $model->getMongoRelation();
                 } else {
                     continue;
@@ -61,7 +63,7 @@ class AnalyseDatabase extends Command
         $is_EO = SyncHelper::is_EO($type);
 
         // Check if modelInstance is a Model to call count and chunk
-        if (! $modelInstance instanceof \MongoDB\Laravel\Eloquent\Model) {
+        if (! $modelInstance instanceof Model) {
             return;
         }
 

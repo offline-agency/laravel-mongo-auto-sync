@@ -2,7 +2,10 @@
 
 namespace OfflineAgency\MongoAutoSync\Eloquent;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Str;
+use MongoDB\Laravel\Eloquent\Builder;
+use MongoDB\Laravel\Eloquent\Model;
 use OfflineAgency\MongoAutoSync\Relationships\EmbedsMany;
 use OfflineAgency\MongoAutoSync\Relationships\EmbedsOne;
 
@@ -15,7 +18,7 @@ trait EmbedsRelationships
      * @param  string|null  $localKey
      * @param  string|null  $foreignKey
      * @param  string|null  $relation
-     * @return \MongoDB\Laravel\Relations\EmbedsMany<\MongoDB\Laravel\Eloquent\Model, \MongoDB\Laravel\Eloquent\Model, \Illuminate\Database\Eloquent\Collection<int, \MongoDB\Laravel\Eloquent\Model>>|\OfflineAgency\MongoAutoSync\Relationships\EmbedsMany
+     * @return \MongoDB\Laravel\Relations\EmbedsMany<Model, Model, Collection<int, Model>>|EmbedsMany
      */
     public function embedsMany($related, $localKey = null, $foreignKey = null, $relation = null)
     {
@@ -36,10 +39,10 @@ trait EmbedsRelationships
             $foreignKey = Str::snake(class_basename($this));
         }
 
-        /** @var \MongoDB\Laravel\Eloquent\Builder<\MongoDB\Laravel\Eloquent\Model> $query */
+        /** @var Builder<Model> $query */
         $query = $this->newQuery();
 
-        /** @var \MongoDB\Laravel\Eloquent\Model $instance */
+        /** @var Model $instance */
         $instance = new $related;
 
         $embedsMany = new EmbedsMany($query, $this, $instance, $localKey, $foreignKey, $relation);
@@ -54,7 +57,7 @@ trait EmbedsRelationships
      * @param  string|null  $localKey
      * @param  string|null  $foreignKey
      * @param  string|null  $relation
-     * @return \MongoDB\Laravel\Relations\EmbedsOne<\MongoDB\Laravel\Eloquent\Model, \MongoDB\Laravel\Eloquent\Model, \MongoDB\Laravel\Eloquent\Model>|\OfflineAgency\MongoAutoSync\Relationships\EmbedsOne
+     * @return \MongoDB\Laravel\Relations\EmbedsOne<Model, Model, Model>|EmbedsOne
      */
     public function embedsOne($related, $localKey = null, $foreignKey = null, $relation = null)
     {
@@ -75,10 +78,10 @@ trait EmbedsRelationships
             $foreignKey = Str::snake(class_basename($this));
         }
 
-        /** @var \MongoDB\Laravel\Eloquent\Builder<\MongoDB\Laravel\Eloquent\Model> $query */
+        /** @var Builder<Model> $query */
         $query = $this->newQuery();
 
-        /** @var \MongoDB\Laravel\Eloquent\Model $instance */
+        /** @var Model $instance */
         $instance = new $related;
 
         $embedsOne = new EmbedsOne($query, $this, $instance, $localKey, $foreignKey, $relation);

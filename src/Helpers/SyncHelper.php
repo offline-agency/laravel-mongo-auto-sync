@@ -4,6 +4,7 @@ namespace OfflineAgency\MongoAutoSync\Helpers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
+use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 use stdClass;
 
 class SyncHelper
@@ -160,7 +161,7 @@ class SyncHelper
     public static function getRequestToBeSync($ref_id, $modelOnTarget, Request $request, $methodOnTarget)
     {
         $new_req_embeded = new stdClass;
-        /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $model */
+        /** @var MDModel $model */
         $model = new $modelOnTarget;
         /** @var array<string, mixed> $items */
         $items = $model->getItems();
@@ -227,7 +228,7 @@ class SyncHelper
         $arr = [];
         if ($is_EO) {
             $obj = new stdClass;
-            /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $embedObj */
+            /** @var MDModel $embedObj */
             $embedObj = new $model;
             /** @var array<string, mixed> $EOitems */
             $EOitems = $embedObj->getItems();

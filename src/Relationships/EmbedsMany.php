@@ -8,9 +8,10 @@ use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use MongoDB\BSON\ObjectId;
+use MongoDB\Laravel\Query\Builder;
 
 /**
- * @extends EmbedsOneOrMany<\MongoDB\Laravel\Eloquent\Model, \MongoDB\Laravel\Eloquent\Model, \Illuminate\Database\Eloquent\Collection<int, \MongoDB\Laravel\Eloquent\Model>>
+ * @extends EmbedsOneOrMany<\MongoDB\Laravel\Eloquent\Model, \MongoDB\Laravel\Eloquent\Model, Collection<int, \MongoDB\Laravel\Eloquent\Model>>
  */
 class EmbedsMany extends EmbedsOneOrMany
 {
@@ -29,11 +30,11 @@ class EmbedsMany extends EmbedsOneOrMany
     /**
      * {@inheritdoc}
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, \MongoDB\Laravel\Eloquent\Model>
+     * @return Collection<int, \MongoDB\Laravel\Eloquent\Model>
      */
     public function getResults()
     {
-        /** @var \Illuminate\Database\Eloquent\Collection<int, \MongoDB\Laravel\Eloquent\Model> $results */
+        /** @var Collection<int, \MongoDB\Laravel\Eloquent\Model> $results */
         $results = $this->toCollection($this->getEmbeddedAsIndexed());
 
         return $results;
@@ -59,7 +60,7 @@ class EmbedsMany extends EmbedsOneOrMany
         }
 
         // Push the new model to the database.
-        /** @var \MongoDB\Laravel\Query\Builder $baseQuery */
+        /** @var Builder $baseQuery */
         $baseQuery = $this->getBaseQuery();
         $result = $baseQuery->push($this->localKey, $model->getAttributes(), true);
 
@@ -120,7 +121,7 @@ class EmbedsMany extends EmbedsOneOrMany
         // Get the correct foreign key value.
         $foreignKey = $this->getForeignKeyValue($model);
 
-        /** @var \MongoDB\Laravel\Query\Builder $baseQuery */
+        /** @var Builder $baseQuery */
         $baseQuery = $this->getBaseQuery();
         $result = $baseQuery->pull($this->localKey, [$model->getKeyName() => $foreignKey]);
 
@@ -237,18 +238,18 @@ class EmbedsMany extends EmbedsOneOrMany
      * @return Model
      */
     /**
-     * @return \Illuminate\Database\Eloquent\Model
+     * @return EloquentModel
      */
     public function attach(Model $model)
     {
         /** @var \MongoDB\Laravel\Eloquent\Model $model */
         $result = $this->save($model);
         if ($result === false) {
-            /** @var \Illuminate\Database\Eloquent\Model $model */
+            /** @var EloquentModel $model */
             return $model;
         }
 
-        /** @var \Illuminate\Database\Eloquent\Model $result */
+        /** @var EloquentModel $result */
         return $result;
     }
 
@@ -256,7 +257,7 @@ class EmbedsMany extends EmbedsOneOrMany
      * Associate a new model instance to the given parent, without saving it to the database.
      *
      * @param  Model  $model
-     * @return \Illuminate\Database\Eloquent\Model
+     * @return EloquentModel
      */
     protected function associateNew($model)
     {
@@ -279,7 +280,7 @@ class EmbedsMany extends EmbedsOneOrMany
      * Associate an existing model instance to the given parent, without saving it to the database.
      *
      * @param  Model  $model
-     * @return \Illuminate\Database\Eloquent\Model
+     * @return EloquentModel
      */
     protected function associateExisting($model)
     {

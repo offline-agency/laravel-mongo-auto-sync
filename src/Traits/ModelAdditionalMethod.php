@@ -4,6 +4,8 @@ namespace OfflineAgency\MongoAutoSync\Traits;
 
 use DateTime;
 use Exception;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use MongoDB\BSON\UTCDateTime;
 use OfflineAgency\MongoAutoSync\Exceptions\InvalidConfigurationException;
@@ -27,12 +29,12 @@ trait ModelAdditionalMethod
     protected static $mini_model_list_cache = [];
 
     /**
-     * @param  array<int, \Illuminate\Database\Eloquent\Model>  $models
-     * @return \Illuminate\Database\Eloquent\Collection<int, static>
+     * @param  array<int, Model>  $models
+     * @return Collection<int, static>
      */
     public function newCollection(array $models = [])
     {
-        /** @var \Illuminate\Database\Eloquent\Collection<int, static> $collection */
+        /** @var Collection<int, static> $collection */
         $collection = new MongoCollection($models);
 
         return $collection;

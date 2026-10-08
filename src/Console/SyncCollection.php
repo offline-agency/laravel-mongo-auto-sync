@@ -3,7 +3,9 @@
 namespace OfflineAgency\MongoAutoSync\Console;
 
 use Illuminate\Console\Command;
+use OfflineAgency\MongoAutoSync\Eloquent\Model;
 use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
+use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 use OfflineAgency\MongoAutoSync\Jobs\SyncTargetJob;
 
 class SyncCollection extends Command
@@ -25,7 +27,7 @@ class SyncCollection extends Command
             return;
         }
 
-        /** @var \OfflineAgency\MongoAutoSync\Eloquent\Model $model */
+        /** @var Model $model */
         $model = new $modelClass;
         $count = $model->count();
         $bar = $this->output->createProgressBar($count);
@@ -33,7 +35,7 @@ class SyncCollection extends Command
         $model::chunk(100, function ($items) use ($bar) {
             foreach ($items as $item) {
                 if (method_exists($item, 'getMongoRelation')) {
-                    /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $item */
+                    /** @var MDModel $item */
                     $relations = $item->getMongoRelation();
                     foreach ($relations as $method => $relation) {
                         if (SyncHelper::hasTarget($relation)) {

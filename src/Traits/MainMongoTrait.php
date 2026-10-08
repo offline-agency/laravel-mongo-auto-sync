@@ -9,6 +9,7 @@ use OfflineAgency\MongoAutoSync\Exceptions\InvalidConfigurationException;
 use OfflineAgency\MongoAutoSync\Exceptions\InvalidRequestException;
 use OfflineAgency\MongoAutoSync\Exceptions\MongoAutoSyncException;
 use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
+use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 use OfflineAgency\MongoAutoSync\Observers\MongoAutoSyncObserver;
 use stdClass;
 
@@ -230,7 +231,7 @@ trait MainMongoTrait
     }
 
     /**
-     * @return \OfflineAgency\MongoAutoSync\Http\Models\MDModel|null
+     * @return MDModel|null
      *
      * @throws InvalidConfigurationException
      */
@@ -240,11 +241,11 @@ trait MainMongoTrait
         $target_id = $obj->ref_id;
 
         // Init the Target Model
-        /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $modelToBeSync */
+        /** @var MDModel $modelToBeSync */
         $modelToBeSync = new $modelTarget;
 
         $found = $modelToBeSync->find($target_id);
-        if ($found instanceof \OfflineAgency\MongoAutoSync\Http\Models\MDModel) {
+        if ($found instanceof MDModel) {
             return $found;
         }
 
