@@ -326,7 +326,7 @@ abstract class EmbedsOneOrMany extends Relation
      * Convert an array of records to a Collection.
      *
      * @param  array<int, array<string, mixed>>  $records
-     * @return Collection<int, Model>
+     * @return Collection<array-key, TRelatedModel>
      */
     protected function toCollection(array $records = [])
     {
