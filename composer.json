@@ -11,13 +11,13 @@
         "illuminate/database": "^11.0|^12.0",
         "illuminate/events": "^11.0|^12.0",
         "illuminate/support": "^11.0|^12.0",
-        "mongodb/laravel-mongodb": "^5.0",
+        "mongodb/laravel-mongodb": "^5.2",
         "nunomaduro/termwind": "^2.3"
     },
     "require-dev": {
         "laravel/pint": "^1.0",
         "larastan/larastan": "^3.0",
-        "orchestra/testbench": "^9.0",
+        "orchestra/testbench": "^9.0|^10.0",
         "pestphp/pest": "^3.7",
         "pestphp/pest-plugin-laravel": "^3.0",
         "mockery/mockery": "^1.6",
@@ -34,19 +34,20 @@
         "psr-4": {
             "OfflineAgency\\MongoAutoSync\\": "src/"
         },
-        "files": []
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Tests\\": "tests/"
-        },
         "files": [
             "src/syncUtils.php"
         ]
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
     "scripts": {
         "test": "vendor/bin/pest",
+        "test:coverage": "vendor/bin/pest --coverage",
         "lint": "vendor/bin/pint",
+        "lint:check": "vendor/bin/pint --test",
         "stan": "vendor/bin/phpstan analyse"
     },
     "config": {

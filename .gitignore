@@ -7,3 +7,5 @@ bootstrap/
 .phpunit.result.cache
 .phpunit.cache
 build/phpstan
+composer.lock
+coverage.xml
