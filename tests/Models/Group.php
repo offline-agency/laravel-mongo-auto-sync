@@ -8,7 +8,7 @@ class Group extends MDModel
 {
     protected $connection = 'mongodb';
 
-    protected $collection = 'groups';
+    protected $table = 'groups';
 
     protected static $unguarded = true;
 }

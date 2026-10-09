@@ -8,7 +8,7 @@ class Scoped extends MDModel
 {
     protected $connection = 'mongodb';
 
-    protected $collection = 'scoped';
+    protected $table = 'scoped';
 
     protected $fillable = ['name', 'favorite'];
 

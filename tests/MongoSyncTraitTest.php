@@ -69,7 +69,8 @@ test('store different input type', function () {
     expect($navigation->text)->toBeString();
     expect($navigation->href)->toBeNull();
     expect($navigation->title)->toBeArray();
-    expect($navigation->target)->toBeObject();
+    // stdClass input is stored as an array: Symfony InputBag rejects objects, and BSON documents are read back as arrays anyway
+    expect($navigation->target)->toBeArray();
 });
 
 test('update with sync with embeds one on target', function () {
@@ -145,7 +146,8 @@ test('update different input type', function () {
     $navigation->updateWithSync($request, $arr, $options);
 
     expect($this->isUpdated($navigation))->toBeTrue();
-    expect($navigation->target)->toBeObject();
+    // stdClass input is stored as an array: Symfony InputBag rejects objects, and BSON documents are read back as arrays anyway
+    expect($navigation->target)->toBeArray();
     expect($navigation->title)->toBeArray();
     expect($navigation->href)->toBeString();
 });

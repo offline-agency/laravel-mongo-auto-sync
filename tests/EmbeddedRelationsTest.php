@@ -53,7 +53,7 @@ test('embeds many save', function () {
     expect($address->_id)->toBeString();
 
     $raw = $address->getAttributes();
-    expect($raw['_id'])->toBeInstanceOf(ObjectId::class);
+    expect($raw['id'])->toBeInstanceOf(ObjectId::class);
 
     $address = $user->addresses()->save(new Address(['city' => 'Paris']));
 
@@ -172,17 +172,17 @@ test('embeds many create', function () {
     expect($user->addresses->pluck('city')->all())->toEqual(['Bruxelles']);
 
     $raw = $address->getAttributes();
-    expect($raw['_id'])->toBeInstanceOf(ObjectId::class);
+    expect($raw['id'])->toBeInstanceOf(ObjectId::class);
 
     $freshUser = User::find($user->id);
     expect($freshUser->addresses->pluck('city')->all())->toEqual(['Bruxelles']);
 
     $user = User::create([]);
-    $address = $user->addresses()->create(['_id' => '', 'city' => 'Bruxelles']);
+    $address = $user->addresses()->create(['id' => '', 'city' => 'Bruxelles']);
     expect($address->_id)->toBeString();
 
     $raw = $address->getAttributes();
-    expect($raw['_id'])->toBeInstanceOf(ObjectId::class);
+    expect($raw['id'])->toBeInstanceOf(ObjectId::class);
 });
 
 test('embeds many create many', function () {
@@ -523,7 +523,7 @@ test('embeds one', function () {
     expect($father->_id)->toBeString();
 
     $raw = $father->getAttributes();
-    expect($raw['_id'])->toBeInstanceOf(ObjectId::class);
+    expect($raw['id'])->toBeInstanceOf(ObjectId::class);
 
     $father->setEventDispatcher($events = Mockery::mock(Dispatcher::class));
     $events->shouldReceive('dispatch')->with('eloquent.retrieved: '.get_class($father), Mockery::any());

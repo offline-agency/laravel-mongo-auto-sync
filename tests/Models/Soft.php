@@ -17,7 +17,7 @@ class Soft extends MDModel
 
     protected $connection = 'mongodb';
 
-    protected $collection = 'soft';
+    protected $table = 'soft';
 
     protected static $unguarded = true;
 

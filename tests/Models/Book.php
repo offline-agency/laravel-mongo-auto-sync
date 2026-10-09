@@ -15,7 +15,7 @@ class Book extends MDModel
 {
     protected $connection = 'mongodb';
 
-    protected $collection = 'books';
+    protected $table = 'books';
 
     protected static $unguarded = true;
 

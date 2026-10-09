@@ -10,7 +10,7 @@ use Orchestra\Testbench\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
 {
-    use MockeryPHPUnitIntegration;
+    use MockeryPHPUnitIntegration, SyncHelpers;
 
     protected function setUp(): void
     {
@@ -45,9 +45,10 @@ abstract class TestCase extends BaseTestCase
         $app['config']->set('auth.providers.users.model', 'User');
         $app['config']->set('cache.driver', 'array');
 
-        $app['config']->set('queue.default', 'database');
-        $app['config']->set('queue.connections.database', [
+        $app['config']->set('queue.default', 'sync');
+        $app['config']->set('queue.connections.mongodb', [
             'driver' => 'mongodb',
+            'connection' => 'mongodb',
             'table' => 'jobs',
             'queue' => 'default',
             'expire' => 60,

@@ -20,7 +20,7 @@ use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
  **/
 class Navigation extends MDModel
 {
-    protected $collection = 'navigation';
+    protected $table = 'navigation';
 
     protected $dates = ['date'];
 

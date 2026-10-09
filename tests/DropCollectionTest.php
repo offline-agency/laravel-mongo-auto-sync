@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Http\Request;
 use Tests\Models\Article;
 
 test('drop collection with object', function () {
@@ -27,21 +26,10 @@ test('exception path not found', function () {
 
 function createArticle()
 {
-    $articles = [];
+    // Full requests: storeWithSync() requires every item declared on the model
+    test()->prepareArticleData([], 2);
 
-    for ($i = 0; $i < 2; $i++) {
-        $article = new Article;
-        $request = new Request;
-        $arr = [
-            'title' => 'Article #'.$i,
-        ];
-
-        $article->storeWithSync($request, $arr);
-
-        $articles[$i] = $article;
-    }
-
-    return $articles;
+    return Article::all()->all();
 }
 
 function isDeleted($articles)

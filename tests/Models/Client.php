@@ -8,7 +8,7 @@ class Client extends MDModel
 {
     protected $connection = 'mongodb';
 
-    protected $collection = 'clients';
+    protected $table = 'clients';
 
     protected static $unguarded = true;
 }
