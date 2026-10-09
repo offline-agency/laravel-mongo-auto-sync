@@ -56,7 +56,13 @@ See [UPGRADE-4.0.md](UPGRADE-4.0.md) for the migration guide.
 - Partial requests wrapped the whole `EmbedsOne` mini model in `ref_id`.
 - An empty `EmbedsOne` relation returned an empty model instead of `null` (as in 3.x).
 - Embedded models did not get a generated key (the 5.x key name is `id`) and string ids were not converted to `ObjectId`.
-- `mongo-sync:benchmark` always crashed (it imported a non-existent facade).
+- `mongo-sync:benchmark` always crashed (it imported a non-existent facade) and exited 0 for an unknown model.
+- `drop:collection`, `model-doc:generate` and `mongo-sync:check-config` did not find models in subdirectories of `model_path`.
+- `mongo-sync:check-config` exited 0 when the model directory could not be read.
+- `Builder::chunkById()` always failed (it forced the `_id` column, returned as `id` by laravel-mongodb 5).
+- `increment()` / `decrement()` on an embedded model crashed on an expression column.
+- Eager loading an `EmbedsOne` relation crashed.
+- `getRandomRow()` returned models without id or attributes.
 
 ## [3.1.1] and earlier
 

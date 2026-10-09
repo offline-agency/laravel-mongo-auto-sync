@@ -23,6 +23,8 @@ Once the test suite was actually running, it exposed several runtime regressions
 | R13 | Legacy files tracked (`.phpunit.result.cache`, `.codacy.yml`, `phpcs.xml`), outdated Docker setup | `fc26ec0` |
 | R14 | `composer.lock` committed for a library; missing composer scripts | `d09c3d8` |
 
+Raising coverage to 100 % uncovered more bugs, fixed test-first in `5817cd3` (`chunkById()`, embedded `increment()` with an expression, `EmbedsOne` eager loading), `bee0ba9` (console commands could not find models in subdirectories; exit codes) and `3ecee63` (`getRandomRow()` returned empty models); `4b3fb57` adds tests only.
+
 Other commits: `c0ab993` (Pint preset of the current Pint release), `5fc65bc` (deprecated faker properties in tests).
 
 A fresh review of the whole branch found further issues, fixed test-first in `bf13709` / `d753705`: the job no longer carries the request input (stale values, wrong locale on multilingual fields, posted secrets in the queue payload), target writes are atomic (`$pull` / `$push` / `$set`, no lost entries with concurrent workers), `destroyWithSync(false)` no longer syncs in background mode, and a partial update with an empty `EmbedsOne` target relation no longer crashes.
@@ -50,11 +52,11 @@ Additional decisions taken during the work:
 
 | Check | Laravel 13.35 / Testbench 11.3 | Laravel 12.69 / Testbench 10.12 |
 | --- | --- | --- |
-| `vendor/bin/pest` | 163 passed (613 assertions) | 163 passed (613 assertions) |
+| `vendor/bin/pest` | 262 passed (879 assertions) | 262 passed (879 assertions) |
 | `vendor/bin/phpstan analyse` (level 8) | OK | OK |
 | `vendor/bin/pint --test` | OK | – |
 
-- Coverage (pcov, PHP 8.4): 82.09 % lines, up from 29.74 % on `develop` (where 113 of 140 tests failed).
+- Coverage (pcov, PHP 8.4): **100 % lines** (1353/1353), up from 29.74 % on `develop` (where 113 of 140 tests failed).
 - `composer validate --strict`: valid. `function_exists('ml')` is `true` with `composer install --no-dev`.
 - Workflows: parsed as YAML, `actionlint` clean; the release version script computes `3.1.1` -> `4.0.0` on this branch.
 
@@ -73,3 +75,4 @@ Additional decisions taken during the work:
 - CI does not test the lowest allowed versions (`--prefer-lowest`).
 - A missing request key on a relationship *with* target is not reported as `InvalidRequestException` (same as 3.x).
 - `release.yml` manual runs are not restricted to `master`.
+- `HasOne` / `HasMany` children saved by `storeWithSync()` (which requires `'has-target' => false`) are not deleted by `destroyWithSync()` (which only deletes them when the relation has a target).
