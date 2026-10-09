@@ -33,8 +33,8 @@ trait SyncHelpers
         $request = new Request;
 
         $text = Arr::has($data, 'text') ? Arr::get($data, 'text') : $faker->text(50);
-        $code = Arr::has($data, 'code') ? Arr::get($data, 'code') : $faker->creditCardNumber;
-        $href = Arr::has($data, 'href') ? Arr::get($data, 'href') : $faker->url;
+        $code = Arr::has($data, 'code') ? Arr::get($data, 'code') : $faker->creditCardNumber();
+        $href = Arr::has($data, 'href') ? Arr::get($data, 'href') : $faker->url();
         $navigation = Arr::has($data, 'navigation') ? Arr::get($data, 'navigation') : json_encode([]);
 
         $arr = [
@@ -59,8 +59,8 @@ trait SyncHelpers
         $request = new Request;
 
         $text = Arr::has($data, 'text') ? Arr::get($data, 'text') : $faker->text(50);
-        $code = Arr::has($data, 'code') ? Arr::get($data, 'code') : $faker->creditCardNumber;
-        $href = Arr::has($data, 'href') ? Arr::get($data, 'href') : $faker->url;
+        $code = Arr::has($data, 'code') ? Arr::get($data, 'code') : $faker->creditCardNumber();
+        $href = Arr::has($data, 'href') ? Arr::get($data, 'href') : $faker->url();
         $navigation = Arr::has($data, 'navigation') ? Arr::get($data, 'navigation') : json_encode([]);
 
         $arr = [
@@ -88,11 +88,11 @@ trait SyncHelpers
         $navigation = new Navigation;
 
         $text = Arr::has($data, 'text') ? Arr::get($data, 'text') : $faker->text(50);
-        $code = Arr::has($data, 'code') ? Arr::get($data, 'code') : $faker->creditCardNumber;
-        $href = Arr::has($data, 'href') ? Arr::get($data, 'href') : $faker->url;
+        $code = Arr::has($data, 'code') ? Arr::get($data, 'code') : $faker->creditCardNumber();
+        $href = Arr::has($data, 'href') ? Arr::get($data, 'href') : $faker->url();
         $date = Arr::has($data, 'date') ? Arr::get($data, 'date') : Date::now();
         $target = Arr::has($data, 'target') ? Arr::get($data, 'target') : $faker->text(50);
-        $title = Arr::has($data, 'title') ? Arr::get($data, 'title') : $faker->title;
+        $title = Arr::has($data, 'title') ? Arr::get($data, 'title') : $faker->title();
 
         $sub_items = Arr::has($data, 'sub_items') ? Arr::get($data, 'sub_items') : json_encode([]);
 
@@ -267,8 +267,8 @@ trait SyncHelpers
 
         $permission = new Permission;
 
-        $name = Arr::has($data, 'name') ? Arr::get($data, 'name') : $faker->name;
-        $label = Arr::has($data, 'label') ? Arr::get($data, 'label') : $faker->name;
+        $name = Arr::has($data, 'name') ? Arr::get($data, 'name') : $faker->name();
+        $label = Arr::has($data, 'label') ? Arr::get($data, 'label') : $faker->name();
 
         $roles = Arr::has($data, 'roles') ? Arr::get($data, 'roles') : json_encode([]);
         $users = Arr::has($data, 'users') ? Arr::get($data, 'users') : json_encode([]);
@@ -296,8 +296,8 @@ trait SyncHelpers
 
         $role = new Role;
 
-        $name = Arr::has($data, 'name') ? Arr::get($data, 'name') : $faker->name;
-        $label = Arr::has($data, 'label') ? Arr::get($data, 'label') : $faker->name;
+        $name = Arr::has($data, 'name') ? Arr::get($data, 'name') : $faker->name();
+        $label = Arr::has($data, 'label') ? Arr::get($data, 'label') : $faker->name();
 
         $permissions = Arr::has($data, 'permissions') ? Arr::get($data, 'permissions') : json_encode([]);
         $users = Arr::has($data, 'users') ? Arr::get($data, 'users') : json_encode([]);
@@ -331,7 +331,7 @@ trait SyncHelpers
             $slug = Arr::has($data, 'slug') ? Arr::get($data, 'slug') : Str::slug($title);
             $visibility = Arr::has($data, 'visibility') ? Arr::get($data, 'visibility') : $faker->text(50);
             $status = Arr::has($data, 'status') ? Arr::get($data, 'status') : $faker->text(50);
-            $is_deleted = Arr::has($data, 'is_deleted') ? Arr::get($data, 'is_deleted') : $faker->boolean;
+            $is_deleted = Arr::has($data, 'is_deleted') ? Arr::get($data, 'is_deleted') : $faker->boolean();
             $is_active = Arr::has($data, 'is_active') ? Arr::get($data, 'is_active') : $faker->text(50);
             $primarycategory = Arr::has($data, 'primarycategory') ? Arr::get($data, 'primarycategory') : $faker->text(50);
 
@@ -367,9 +367,9 @@ trait SyncHelpers
             $request = new Request;
             $user = new User;
 
-            $name = Arr::has($data, 'name') ? Arr::get($data, 'name') : $faker->firstName;
-            $surname = Arr::has($data, 'surname') ? Arr::get($data, 'surname') : $faker->lastName;
-            $email = Arr::has($data, 'email') ? Arr::get($data, 'email') : $faker->email;
+            $name = Arr::has($data, 'name') ? Arr::get($data, 'name') : $faker->firstName();
+            $surname = Arr::has($data, 'surname') ? Arr::get($data, 'surname') : $faker->lastName();
+            $email = Arr::has($data, 'email') ? Arr::get($data, 'email') : $faker->email();
 
             $roles = Arr::has($data, 'roles') ? Arr::get($data, 'roles') : json_encode([]);
             $permissions = Arr::has($data, 'permissions') ? Arr::get($data, 'permissions') : json_encode([]);

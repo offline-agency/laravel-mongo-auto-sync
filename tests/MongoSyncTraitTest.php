@@ -32,8 +32,8 @@ test('store with sync', function () {
 
     $arr = [
         'text' => $faker->text(50),
-        'code' => $faker->creditCardNumber,
-        'href' => $faker->url,
+        'code' => $faker->creditCardNumber(),
+        'href' => $faker->url(),
         'title' => $faker->text(30),
         'date' => new UTCDateTime(new DateTime),
         'target' => (object) [
@@ -56,7 +56,7 @@ test('store different input type', function () {
 
     $arr = [
         'text' => $faker->text(50),
-        'code' => $faker->creditCardNumber,
+        'code' => $faker->creditCardNumber(),
         'href' => null,
         'title' => $faker->text(30),
         'date' => new UTCDateTime(new DateTime),
@@ -86,7 +86,7 @@ test('update with sync with embeds one on target', function () {
 
     $arr = [
         'text' => 'Aggiornato',
-        'code' => $faker->creditCardNumber,
+        'code' => $faker->creditCardNumber(),
         'href' => $faker->imageUrl(),
         'title' => $faker->text(30),
         'date' => null,
@@ -111,7 +111,7 @@ test('update with sync with embeds many on target', function () {
 
     $arr = [
         'text' => 'Aggiornato',
-        'code' => $faker->creditCardNumber,
+        'code' => $faker->creditCardNumber(),
         'href' => $faker->imageUrl(),
         'title' => $faker->text(30),
         'date' => null,
@@ -136,7 +136,7 @@ test('update different input type', function () {
 
     $arr = [
         'text' => 'Aggiornato',
-        'code' => $faker->creditCardNumber,
+        'code' => $faker->creditCardNumber(),
         'href' => $faker->text(50),
         'title' => $faker->text(30),
         'date' => new UTCDateTime(new DateTime),
@@ -165,7 +165,7 @@ test('update null value on all field except text and code', function () {
 
     $arr = [
         'text' => 'Aggiornato',
-        'code' => $faker->creditCardNumber,
+        'code' => $faker->creditCardNumber(),
         'href' => null,
         'title' => null,
         'date' => null,
@@ -189,8 +189,8 @@ test('store item with relation', function () {
     $item = new Item;
 
     $arr = [
-        'name' => $faker->firstName.' '.$faker->lastName,
-        'code' => $faker->creditCardNumber,
+        'name' => $faker->firstName().' '.$faker->lastName(),
+        'code' => $faker->creditCardNumber(),
         'price' => $faker->numberBetween(1, 100),
         'quantity' => $faker->numberBetween(1, 10),
         'discount' => $faker->randomElement([10, 20, 50]),
