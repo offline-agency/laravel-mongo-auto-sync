@@ -13,17 +13,19 @@ Once the test suite was actually running, it exposed several runtime regressions
 | R3 | Orchestra Testbench constraint excluded Laravel 12+ | `d09c3d8`, `e36cbc5` |
 | R4 | `src/syncUtils.php` helpers only in `autoload-dev` | `d09c3d8` |
 | R5 | Test harness: suite never booted Testbench, jobs queued on a non-running driver | `a811a10` (+ regressions it uncovered: `aef0cb7`, `36af79c`) |
-| R6 | `SyncTargetJob` serialised embedded models: silent no-op on real drivers | `c5a7330` |
-| R7 | Two independent jobs per save (delete + save) could run out of order | `c5a7330` |
+| R6 | `SyncTargetJob` serialised embedded models: silent no-op on real drivers | `c5a7330`, `bf13709` |
+| R7 | Two independent jobs per save (delete + save) could run out of order | `c5a7330`, `bf13709` |
 | R8 | No tests for console commands and exceptions | `644b3b4` (+ fixes it uncovered: `e2d1720`) |
-| R9 | `ref_id` strict comparison (ObjectId vs string), duplicated mini models, queue config ignored | `c5a7330` |
+| R9 | `ref_id` strict comparison (ObjectId vs string), duplicated mini models, queue config ignored | `c5a7330`, `bf13709` |
 | R10 | Unconditional `info` logging | `3b0cf91` |
-| R11 | PR body claimed recursive syncing; nested sync call was broken | `aef0cb7` (call removed, TODO restored), `6a5ad0a` (docs) |
-| R12 | README / changelog / upgrade guide missing or wrong | `6a5ad0a` |
+| R11 | PR body claimed recursive syncing; nested sync call was broken | `aef0cb7` (call removed, TODO restored), `6a5ad0a`, `d753705` (docs) |
+| R12 | README / changelog / upgrade guide missing or wrong | `6a5ad0a`, `d753705` |
 | R13 | Legacy files tracked (`.phpunit.result.cache`, `.codacy.yml`, `phpcs.xml`), outdated Docker setup | `fc26ec0` |
 | R14 | `composer.lock` committed for a library; missing composer scripts | `d09c3d8` |
 
 Other commits: `c0ab993` (Pint preset of the current Pint release), `5fc65bc` (deprecated faker properties in tests).
+
+A fresh review of the whole branch found further issues, fixed test-first in `bf13709` / `d753705`: the job no longer carries the request input (stale values, wrong locale on multilingual fields, posted secrets in the queue payload), target writes are atomic (`$pull` / `$push` / `$set`, no lost entries with concurrent workers), `destroyWithSync(false)` no longer syncs in background mode, and a partial update with an empty `EmbedsOne` target relation no longer crashes.
 
 ## Decisions
 
@@ -41,17 +43,18 @@ Additional decisions taken during the work:
 
 - Supported versions: PHP ^8.4, Laravel ^12.8 | ^13.0 (Laravel 11 dropped; ^12.8 because the observer is registered with `whenBooted()`).
 - Tests for the business methods extracted in 4.0 (`getBySlug*`, `getNotDeleted`, `getPublished`, `getPublic`, `getActive`, `findByAID`, `hasPermission`, `hasRole`, `checkPermission`, `getAID()`) and for the removed `getTypeOnTarget()` helper are deleted; the removals are documented in `UPGRADE-4.0.md`.
-- `SyncTargetJob` reloads the source and only upserts targets the source still references, so stale or out-of-order jobs cannot re-add removed references.
+- `SyncTargetJob` reloads the source, only upserts targets the source still references and builds the mini model from the stored document, so stale or out-of-order jobs cannot re-add removed references or write old values.
+- Target writes bypass Eloquent (atomic updates): no model events fire on the target models for them (documented in `UPGRADE-4.0.md`).
 
 ## Verification (PHP 8.4.25, MongoDB 8.0)
 
 | Check | Laravel 13.35 / Testbench 11.3 | Laravel 12.69 / Testbench 10.12 |
 | --- | --- | --- |
-| `vendor/bin/pest` | 155 passed (600 assertions) | 155 passed (600 assertions) |
+| `vendor/bin/pest` | 163 passed (613 assertions) | 163 passed (613 assertions) |
 | `vendor/bin/phpstan analyse` (level 8) | OK | OK |
 | `vendor/bin/pint --test` | OK | – |
 
-- Coverage (pcov, PHP 8.4): 81.68 % lines, up from 29.74 % on `develop` (where 113 of 140 tests failed).
+- Coverage (pcov, PHP 8.4): 82.09 % lines, up from 29.74 % on `develop` (where 113 of 140 tests failed).
 - `composer validate --strict`: valid. `function_exists('ml')` is `true` with `composer install --no-dev`.
 - Workflows: parsed as YAML, `actionlint` clean; the release version script computes `3.1.1` -> `4.0.0` on this branch.
 
@@ -62,3 +65,11 @@ Additional decisions taken during the work:
 - Packagist picks up tags through the GitHub hook, or through the optional `PACKAGIST_USERNAME` / `PACKAGIST_TOKEN` secrets.
 - PHP 8.5 cells use `continue-on-error` until they are stable.
 - The corrected PR #40 description is in `docs/pr/pr-40-body.md`.
+
+## Known follow-ups (not in this PR)
+
+- Each `storeWithSync()` / `updateWithSync()` can dispatch 2-3 idempotent jobs per relationship (one per internal save).
+- `mongo-sync:sync-collection` also dispatches no-op jobs for documents with empty relations.
+- CI does not test the lowest allowed versions (`--prefer-lowest`).
+- A missing request key on a relationship *with* target is not reported as `InvalidRequestException` (same as 3.x).
+- `release.yml` manual runs are not restricted to `master`.
