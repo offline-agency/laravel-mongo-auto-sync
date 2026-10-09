@@ -69,6 +69,7 @@ trait RelationshipMongoTrait
             $is_embeds_has_to_be_updated = $request->has($key);
 
             if (! is_null($value) && ! ($value == '') && ! ($value == '[]')) {
+                SyncHelper::assertSafeRefIds($key, $value);
                 $objs = json_decode($value);
             } else {
                 $objs = SyncHelper::getArrayWithEmptyObj($model, $is_EO, $is_EM);

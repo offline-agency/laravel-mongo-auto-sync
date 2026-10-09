@@ -67,6 +67,7 @@ trait MainMongoTrait
         $this->logSyncDebug('storeWithSync started for model: '.get_class($this));
 
         $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
+        $this->assertRelationshipRefIdsAreSafe($request);
         $this->storeEditAllItems($request, 'add', $options);
         $this->processAllRelationships($request, 'add', '', '', $options);
 
@@ -94,6 +95,7 @@ trait MainMongoTrait
         $this->logSyncDebug('updateWithSync started for model: '.get_class($this).' with ID: '.$this->getKey());
 
         $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
+        $this->assertRelationshipRefIdsAreSafe($request);
         $this->storeEditAllItems($request, 'update', $options);
         $this->processAllRelationships($request, 'update', '', '', $options);
 
@@ -112,6 +114,20 @@ trait MainMongoTrait
     {
         if (config('laravel-mongo-auto-sync.logging')) {
             Log::debug($message);
+        }
+    }
+
+    /**
+     * Reject, before anything is written, top-level relationship payloads whose ref_id is not a plain id.
+     *
+     * @throws InvalidRequestException
+     */
+    private function assertRelationshipRefIdsAreSafe(Request $request): void
+    {
+        foreach ($this->getMongoRelation() as $method => $relation) {
+            if ((SyncHelper::is_EO($relation['type'] ?? null) || SyncHelper::is_EM($relation['type'] ?? null)) && $request->has($method)) {
+                SyncHelper::assertSafeRefIds((string) $method, $request->input($method));
+            }
         }
     }
 

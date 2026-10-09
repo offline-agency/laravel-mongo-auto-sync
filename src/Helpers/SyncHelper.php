@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use MongoDB\BSON\ObjectId;
+use OfflineAgency\MongoAutoSync\Exceptions\InvalidRequestException;
 use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 use stdClass;
 use Stringable;
@@ -189,6 +190,39 @@ class SyncHelper
         }
 
         return (string) $a === (string) $b;
+    }
+
+    /**
+     * A relationship payload (JSON list of mini models) may only reference documents by a plain id:
+     * a string, an integer or null. Objects and lists (MongoDB operators, composite keys) are rejected
+     * before they reach a query or the database. Values that are not a JSON list are left to the parser.
+     *
+     * @throws InvalidRequestException
+     */
+    public static function assertSafeRefIds(string $key, mixed $value): void
+    {
+        if (! is_string($value)) {
+            return;
+        }
+
+        $objs = json_decode($value);
+        if (! is_array($objs)) {
+            return;
+        }
+
+        foreach ($objs as $obj) {
+            if (! $obj instanceof stdClass || ! property_exists($obj, 'ref_id')) {
+                continue;
+            }
+            $refId = $obj->ref_id;
+            if ($refId !== null && ! is_string($refId) && ! is_int($refId)) {
+                throw new InvalidRequestException(sprintf(
+                    "Invalid ref_id in relationship '%s': expected a string or integer id, got %s.",
+                    $key,
+                    get_debug_type($refId),
+                ));
+            }
+        }
     }
 
     /**
