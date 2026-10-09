@@ -5,212 +5,135 @@ namespace OfflineAgency\MongoAutoSync\Jobs;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Foundation\Bus\PendingDispatch;
 use Illuminate\Http\Request;
 use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Arr;
-use MongoDB\Laravel\Eloquent\Model;
 use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
+use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
+use OfflineAgency\MongoAutoSync\Observers\MongoAutoSyncObserver;
 
-class SyncTargetJob implements ShouldQueue
+/**
+ * Keeps the mini model of a source document in sync on the target documents of one relation.
+ *
+ * The payload carries ids only (no SerializesModels): the source is reloaded when the job runs, so the job
+ * reflects the latest stored state and can run more than once, or out of order, with the same result.
+ */
+final class SyncTargetJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
-    /** @var mixed */
-    protected $model;
-
-    /** @var array<mixed> */
-    protected $relation;
-
-    /** @var string */
-    protected $method;
-
-    /** @var string */
-    protected $event;
-
-    /** @var mixed */
-    protected $items;
-
-    /** @var array<mixed> */
-    protected $requestData;
-
-    /** @var array<mixed> */
-    protected $targetAdditionalData;
-
-    /** @var mixed */
-    protected $sourceId;
+    use Dispatchable, InteractsWithQueue, Queueable;
 
     /**
-     * @param  mixed  $model
-     * @param  array<mixed>  $relation
-     * @param  string  $method
-     * @param  string  $event
-     * @param  mixed  $items
-     * @param  array<mixed>  $requestData
-     * @param  array<mixed>  $targetAdditionalData
-     * @param  mixed  $sourceId
+     * @param  class-string<MDModel>  $sourceClass
+     * @param  array<string, mixed>  $relation  one entry of getMongoRelation()
+     * @param  list<string>  $currentTargetIds  targets that must contain the source mini model (upsert)
+     * @param  list<string>  $removedTargetIds  targets that must no longer contain it
+     * @param  array<string, mixed>  $requestData
+     * @param  array<string, mixed>  $targetAdditionalData
      */
-    public function __construct($model, $relation, $method, $event, $items, $requestData = [], $targetAdditionalData = [], $sourceId = null)
-    {
-        $this->relation = $relation;
-        $this->method = $method;
-        $this->event = $event;
-        $this->requestData = $requestData;
-        $this->targetAdditionalData = $targetAdditionalData;
-        $this->items = $items;
-        $this->sourceId = $sourceId;
+    public function __construct(
+        public readonly string $sourceClass,
+        public readonly string $sourceId,
+        public readonly string $method,
+        public readonly array $relation,
+        public readonly array $currentTargetIds,
+        public readonly array $removedTargetIds = [],
+        public readonly array $requestData = [],
+        public readonly array $targetAdditionalData = [],
+    ) {}
 
-        if ($event === 'delete') {
-            $this->model = null;
-        } else {
-            $this->model = $model;
+    /**
+     * @param  array<string, mixed>  $relation
+     * @param  list<string>  $currentTargetIds
+     * @param  list<string>  $removedTargetIds
+     */
+    public static function dispatchFor(MDModel $source, string $method, array $relation, array $currentTargetIds, array $removedTargetIds): PendingDispatch
+    {
+        $request = $source->getRequest();
+
+        $job = new self(
+            $source::class,
+            (string) $source->getKey(),
+            $method,
+            $relation,
+            array_values($currentTargetIds),
+            array_values($removedTargetIds),
+            $request === null ? [] : $request->input(),
+            $source->getTargetAdditionalData(),
+        );
+
+        $connection = config('laravel-mongo-auto-sync.queue_connection');
+        if (is_string($connection) && $connection !== '') {
+            $job->onConnection($connection);
         }
+
+        $queue = config('laravel-mongo-auto-sync.queue_name');
+        if (is_string($queue) && $queue !== '') {
+            $job->onQueue($queue);
+        }
+
+        return new PendingDispatch($job);
     }
 
-    /**
-     * @return void
-     */
-    public function handle()
+    public function handle(): void
     {
-        $relation = $this->relation;
-        $method = $this->method;
-        $event = $this->event;
+        MongoAutoSyncObserver::withoutDispatching(fn () => $this->sync());
+    }
 
-        if ($this->model && is_object($this->model)) {
-            $request = new Request;
-            $request->merge($this->requestData);
-            if (method_exists($this->model, 'setRequest')) {
-                $this->model->setRequest($request, []);
-            }
-            if (method_exists($this->model, 'setTargetAdditionalData')) {
-                $this->model->setTargetAdditionalData($this->targetAdditionalData);
-            }
-            if (method_exists($this->model, 'setMiniModels')) {
-                $this->model->setMiniModels();
-            }
-        }
-
-        $items = $this->items;
-
-        if (empty($items)) {
-            return;
-        }
-
-        $type = $relation['type'];
-        $modelTarget = $relation['modelTarget'];
-        $methodOnTarget = $relation['methodOnTarget'];
-        $modelOnTarget = $relation['modelOnTarget'];
-        $typeOnTarget = Arr::get($relation, 'typeOnTarget', 'EmbedsMany');
-
-        $is_EO = SyncHelper::is_EO($type);
+    private function sync(): void
+    {
+        /** @var class-string<MDModel> $modelTarget */
+        $modelTarget = $this->relation['modelTarget'];
+        $methodOnTarget = (string) $this->relation['methodOnTarget'];
+        $modelOnTarget = (string) $this->relation['modelOnTarget'];
+        $typeOnTarget = Arr::get($this->relation, 'typeOnTarget', 'EmbedsMany');
         $is_EO_target = SyncHelper::is_EO($typeOnTarget);
         $is_EM_target = SyncHelper::is_EM($typeOnTarget);
 
-        if ($event === 'delete') {
-            $this->processDelete($items, $is_EO, $modelTarget, $methodOnTarget, $is_EO_target, $is_EM_target);
-        } else {
-            $this->processUpdate($items, $is_EO, $modelTarget, $methodOnTarget, $modelOnTarget, $is_EO_target, $is_EM_target);
-        }
-    }
+        $source = $this->sourceClass::find($this->sourceId);
+        $source = $source instanceof MDModel ? $source : null;
 
-    /**
-     * @param  mixed  $items
-     * @param  bool  $is_EO
-     * @param  string  $modelTarget
-     * @param  string  $methodOnTarget
-     * @param  string  $modelOnTarget
-     * @param  bool  $is_EO_target
-     * @param  bool  $is_EM_target
-     * @return void
-     */
-    private function processUpdate($items, $is_EO, $modelTarget, $methodOnTarget, $modelOnTarget, $is_EO_target, $is_EM_target)
-    {
-        if (is_object($this->model) && method_exists($this->model, 'getEmbedModel')) {
-            $miniModel = $this->model->getEmbedModel($modelOnTarget);
-        } else {
+        // Trust the stored source over the payload: a stale job must not re-add a reference removed meanwhile.
+        $stillReferenced = $source === null ? [] : SyncHelper::refIds(Arr::get($source->getAttributes(), $this->method));
+        $upsertIds = array_values(array_intersect($this->currentTargetIds, $stillReferenced));
+        $removeIds = array_values(array_diff(array_unique([...$this->currentTargetIds, ...$this->removedTargetIds]), $stillReferenced));
+
+        if ($upsertIds === [] && $removeIds === []) {
             return;
         }
 
-        $itemList = $is_EO ? [$items] : $items;
-        if (! is_array($itemList) && ! is_iterable($itemList)) {
-            $itemList = [$itemList];
-        }
+        $targets = $modelTarget::query()
+            ->whereIn('id', [...$upsertIds, ...$removeIds])
+            ->get()
+            ->keyBy(fn (MDModel $target) => (string) $target->getKey());
 
-        $ids = [];
-        foreach ($itemList as $item) {
-            $ref_id = is_array($item) ? ($item['ref_id'] ?? null) : ($item->ref_id ?? null);
-            if ($ref_id) {
-                $ids[] = $ref_id;
+        // 1. removals first
+        foreach ($removeIds as $id) {
+            $target = $targets->get($id);
+            if ($target instanceof MDModel) {
+                $target->removeRelationWithSync($methodOnTarget, $this->sourceId, $is_EO_target, $is_EM_target);
             }
         }
 
-        if (empty($ids)) {
+        if ($source === null || $upsertIds === []) {
             return;
         }
 
-        /** @var Model $targetModel */
-        $targetModel = new $modelTarget;
-        // Batch load
-        // MongoDB IDs can be strings or ObjectId.
-        // Assuming they match what is in ref_id.
-        $targets = $targetModel::whereIn('_id', $ids)->get();
-        // keyBy might fail if _id is object, but usually it casts to string
+        // 2. upserts with the mini model built as the synchronous path does
+        $request = new Request;
+        $request->merge($this->requestData);
+        $source->setRequest($request, []);
+        $source->setTargetAdditionalData($this->targetAdditionalData);
+        $source->setMiniModels();
+        $miniModel = $source->getEmbedModel($modelOnTarget);
 
-        foreach ($targets as $target) {
-            if (method_exists($target, 'updateRelationWithSync')) {
+        foreach ($upsertIds as $id) {
+            $target = $targets->get($id);
+            if ($target instanceof MDModel) {
                 $target->updateRelationWithSync($miniModel, $methodOnTarget, $is_EO_target, $is_EM_target);
             }
-
-            // TODO: Recursion will go here
-            // $this->processRecursiveSync($target, $modelOnTarget);
-        }
-    }
-
-    /**
-     * @param  mixed  $items
-     * @param  bool  $is_EO
-     * @param  string  $modelTarget
-     * @param  string  $methodOnTarget
-     * @param  bool  $is_EO_target
-     * @param  bool  $is_EM_target
-     * @return void
-     */
-    private function processDelete($items, $is_EO, $modelTarget, $methodOnTarget, $is_EO_target, $is_EM_target)
-    {
-        $itemList = $is_EO ? [$items] : $items;
-        if (! is_array($itemList) && ! is_iterable($itemList)) {
-            $itemList = [$itemList];
         }
 
-        $ids = [];
-        foreach ($itemList as $item) {
-            $ref_id = is_array($item) ? ($item['ref_id'] ?? null) : ($item->ref_id ?? null);
-            if ($ref_id) {
-                $ids[] = $ref_id;
-            }
-        }
-
-        if (empty($ids)) {
-            return;
-        }
-
-        /** @var Model $targetModel */
-        $targetModel = new $modelTarget;
-        $targets = $targetModel::whereIn('_id', $ids)->get();
-
-        foreach ($targets as $target) {
-            if ($is_EM_target) {
-                $new_values = [];
-                if (is_iterable($target->$methodOnTarget)) {
-                    foreach ($target->$methodOnTarget as $temp) {
-                        if ($temp->ref_id !== $this->sourceId) {
-                            $new_values[] = $temp->attributes;
-                        }
-                    }
-                }
-                $target->$methodOnTarget = $new_values;
-                $target->save();
-            }
-        }
+        // TODO: nested sync (targets of level > 1) is not performed on the background path.
     }
 }

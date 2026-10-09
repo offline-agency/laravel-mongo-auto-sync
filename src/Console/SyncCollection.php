@@ -3,6 +3,7 @@
 namespace OfflineAgency\MongoAutoSync\Console;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Arr;
 use OfflineAgency\MongoAutoSync\Eloquent\Model;
 use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
 use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
@@ -39,16 +40,7 @@ class SyncCollection extends Command
                     $relations = $item->getMongoRelation();
                     foreach ($relations as $method => $relation) {
                         if (SyncHelper::hasTarget($relation)) {
-                            dispatch(new SyncTargetJob(
-                                $item,
-                                $relation,
-                                $method,
-                                'save',
-                                $item->$method,
-                                [],
-                                [],
-                                $item->id
-                            ));
+                            SyncTargetJob::dispatchFor($item, $method, $relation, SyncHelper::refIds(Arr::get($item->getAttributes(), $method)), []);
                         }
                     }
                 }

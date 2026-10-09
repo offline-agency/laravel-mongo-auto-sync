@@ -3,6 +3,7 @@
 namespace OfflineAgency\MongoAutoSync\Console;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\File;
 use MongoDB\Laravel\Eloquent\Model;
 use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
@@ -115,17 +116,8 @@ class AnalyseDatabase extends Command
                         if (! $found) {
                             render("<div class='text-yellow-500'>Inconsistency: {$modelClass} {$item->id} links to {$modelTarget} {$ref_id}, but target missing back reference.</div>");
 
-                            if ($this->option('fix')) {
-                                dispatch(new SyncTargetJob(
-                                    $item,
-                                    $relation,
-                                    $method,
-                                    'save',
-                                    $item->$method,
-                                    [],
-                                    [],
-                                    $item->id
-                                ));
+                            if ($this->option('fix') && $item instanceof MDModel) {
+                                SyncTargetJob::dispatchFor($item, $method, $relation, SyncHelper::refIds(Arr::get($item->getAttributes(), $method)), []);
                             }
                         }
                     }

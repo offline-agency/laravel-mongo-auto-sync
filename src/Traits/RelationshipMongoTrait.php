@@ -3,6 +3,7 @@
 namespace OfflineAgency\MongoAutoSync\Traits;
 
 use DateTime;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use MongoDB\BSON\UTCDateTime;
@@ -131,6 +132,9 @@ trait RelationshipMongoTrait
     }
 
     /**
+     * Upsert the mini model of a source on this target: an existing entry with the same ref_id is replaced
+     * in place, so running the sync twice never duplicates it.
+     *
      * @param  object  $mini_model
      * @param  bool  $is_EO_target
      * @param  bool  $is_EM_target
@@ -138,21 +142,87 @@ trait RelationshipMongoTrait
      */
     public function updateRelationWithSync($mini_model, string $method_on_target, $is_EO_target, $is_EM_target)
     {
+        /** @var MDModel $mini_model */
+        $mini_attributes = $mini_model->getAttributes();
+
         if ($is_EM_target) {
             $new_values = [];
-            foreach ($this->$method_on_target as $temp) {
-                /** @var MDModel $temp */
-                $new_values[] = $temp->attributes;
+            $replaced = false;
+            foreach ($this->embeddedEntries($method_on_target) as $attributes) {
+                if (SyncHelper::sameId($attributes['ref_id'] ?? null, $mini_attributes['ref_id'] ?? null)) {
+                    if ($replaced) {
+                        continue; // drop duplicates left by older versions
+                    }
+                    $attributes = $mini_attributes;
+                    $replaced = true;
+                }
+                $new_values[] = $attributes;
             }
-            /** @var MDModel $mini_model */
-            $new_values[] = $mini_model->attributes;
+            if (! $replaced) {
+                $new_values[] = $mini_attributes;
+            }
         } else {
-            /** @var MDModel $mini_model */
-            $new_values = $mini_model->attributes;
+            $new_values = $mini_attributes;
         }
 
         $this->$method_on_target = $new_values;
         $this->save();
+    }
+
+    /**
+     * Remove the mini model of the source $ref_id from this target.
+     *
+     * @return void
+     */
+    public function removeRelationWithSync(string $method_on_target, mixed $ref_id, bool $is_EO_target, bool $is_EM_target)
+    {
+        if ($is_EM_target) {
+            $entries = $this->embeddedEntries($method_on_target);
+            $new_values = array_values(array_filter(
+                $entries,
+                fn (array $attributes) => ! SyncHelper::sameId($attributes['ref_id'] ?? null, $ref_id)
+            ));
+            if (count($new_values) === count($entries)) {
+                return;
+            }
+            $this->$method_on_target = $new_values;
+        } elseif ($is_EO_target) {
+            $current = Arr::get($this->getAttributes(), $method_on_target);
+            if (! is_array($current) || ! SyncHelper::sameId($current['ref_id'] ?? null, $ref_id)) {
+                return;
+            }
+            $this->$method_on_target = null;
+        } else {
+            return;
+        }
+
+        $this->save();
+    }
+
+    /**
+     * Raw attributes of every entry embedded under $method.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function embeddedEntries(string $method): array
+    {
+        $value = $this->$method;
+        if (! is_iterable($value)) {
+            return [];
+        }
+
+        $entries = [];
+        foreach ($value as $entry) {
+            if ($entry instanceof Model) {
+                $entries[] = $entry->getAttributes();
+            } elseif (is_array($entry)) {
+                $entries[] = $entry;
+            } elseif (is_object($entry)) {
+                $entries[] = (array) $entry;
+            }
+        }
+
+        return $entries;
     }
 
     /**
@@ -222,31 +292,17 @@ trait RelationshipMongoTrait
      */
     public function batchHandleSubTarget(array $targetIds, string $modelTarget, string $methodOnTarget, bool $is_EO_target, bool $is_EM_target)
     {
-        if ($is_EM_target) {
-            /** @var MDModel $modelInstance */
-            $modelInstance = new $modelTarget;
-            // Use whereIn for batch retrieval
-            $targets = $modelInstance->whereIn('id', $targetIds)->get();
+        if (! $is_EM_target) {
+            return; // the synchronous path only cleans EmbedsMany targets (unchanged since 3.x)
+        }
 
-            foreach ($targets as $target) {
-                if (! is_null($target)) {
-                    $new_values = [];
-                    // Check if the relationship exists and is iterable
-                    if (isset($target->$methodOnTarget) && is_iterable($target->$methodOnTarget)) {
-                        foreach ($target->$methodOnTarget as $temp) {
-                            // Check if property exists to avoid undefined property notice
-                            if (property_exists($temp, 'ref_id') && $temp->ref_id !== $this->getId()) {
-                                $new_values[] = $temp->attributes ?? $temp;
-                            } elseif (isset($temp['ref_id']) && $temp['ref_id'] !== $this->getId()) {
-                                // Handle array case just in case
-                                $new_values[] = $temp;
-                            }
-                        }
-                    }
-                    $target->$methodOnTarget = $new_values;
-                    $target->save();
-                }
-            }
+        /** @var MDModel $modelInstance */
+        $modelInstance = new $modelTarget;
+        $targets = $modelInstance->whereIn('id', $targetIds)->get();
+
+        foreach ($targets as $target) {
+            /** @var MDModel $target */
+            $target->removeRelationWithSync($methodOnTarget, $this->getId(), $is_EO_target, $is_EM_target);
         }
     }
 

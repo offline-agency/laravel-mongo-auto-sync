@@ -2,6 +2,7 @@
 
 namespace OfflineAgency\MongoAutoSync\Observers;
 
+use Illuminate\Support\Arr;
 use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
 use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 use OfflineAgency\MongoAutoSync\Jobs\SyncTargetJob;
@@ -9,93 +10,78 @@ use OfflineAgency\MongoAutoSync\Jobs\SyncTargetJob;
 class MongoAutoSyncObserver
 {
     /**
-     * @param  mixed  $model
-     * @return void
+     * True while a SyncTargetJob writes targets: those saves must not dispatch jobs back to the source.
      */
-    public function saved($model)
+    private static bool $dispatchingSuspended = false;
+
+    /**
+     * @template TReturn
+     *
+     * @param  callable(): TReturn  $callback
+     * @return TReturn
+     */
+    public static function withoutDispatching(callable $callback): mixed
     {
-        if (config('laravel-mongo-auto-sync.use_background_sync')) {
-            $this->processSync($model, 'save');
+        $previous = self::$dispatchingSuspended;
+        self::$dispatchingSuspended = true;
+
+        try {
+            return $callback();
+        } finally {
+            self::$dispatchingSuspended = $previous;
         }
     }
 
-    /**
-     * @param  mixed  $model
-     * @return void
-     */
-    public function deleted($model)
+    public function saved(MDModel $model): void
     {
-        if (config('laravel-mongo-auto-sync.use_background_sync')) {
-            if (method_exists($model, 'getMongoRelation')) {
-                /** @var MDModel $model */
-                $relations = $model->getMongoRelation();
-                foreach ($relations as $method => $relation) {
-                    if (SyncHelper::hasTarget($relation)) {
-                        $items = $model->$method;
-
-                        dispatch(new SyncTargetJob(
-                            $model,
-                            $relation,
-                            $method,
-                            'delete',
-                            $items,
-                            [],
-                            [],
-                            $model->id ?? $model->_id ?? null
-                        ));
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * @param  mixed  $model
-     * @param  string  $event
-     * @return void
-     */
-    private function processSync($model, $event)
-    {
-        if (! method_exists($model, 'getMongoRelation')) {
+        if (! $this->isEnabled()) {
             return;
         }
 
-        /** @var MDModel $model */
-        $relations = $model->getMongoRelation();
-        $requestData = method_exists($model, 'getRequest') && $model->getRequest() ? $model->getRequest()->all() : [];
-        $targetAdditionalData = method_exists($model, 'getTargetAdditionalData') ? $model->getTargetAdditionalData() : [];
+        foreach ($this->embeddedRelationsWithTarget($model) as $method => $relation) {
+            $current = SyncHelper::refIds(Arr::get($model->getAttributes(), $method));
+            $original = SyncHelper::refIds($model->getRawOriginal($method));
+            $removed = array_values(array_diff($original, $current));
+            $added = array_values(array_diff($current, $original));
 
-        foreach ($relations as $method => $relation) {
-            if (SyncHelper::hasTarget($relation)) {
-                $original = method_exists($model, 'getOriginal') ? $model->getOriginal($method) : null;
-                $current = $model->$method;
+            $mustSync = $removed !== [] || $added !== []
+                || ($current !== [] && ($model->wasRecentlyCreated || $model->wasChanged()));
 
-                if (! empty($original)) {
-                    dispatch(new SyncTargetJob(
-                        $model,
-                        $relation,
-                        $method,
-                        'delete',
-                        $original,
-                        $requestData,
-                        $targetAdditionalData,
-                        $model->id ?? $model->_id ?? null
-                    ));
-                }
-
-                if (! empty($current)) {
-                    dispatch(new SyncTargetJob(
-                        $model,
-                        $relation,
-                        $method,
-                        'save',
-                        $current,
-                        $requestData,
-                        $targetAdditionalData,
-                        $model->id ?? $model->_id ?? null
-                    ));
-                }
+            if ($mustSync) {
+                SyncTargetJob::dispatchFor($model, $method, $relation, $current, $removed);
             }
         }
+    }
+
+    public function deleted(MDModel $model): void
+    {
+        if (! $this->isEnabled()) {
+            return;
+        }
+
+        foreach ($this->embeddedRelationsWithTarget($model) as $method => $relation) {
+            $removed = SyncHelper::refIds(Arr::get($model->getAttributes(), $method));
+
+            if ($removed !== []) {
+                SyncTargetJob::dispatchFor($model, $method, $relation, [], $removed);
+            }
+        }
+    }
+
+    private function isEnabled(): bool
+    {
+        return ! self::$dispatchingSuspended && (bool) config('laravel-mongo-auto-sync.use_background_sync');
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private function embeddedRelationsWithTarget(MDModel $model): array
+    {
+        return array_filter(
+            $model->getMongoRelation(),
+            fn (array $relation) => SyncHelper::hasTarget($relation)
+                && (SyncHelper::is_EO($relation['type'] ?? null) || SyncHelper::is_EM($relation['type'] ?? null))
+        );
     }
 }
