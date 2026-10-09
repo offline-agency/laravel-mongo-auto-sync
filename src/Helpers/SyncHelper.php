@@ -191,6 +191,23 @@ class SyncHelper
         return (string) $a === (string) $b;
     }
 
+    /**
+     * Both stored forms of an id (string and ObjectId), to match documents written by either.
+     *
+     * @return list<string|ObjectId>
+     */
+    public static function idVariants(mixed $id): array
+    {
+        if ($id instanceof ObjectId) {
+            return [$id, (string) $id];
+        }
+        if (! is_string($id) || $id === '') {
+            return [];
+        }
+
+        return strlen($id) === 24 && ctype_xdigit($id) ? [$id, new ObjectId($id)] : [$id];
+    }
+
     private static function isSingleEmbedded(mixed $value): bool
     {
         if ($value instanceof Model) {

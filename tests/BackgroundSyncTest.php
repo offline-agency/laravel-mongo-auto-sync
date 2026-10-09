@@ -183,6 +183,66 @@ test('target writes made by the job do not dispatch new jobs', function () {
     Queue::assertNothingPushed();
 });
 
+test('a stale job does not overwrite newer values on the target', function () {
+    $navigation = $this->createNavigation();
+    $mini = $this->getMiniNavigation($navigation->id);
+    $subItem = $this->createSubItems(['text' => 'v1', 'navigation' => $mini]);
+
+    Queue::fake();
+    $subItem = updateSubItem($subItem, ['text' => 'v2', 'navigation' => $mini]);
+    updateSubItem($subItem, ['text' => 'v3', 'navigation' => $mini]);
+
+    // workers run the jobs in reverse order
+    foreach (Queue::pushed(SyncTargetJob::class)->values()->reverse() as $job) {
+        unserialize(serialize($job))->handle();
+    }
+
+    $entries = subItemEntries($navigation->id, $subItem->id);
+    expect($entries)->toHaveCount(1);
+    expect(getTranslatedContent($entries[0]->text))->toEqual('v3');
+});
+
+test('the job keeps the locale of the stored source', function () {
+    $navigation = $this->createNavigation();
+    $mini = $this->getMiniNavigation($navigation->id);
+
+    app()->setLocale('it');
+    Queue::fake();
+    $subItem = $this->createSubItems(['text' => 'ciao', 'navigation' => $mini]);
+    $job = Queue::pushed(SyncTargetJob::class)->first();
+
+    app()->setLocale('en');
+    unserialize(serialize($job))->handle();
+
+    expect(subItemEntries($navigation->id, $subItem->id)[0]->text)->toEqual(['it' => 'ciao']);
+});
+
+test('the job payload does not carry the request input', function () {
+    $navigation = $this->createNavigation();
+
+    Queue::fake();
+    (new SubItem)->storeWithSync(new Request(['password' => 'hunter2']), [
+        'text' => 'text',
+        'code' => 'code',
+        'href' => 'href',
+        'navigation' => $this->getMiniNavigation($navigation->id),
+    ]);
+
+    $job = Queue::pushed(SyncTargetJob::class)->first();
+    expect($job->requestData)->toBe([]);
+    expect(serialize($job))->not->toContain('hunter2');
+});
+
+test('destroyWithSync(false) does not touch the targets', function () {
+    $navigation = $this->createNavigation();
+    $subItem = $this->createSubItems(['navigation' => $this->getMiniNavigation($navigation->id)]);
+
+    Queue::fake();
+    $subItem->destroyWithSync(false);
+
+    Queue::assertNothingPushed();
+});
+
 test('ref_id comparison ignores ObjectId vs string', function () {
     $id = (string) new ObjectId;
 

@@ -28,7 +28,7 @@ final class SyncTargetJob implements ShouldQueue
      * @param  array<string, mixed>  $relation  one entry of getMongoRelation()
      * @param  list<string>  $currentTargetIds  targets that must contain the source mini model (upsert)
      * @param  list<string>  $removedTargetIds  targets that must no longer contain it
-     * @param  array<string, mixed>  $requestData
+     * @param  array<string, mixed>  $requestData  values preferred over the stored source when building the mini model (empty for jobs dispatched by the package)
      * @param  array<string, mixed>  $targetAdditionalData
      */
     public function __construct(
@@ -49,8 +49,6 @@ final class SyncTargetJob implements ShouldQueue
      */
     public static function dispatchFor(MDModel $source, string $method, array $relation, array $currentTargetIds, array $removedTargetIds): PendingDispatch
     {
-        $request = $source->getRequest();
-
         $job = new self(
             $source::class,
             (string) $source->getKey(),
@@ -58,7 +56,7 @@ final class SyncTargetJob implements ShouldQueue
             $relation,
             array_values($currentTargetIds),
             array_values($removedTargetIds),
-            $request === null ? [] : $request->input(),
+            [], // the mini model is rebuilt from the stored source: no request input (and no secrets) in the payload
             $source->getTargetAdditionalData(),
         );
 
@@ -119,7 +117,7 @@ final class SyncTargetJob implements ShouldQueue
             return;
         }
 
-        // 2. upserts with the mini model built as the synchronous path does
+        // 2. upserts with the mini model built from the stored source, as the synchronous path does
         $request = new Request;
         $request->merge($this->requestData);
         $source->setRequest($request, []);

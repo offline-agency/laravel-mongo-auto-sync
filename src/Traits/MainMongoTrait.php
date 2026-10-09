@@ -151,8 +151,12 @@ trait MainMongoTrait
                 }
             }
         }
-        // Delete current object
-        $this->delete();
+        // Delete current object (without background sync of the targets when $syncTargets is false)
+        if ($syncTargets) {
+            $this->delete();
+        } else {
+            MongoAutoSyncObserver::withoutDispatching(fn () => $this->delete());
+        }
 
         // Dispatch the destroy event
         $this->fireModelEvent('destroyWithSync');
