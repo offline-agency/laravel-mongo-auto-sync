@@ -13,10 +13,7 @@ class BenchmarkCommand extends Command
 
     protected $description = 'Benchmark MongoDB operations';
 
-    /**
-     * @return void
-     */
-    public function handle()
+    public function handle(): int
     {
         /** @var string */
         $modelClass = $this->argument('model');
@@ -26,7 +23,7 @@ class BenchmarkCommand extends Command
         if (! class_exists($modelClass)) {
             $this->error("Class $modelClass does not exist.");
 
-            return;
+            return self::FAILURE;
         }
 
         render('<div class="px-1 bg-green-500 text-white">Starting Benchmark...</div>');
@@ -97,5 +94,7 @@ class BenchmarkCommand extends Command
                 </tr>
             </tbody>
         </table>');
+
+        return self::SUCCESS;
     }
 }
