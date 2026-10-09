@@ -338,27 +338,6 @@ class EmbedsMany extends EmbedsOneOrMany
     }
 
     /**
-     * Get embedded models for EmbedsMany relationship.
-     * This overrides the parent method to return the correct type.
-     *
-     * @return array<string, mixed>|null
-     */
-    protected function getEmbedded()
-    {
-        $embedded = parent::getEmbedded();
-        if ($embedded === null) {
-            return null;
-        }
-        // Ensure it's an array
-        if (! is_array($embedded)) {
-            return null;
-        }
-
-        // Return as-is, maintaining parent's type signature
-        return $embedded;
-    }
-
-    /**
      * Get embedded models as indexed array for EmbedsMany.
      * This is a helper method that returns the indexed array format.
      *
@@ -395,24 +374,16 @@ class EmbedsMany extends EmbedsOneOrMany
      */
     protected function setEmbedded($models)
     {
-        if ($models === null) {
-            parent::setEmbedded(null);
-
-            return;
-        }
-        if (! is_array($models)) {
-            $models = [$models];
-        }
-        // Convert to the format expected by parent (array<string, mixed>|null)
-        // For EmbedsMany, we store as indexed array, but parent expects associative or null
-        // We need to convert the indexed array to an associative array
-        $associativeArray = [];
-        foreach ($models as $key => $value) {
+        // The parent expects an associative array (or null): keep only the
+        // embedded documents, preserving their keys.
+        $records = [];
+        foreach ($models ?? [] as $key => $value) {
             if (is_array($value)) {
-                $associativeArray[(string) $key] = $value;
+                $records[(string) $key] = $value;
             }
         }
-        parent::setEmbedded($associativeArray);
+
+        parent::setEmbedded($models === null ? null : $records);
     }
 
     /**
@@ -432,16 +403,5 @@ class EmbedsMany extends EmbedsOneOrMany
         }
 
         return parent::__call($method, $parameters);
-    }
-
-    /**
-     * Get the name of the "where in" method for eager loading.
-     *
-     * @param  string  $key
-     * @return string
-     */
-    protected function whereInMethod(EloquentModel $model, $key)
-    {
-        return 'whereIn';
     }
 }

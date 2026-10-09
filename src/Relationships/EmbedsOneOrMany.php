@@ -3,7 +3,6 @@
 namespace OfflineAgency\MongoAutoSync\Relationships;
 
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use MongoDB\Laravel\Eloquent\Builder;
 use MongoDB\Laravel\Eloquent\Model;
@@ -495,16 +494,5 @@ abstract class EmbedsOneOrMany extends Relation
     public function getQualifiedForeignKeyName()
     {
         return $this->foreignKey;
-    }
-
-    /**
-     * Get the name of the "where in" method for eager loading.
-     *
-     * @param  string  $key
-     * @return string
-     */
-    protected function whereInMethod(EloquentModel $model, $key)
-    {
-        return 'whereIn';
     }
 }

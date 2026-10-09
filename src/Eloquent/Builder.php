@@ -111,7 +111,11 @@ class Builder extends MongoDbEloquentBuilder
         // Intercept operations on embedded models and delegate logic
         // to the parent relation instance.
         if (method_exists($this->model, 'getParentRelation') && $relation = $this->model->getParentRelation()) {
-            /** @var EmbedsOneOrMany $relation */
+            // Embedded documents can only be incremented by attribute name.
+            if (! is_string($column)) {
+                return 0;
+            }
+
             /** @var mixed $value */
             $value = $this->model->{$column};
 
@@ -119,20 +123,12 @@ class Builder extends MongoDbEloquentBuilder
             // sync the original attributes. We need to change the attribute
             // temporary in order to trigger an update query.
             $this->model->{$column} = null;
+            $this->model->syncOriginalAttribute($column);
 
-            if (is_string($column)) {
-                $this->model->syncOriginalAttribute($column);
-            }
+            /** @var array<string, mixed> $updateData */
+            $updateData = [$column => $value];
 
-            if (is_string($column)) {
-                /** @var array<string, mixed> $updateData */
-                $updateData = [$column => $value];
-                $result = $this->model->update($updateData);
-            } else {
-                $result = false;
-            }
-
-            return (int) $result;
+            return (int) $this->model->update($updateData);
         }
 
         return EloquentBuilder::increment($column, $amount, $extra);
@@ -151,7 +147,11 @@ class Builder extends MongoDbEloquentBuilder
         // Intercept operations on embedded models and delegate logic
         // to the parent relation instance.
         if (method_exists($this->model, 'getParentRelation') && $relation = $this->model->getParentRelation()) {
-            /** @var EmbedsOneOrMany $relation */
+            // Embedded documents can only be decremented by attribute name.
+            if (! is_string($column)) {
+                return 0;
+            }
+
             /** @var mixed $value */
             $value = $this->model->{$column};
 
@@ -159,27 +159,15 @@ class Builder extends MongoDbEloquentBuilder
             // sync the original attributes. We need to change the attribute
             // temporary in order to trigger an update query.
             $this->model->{$column} = null;
+            $this->model->syncOriginalAttribute($column);
 
-            if (is_string($column)) {
-                $this->model->syncOriginalAttribute($column);
-                /** @var array<string, mixed> $updateData */
-                $updateData = [$column => $value];
+            /** @var array<string, mixed> $updateData */
+            $updateData = [$column => $value];
 
-                return (int) $this->model->update($updateData);
-            }
-
-            return 0;
+            return (int) $this->model->update($updateData);
         }
 
         return EloquentBuilder::decrement($column, $amount, $extra);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function chunkById($count, callable $callback, $column = '_id', $alias = null)
-    {
-        return EloquentBuilder::chunkById($count, $callback, $column, $alias);
     }
 
     /**

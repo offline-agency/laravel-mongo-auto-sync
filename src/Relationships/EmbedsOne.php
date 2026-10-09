@@ -2,6 +2,7 @@
 
 namespace OfflineAgency\MongoAutoSync\Relationships;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 use MongoDB\BSON\ObjectId;
@@ -32,6 +33,20 @@ class EmbedsOne extends EmbedsOneOrMany
     public function getResults()
     {
         return $this->toModel($this->getEmbedded());
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * EmbedsOne only brings one result, but eager loading needs a collection.
+     *
+     * @return Collection<int, \MongoDB\Laravel\Eloquent\Model>
+     */
+    public function getEager()
+    {
+        $result = $this->getResults();
+
+        return $this->related->newCollection($result === null ? [] : [$result]);
     }
 
     /**
@@ -153,16 +168,5 @@ class EmbedsOne extends EmbedsOneOrMany
         }
 
         return $this->performDelete($model);
-    }
-
-    /**
-     * Get the name of the "where in" method for eager loading.
-     *
-     * @param  string  $key
-     * @return string
-     */
-    protected function whereInMethod(EloquentModel $model, $key)
-    {
-        return 'whereIn';
     }
 }
