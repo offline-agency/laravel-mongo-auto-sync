@@ -64,7 +64,7 @@ trait MainMongoTrait
      */
     public function storeWithSync(Request $request, array $additionalData = [], array $options = [], array $target_additional_data = [])
     {
-        Log::info('storeWithSync started for model: '.get_class($this));
+        $this->logSyncDebug('storeWithSync started for model: '.get_class($this));
 
         $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
         $this->storeEditAllItems($request, 'add', $options);
@@ -91,7 +91,7 @@ trait MainMongoTrait
      */
     public function updateWithSync(Request $request, array $additionalData = [], array $options = [], array $target_additional_data = [])
     {
-        Log::info('updateWithSync started for model: '.get_class($this).' with ID: '.$this->id);
+        $this->logSyncDebug('updateWithSync started for model: '.get_class($this).' with ID: '.$this->getKey());
 
         $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
         $this->storeEditAllItems($request, 'update', $options);
@@ -106,6 +106,13 @@ trait MainMongoTrait
         }
 
         return $fresh;
+    }
+
+    private function logSyncDebug(string $message): void
+    {
+        if (config('laravel-mongo-auto-sync.logging')) {
+            Log::debug($message);
+        }
     }
 
     /**
