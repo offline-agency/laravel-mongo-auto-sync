@@ -15,17 +15,14 @@ class SyncCollection extends Command
 
     protected $description = 'Sync relationships for a collection';
 
-    /**
-     * @return void
-     */
-    public function handle()
+    public function handle(): int
     {
         $modelClass = $this->argument('model');
         if (! is_string($modelClass) || ! class_exists($modelClass)) {
             $className = is_string($modelClass) ? $modelClass : (is_null($modelClass) ? 'null' : gettype($modelClass));
             $this->error("Class $className does not exist.");
 
-            return;
+            return self::FAILURE;
         }
 
         /** @var Model $model */
@@ -51,5 +48,7 @@ class SyncCollection extends Command
         $bar->finish();
         $this->newLine();
         $this->info('Sync dispatching complete.');
+
+        return self::SUCCESS;
     }
 }

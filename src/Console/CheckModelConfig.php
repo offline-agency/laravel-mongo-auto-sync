@@ -14,10 +14,7 @@ class CheckModelConfig extends Command
 
     protected $description = 'Check model configurations for errors';
 
-    /**
-     * @return void
-     */
-    public function handle()
+    public function handle(): int
     {
         $this->info('Checking model configurations...');
 
@@ -25,9 +22,15 @@ class CheckModelConfig extends Command
         if (! is_string($modelPath)) {
             $this->error('Model path is not a string');
 
-            return;
+            return self::FAILURE;
+        }
+        if (! is_dir($modelPath)) {
+            $this->error("Directory $modelPath not found");
+
+            return self::FAILURE;
         }
         $models = $this->getAllModels($modelPath);
+        $hasErrors = false;
 
         foreach ($models as $modelClass) {
             $this->info("Checking $modelClass...");
@@ -47,10 +50,13 @@ class CheckModelConfig extends Command
                 }
             } catch (Exception $e) {
                 $this->error("Error in $modelClass: ".$e->getMessage());
+                $hasErrors = true;
             }
         }
 
         $this->info('Check completed.');
+
+        return $hasErrors ? self::FAILURE : self::SUCCESS;
     }
 
     /**
