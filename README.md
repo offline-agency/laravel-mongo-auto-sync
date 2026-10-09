@@ -122,13 +122,13 @@ Partial requests are an option of the sync methods, not a config key: `$model->u
 
 ### Background sync
 
-With `use_background_sync=true` every save or delete of a model with target relationships dispatches one `SyncTargetJob` per relationship. The job carries ids only, reloads the source when it runs and can safely run twice or out of order. Run a worker on the configured connection and queue, for example:
+With `use_background_sync=true`, saving or deleting a model dispatches a `SyncTargetJob` for each relationship with a target whose references or data changed. The job carries ids only (no request data), rebuilds the mini model from the stored source when it runs, and writes the targets with atomic MongoDB updates, so it can safely run twice, out of order, or concurrently with other jobs. Run a worker on the configured connection and queue, for example:
 
 ```bash
 php artisan queue:work --queue=mongo_auto_sync
 ```
 
-Nested targets (level > 1) are only synchronised on the synchronous path.
+Nested targets (level > 1) are not synchronised, on either path.
 
 ## Console Commands
 
@@ -183,7 +183,7 @@ composer test
 ```
 
 ## Roadmap :rocket:
-- Nested target synchronisation (level > 1) on the background path.
+- Nested target synchronisation (level > 1).
 - Refactor **save()** method in order to handle CRUD operation on relationship also without sync.
 - Tests for referenced relationships (`HasOne` / `HasMany`).
 - Better support for all field types.

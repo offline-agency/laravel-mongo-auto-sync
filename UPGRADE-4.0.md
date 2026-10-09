@@ -20,6 +20,7 @@ composer require offline-agency/laravel-mongo-auto-sync:^4.0
 - The collection name is read from `$table`: rename `protected $collection = 'articles';` to `protected $table = 'articles';`. A model that keeps `$collection` silently uses the default (pluralised) collection name.
 - The primary key attribute is `id` (stored as `_id` in MongoDB). Use `$model->id` and `'id'` in queries and when creating embedded documents; `getAttributes()` exposes `id`, not `_id`.
 - `DB::collection('name')` is removed: use `DB::table('name')`. Query builder results are `stdClass` objects, not arrays.
+- String ids assigned to `id` / `_id` are converted to `ObjectId` (as laravel-mongodb does), including on embedded models.
 - Embedded documents are read back as arrays. `stdClass` values passed as additional data to `storeWithSync()` / `updateWithSync()` are stored as arrays (Symfony's `InputBag` no longer accepts objects).
 
 ## 2. Removed application-specific methods
@@ -66,7 +67,7 @@ MONGO_AUTO_SYNC_QUEUE_NAME=mongo_auto_sync # optional, default queue when empty
 php artisan queue:work redis --queue=mongo_auto_sync
 ```
 
-With background sync enabled, target collections are **eventually consistent**: a request that reads the target right after `storeWithSync()` / `updateWithSync()` may still see the previous mini model until the worker processes the job. Nested targets (level > 1) are only synchronised on the synchronous path.
+With background sync enabled, target collections are **eventually consistent**: a request that reads the target right after `storeWithSync()` / `updateWithSync()` may still see the previous mini model until the worker processes the job. The job rebuilds the mini model from the stored source, so values that exist only in the request (and not on the source document or in the target additional data) are not copied to the targets. Nested targets (level > 1) are not synchronised, on either path.
 
 ### `SyncTargetJob` constructor
 
@@ -91,6 +92,12 @@ SyncTargetJob::dispatchFor($article, 'categories', $relation, $currentTargetIds,
 ```
 
 Jobs serialised by a previous version cannot be unserialised by 4.0: drain the queue before deploying.
+
+### Target writes
+
+Targets are updated with atomic MongoDB operations (`$pull` / `$push` / `$set`) instead of loading and saving the target model, on both the synchronous and the background path. Concurrent writers no longer overwrite each other, but **no Eloquent events (`saving`, `saved`, observers) fire on the target models** for these writes; `updated_at` is still refreshed.
+
+With background sync enabled, deleting a model removes its mini model from both `EmbedsMany` and `EmbedsOne` targets; the synchronous `destroyWithSync()` keeps the 3.x behaviour and only cleans `EmbedsMany` targets. `destroyWithSync(false)` leaves the targets untouched on both paths.
 
 ## 6. Logging
 

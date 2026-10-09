@@ -30,6 +30,8 @@ The full migration guide is in [UPGRADE-4.0.md](../../UPGRADE-4.0.md) and the li
 
 - **`SyncTargetJob`:** same class name and namespace, new constructor (ids only); jobs queued by a previous version must be drained before deploying.
 
+- **Ids and target writes:** string ids assigned to `id` are converted to `ObjectId`, and target writes no longer fire Eloquent events on the target models.
+
 - **Background synchronization is opt-in:** `use_background_sync` defaults to `false`, so targets keep being updated synchronously as in 3.x. When enabled, targets become eventually consistent and a queue worker is required.
 
 ## Key Changes
@@ -48,11 +50,13 @@ The full migration guide is in [UPGRADE-4.0.md](../../UPGRADE-4.0.md) and the li
 
 - ⚡ **Performance & Architecture:**
 
-  - **Background sync (Observer pattern, opt-in):** `MongoAutoSyncObserver` dispatches one `SyncTargetJob` per relationship. The job carries ids only, removes stale references before upserting, reloads the source, and is idempotent and safe to run out of order. `queue_connection` and `queue_name` are configurable.
+  - **Background sync (Observer pattern, opt-in):** `MongoAutoSyncObserver` dispatches a `SyncTargetJob` per relationship with a target. The job carries ids only (no request data), removes stale references before upserting, rebuilds the mini model from the stored source, and is idempotent and safe to run out of order. `queue_connection` and `queue_name` are configurable.
 
-  - **Batch loading:** target documents are loaded with `whereIn` instead of one query per target.
+  - **Atomic target writes:** targets are updated with `$pull` / `$push` / `$set`, so concurrent writers do not lose entries (no Eloquent events fire on the targets for these writes).
 
-  - Nested (level > 1) target synchronization is only performed on the synchronous path; on the background path it is still on the roadmap.
+  - **Batch loading:** the background job and the target clean-up load target documents with a single `whereIn`.
+
+  - Nested (level > 1) target synchronization is not implemented (on either path) and stays on the roadmap.
 
 - 🛡️ **Robustness & DX:**
 

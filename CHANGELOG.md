@@ -11,7 +11,7 @@ See [UPGRADE-4.0.md](UPGRADE-4.0.md) for the migration guide.
 - Support for Laravel 12 and 13 on PHP 8.4+ with `mongodb/laravel-mongodb` 5.x.
 - Background synchronisation of target collections through `MongoAutoSyncObserver` and the queued `SyncTargetJob` (opt-in, `use_background_sync`).
 - `queue_connection`, `queue_name` and `logging` configuration keys (`MONGO_AUTO_SYNC_QUEUE_CONNECTION`, `MONGO_AUTO_SYNC_QUEUE_NAME`, `MONGO_AUTO_SYNC_LOGGING`).
-- `SyncTargetJob::dispatchFor()`, `SyncHelper::refIds()` and `SyncHelper::sameId()`.
+- `SyncTargetJob::dispatchFor()`, `SyncHelper::refIds()`, `SyncHelper::sameId()` and `SyncHelper::idVariants()`.
 - `removeRelationWithSync()` on synced models (target-side removal of a mini model).
 - Console commands `mongo-sync:check-config`, `mongo-sync:analyse [--fix]`, `mongo-sync:sync-collection {model}` and `mongo-sync:benchmark {model} {count=100}`.
 - Dedicated exceptions extending `MongoAutoSyncException`: `InvalidConfigurationException`, `InvalidRelationshipException`, `InvalidRequestException`, `ModelNotFoundException`.
@@ -23,7 +23,8 @@ See [UPGRADE-4.0.md](UPGRADE-4.0.md) for the migration guide.
 - Driver switched from `jenssegers/mongodb` to `mongodb/laravel-mongodb` ^5.2: namespaces moved from `Jenssegers\Mongodb` to `MongoDB\Laravel`.
 - Background sync is **opt-in** (`use_background_sync` defaults to `false`): with it enabled, targets are eventually consistent and a queue worker is required.
 - `SyncTargetJob` keeps its class name and namespace but has a new constructor (ids only, no serialised models) and is `final`.
-- Each save dispatches one job per relationship with a target; the job performs removals before upserts and reloads the source, so it is idempotent and safe to run out of order.
+- Each save dispatches at most one job per relationship with a target; the job carries ids only, performs removals before upserts and rebuilds the mini model from the stored source, so it is idempotent and safe to run out of order.
+- Target collections are written with atomic MongoDB updates (`$pull` / `$push` / `$set`): concurrent writers no longer lose entries, and no Eloquent events fire on the target models for these writes.
 - `updateRelationWithSync()` replaces an existing entry with the same `ref_id` instead of appending a duplicate.
 - `storeWithSync()` / `updateWithSync()` log at `debug` level, and only when `logging` is enabled.
 - Stricter parameter and return types across the helpers and traits.
@@ -47,11 +48,13 @@ See [UPGRADE-4.0.md](UPGRADE-4.0.md) for the migration guide.
 - Background sync was a silent no-op on real queue drivers (embedded models were restored from a non-existent collection).
 - Background sync could delete a reference just written when two workers ran the delete and save jobs out of order.
 - `ref_id` comparisons failed between `ObjectId` and string values.
-- Synchronous target sync failed on every target with `InvalidRequestException` (level > 1 sync used a malformed request key; it is a TODO again).
+- Synchronous target sync failed on every target with `InvalidRequestException` (level > 1 sync used a malformed request key; nested sync is not implemented, on either path).
+- A partial update of a model whose `EmbedsOne` target relation is empty crashed with a `TypeError`.
+- `destroyWithSync(false)` still synchronised the targets when background sync was enabled.
 - `getTranslatedContent()` returned an empty string for locales other than `en_EN` / `it_IT`.
 - `getCounterForRelationships()` returned no counter for nested `EmbedsMany` items.
 - Partial requests wrapped the whole `EmbedsOne` mini model in `ref_id`.
-- An empty `EmbedsOne` relation returned an empty model instead of `null`.
+- An empty `EmbedsOne` relation returned an empty model instead of `null` (as in 3.x).
 - Embedded models did not get a generated key (the 5.x key name is `id`) and string ids were not converted to `ObjectId`.
 - `mongo-sync:benchmark` always crashed (it imported a non-existent facade).
 
