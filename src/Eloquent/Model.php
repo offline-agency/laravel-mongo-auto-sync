@@ -45,8 +45,8 @@ class Model extends MongoDbModel
      */
     public function setAttribute($key, $value)
     {
-        // Convert _id to ObjectID.
-        if ($key == '_id' && is_string($value)) {
+        // Convert _id (and its laravel-mongodb 5 alias id) to ObjectID.
+        if (($key === '_id' || $key === 'id') && is_string($value)) {
             /** @var \MongoDB\Laravel\Query\Builder $builder */
             $builder = $this->newBaseQueryBuilder();
 

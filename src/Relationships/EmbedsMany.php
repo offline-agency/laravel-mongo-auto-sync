@@ -48,8 +48,8 @@ class EmbedsMany extends EmbedsOneOrMany
     public function performInsert(Model $model)
     {
         // Generate a new key if needed.
-        if ($model->getKeyName() == '_id' && ! $model->getKey()) {
-            $model->setAttribute('_id', new ObjectId);
+        if (in_array($model->getKeyName(), ['_id', 'id'], true) && ! $model->getKey()) {
+            $model->setAttribute($model->getKeyName(), new ObjectId);
         }
 
         // For deeply nested documents, let the parent handle the changes.
@@ -262,8 +262,8 @@ class EmbedsMany extends EmbedsOneOrMany
     protected function associateNew($model)
     {
         // Create a new key if needed.
-        if ($model->getKeyName() === '_id' && ! $model->getAttribute('_id')) {
-            $model->setAttribute('_id', new ObjectId);
+        if (in_array($model->getKeyName(), ['_id', 'id'], true) && ! $model->getKey()) {
+            $model->setAttribute($model->getKeyName(), new ObjectId);
         }
 
         $records = $this->getEmbeddedAsIndexed();
@@ -293,7 +293,7 @@ class EmbedsMany extends EmbedsOneOrMany
 
         // Replace the document in the parent model.
         foreach ($records as &$record) {
-            if ($record[$primaryKey] == $key) {
+            if (isset($record[$primaryKey]) && $record[$primaryKey] == $key) {
                 $record = $model->getAttributes();
                 break;
             }

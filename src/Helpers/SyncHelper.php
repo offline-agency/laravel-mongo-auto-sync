@@ -17,11 +17,13 @@ class SyncHelper
     {
         $cl = Config::get('app.locale');
 
-        if (is_array($mlCollection) && (array_key_exists('en_EN', $mlCollection) || array_key_exists('it_IT', $mlCollection))) {
-            return $mlCollection[$cl] ?? '';
-        } else {
+        if (! is_array($mlCollection)) {
             return '';
         }
+
+        $value = $mlCollection[$cl] ?? '';
+
+        return is_string($value) ? $value : '';
     }
 
     /**
@@ -253,13 +255,8 @@ class SyncHelper
      */
     public static function getCounterForRelationships($method, $is_EO, $is_EM, $i)
     {
-        if ($method === '') {
-            return '';
-        }
-        if ($is_EO) {
-            return '';
-        }
-        if ($is_EM) {
+        // Same rule as 3.x: no counter on the root level and for EmbedsOne, "-<i>" for nested EmbedsMany items
+        if ($method === '' || $is_EO) {
             return '';
         }
 

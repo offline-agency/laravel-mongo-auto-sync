@@ -20,7 +20,8 @@ trait MainMongoTrait
      */
     public static function bootMainMongoTrait()
     {
-        static::observe(MongoAutoSyncObserver::class);
+        // observe() instantiates the model: it must run after booting (Laravel 13 forbids it during boot)
+        static::whenBooted(fn () => static::observe(MongoAutoSyncObserver::class));
     }
 
     /**
@@ -280,8 +281,29 @@ trait MainMongoTrait
      */
     public function setRequest(Request $request, array $additionalData): void
     {
-        $request = $request->merge($additionalData);
+        $request = $request->merge(self::plainObjectsToArrays($additionalData));
         $this->request = $request;
+    }
+
+    /**
+     * Symfony's InputBag rejects stdClass values: store them as arrays (same BSON document once saved).
+     *
+     * @param  array<array-key, mixed>  $data
+     * @return array<array-key, mixed>
+     */
+    private static function plainObjectsToArrays(array $data): array
+    {
+        foreach ($data as $key => $value) {
+            if ($value instanceof stdClass) {
+                $value = (array) $value;
+            }
+            if (is_array($value)) {
+                $value = self::plainObjectsToArrays($value);
+            }
+            $data[$key] = $value;
+        }
+
+        return $data;
     }
 
     /**

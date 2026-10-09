@@ -27,7 +27,7 @@ class EmbedsOne extends EmbedsOneOrMany
     /**
      * {@inheritdoc}
      *
-     * @return \MongoDB\Laravel\Eloquent\Model
+     * @return \MongoDB\Laravel\Eloquent\Model|null
      */
     public function getResults()
     {
@@ -42,8 +42,8 @@ class EmbedsOne extends EmbedsOneOrMany
     public function performInsert(Model $model)
     {
         // Generate a new key if needed.
-        if ($model->getKeyName() == '_id' && ! $model->getKey()) {
-            $model->setAttribute('_id', new ObjectId);
+        if (in_array($model->getKeyName(), ['_id', 'id'], true) && ! $model->getKey()) {
+            $model->setAttribute($model->getKeyName(), new ObjectId);
         }
 
         // For deeply nested documents, let the parent handle the changes.

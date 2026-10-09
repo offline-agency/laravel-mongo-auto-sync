@@ -333,7 +333,10 @@ abstract class EmbedsOneOrMany extends Relation
         $models = [];
 
         foreach ($records as $attributes) {
-            $models[] = $this->toModel($attributes);
+            $model = $this->toModel($attributes);
+            if ($model !== null) {
+                $models[] = $model;
+            }
         }
 
         // Note: Eager loading is handled by the query builder, not needed here
@@ -345,12 +348,12 @@ abstract class EmbedsOneOrMany extends Relation
      * Create a related model instanced.
      *
      * @param  array<string, mixed>|null  $attributes
-     * @return Model
+     * @return Model|null null when nothing is embedded
      */
     protected function toModel($attributes = [])
     {
         if ($attributes === null) {
-            return $this->related->newInstance();
+            return null;
         }
 
         $connection = $this->related->getConnection();

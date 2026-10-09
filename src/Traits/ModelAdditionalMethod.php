@@ -343,9 +343,8 @@ trait ModelAdditionalMethod
         $is_EM = SyncHelper::is_EM($type);
 
         if ($is_EO) {
-            $obj = new stdClass;
-            $obj->ref_id = $this->getObjValueToBeSaved($method, '', false);
-            $objs[] = $obj;
+            // The embedded mini model itself (it already carries ref_id), as in 3.x
+            $objs[] = $this->getObjValueToBeSaved($method, '', false);
         } elseif ($is_EM) {
             $methodValue = $this->$method;
             if (! is_null($methodValue) && is_iterable($methodValue)) {

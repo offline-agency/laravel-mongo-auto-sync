@@ -477,10 +477,8 @@ trait RelationshipMongoTrait
             /** @var MDModel $miniModel */
             $miniModel = $this->getEmbedModel($modelOnTarget);
             $modelToBeSync->updateRelationWithSync($miniModel, $methodOnTarget, $is_EO_target, $is_EM_target);
-            // Sync target on level > 1
-            if ($request && $event) {
-                $modelToBeSync->processAllRelationships($request, $event, $methodOnTarget, $methodOnTarget.'-', $options);
-            }
+            // TODO: sync targets on level > 1 is not implemented (the previous call built the request key
+            // "<method><method><method>-" and threw InvalidRequestException on every target sync).
         }
     }
 }
