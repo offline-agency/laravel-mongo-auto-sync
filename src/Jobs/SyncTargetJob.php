@@ -9,6 +9,8 @@ use Illuminate\Foundation\Bus\PendingDispatch;
 use Illuminate\Http\Request;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Arr;
+use OfflineAgency\MongoAutoSync\Context\SyncContext;
+use OfflineAgency\MongoAutoSync\Exceptions\SyncContextException;
 use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
 use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 use OfflineAgency\MongoAutoSync\Observers\MongoAutoSyncObserver;
@@ -22,6 +24,19 @@ use OfflineAgency\MongoAutoSync\Observers\MongoAutoSyncObserver;
 final class SyncTargetJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
+
+    /**
+     * Payload version: 2 carries the database context. Jobs queued by the 4.0 pre-releases unserialize with the
+     * default 1 (no context).
+     */
+    public int $payloadVersion = 1;
+
+    /**
+     * SyncContext::toArray() of the source when the job was dispatched; null = the models' own connections.
+     *
+     * @var array<string, mixed>|null
+     */
+    public ?array $context = null;
 
     /**
      * @param  class-string<MDModel>  $sourceClass
@@ -40,7 +55,11 @@ final class SyncTargetJob implements ShouldQueue
         public readonly array $removedTargetIds = [],
         public readonly array $requestData = [],
         public readonly array $targetAdditionalData = [],
-    ) {}
+        ?SyncContext $context = null,
+    ) {
+        $this->payloadVersion = 2;
+        $this->context = $context?->toArray();
+    }
 
     /**
      * @param  array<string, mixed>  $relation
@@ -58,6 +77,7 @@ final class SyncTargetJob implements ShouldQueue
             array_values($removedTargetIds),
             [], // the mini model is rebuilt from the stored source: no request input (and no secrets) in the payload
             $source->getTargetAdditionalData(),
+            SyncContext::capture($source),
         );
 
         $connection = config('laravel-mongo-auto-sync.queue_connection');
@@ -73,12 +93,20 @@ final class SyncTargetJob implements ShouldQueue
         return new PendingDispatch($job);
     }
 
+    /**
+     * @throws SyncContextException
+     */
     public function handle(): void
     {
-        MongoAutoSyncObserver::withoutDispatching(fn () => $this->sync());
+        if ($this->payloadVersion < 2 && SyncContext::resolver() !== null) {
+            throw new SyncContextException('The job was queued without a database context while a context_resolver is configured: drain the queue with the previous release before upgrading.');
+        }
+
+        $sync = fn () => MongoAutoSyncObserver::withoutDispatching(fn () => $this->sync($this->context === null ? null : SyncContext::fromArray($this->context)));
+        $this->context === null ? $sync() : SyncContext::fromArray($this->context)->run($sync);
     }
 
-    private function sync(): void
+    private function sync(?SyncContext $context): void
     {
         /** @var class-string<MDModel> $modelTarget */
         $modelTarget = $this->relation['modelTarget'];
@@ -88,7 +116,9 @@ final class SyncTargetJob implements ShouldQueue
         $is_EO_target = SyncHelper::is_EO($typeOnTarget);
         $is_EM_target = SyncHelper::is_EM($typeOnTarget);
 
-        $source = $this->sourceClass::find($this->sourceId);
+        $sourceConnection = $context === null ? SyncContext::connectionName(new $this->sourceClass) : $context->connection;
+
+        $source = (new $this->sourceClass)->setConnection($sourceConnection)->newQuery()->find($this->sourceId);
         $source = $source instanceof MDModel ? $source : null;
 
         // Trust the stored source over the payload: a stale job must not re-add a reference removed meanwhile.
@@ -100,7 +130,7 @@ final class SyncTargetJob implements ShouldQueue
             return;
         }
 
-        $targets = $modelTarget::query()
+        $targets = SyncContext::targetModel($this->sourceClass, $sourceConnection, $modelTarget)->newQuery()
             ->whereIn('id', [...$upsertIds, ...$removeIds])
             ->get()
             ->keyBy(fn (MDModel $target) => SyncHelper::toString($target->getKey()));

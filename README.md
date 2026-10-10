@@ -132,6 +132,8 @@ php artisan queue:work --queue=mongo_auto_sync
 
 Nested targets (level > 1) are not synchronised, on either path.
 
+Sources stored on another connection or in a tenant database are synced in their own database, on both paths: see [docs/tenancy.md](docs/tenancy.md).
+
 ## Console Commands
 
 ### Check Model Configuration

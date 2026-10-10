@@ -11,6 +11,7 @@ See [UPGRADE-4.0.md](UPGRADE-4.0.md) for the migration guide.
 - Support for Laravel 12 and 13 on PHP 8.4+ with `mongodb/laravel-mongodb` 5.x.
 - `docs/compatibility/`: map of the package against laravel-mongodb 5.11.0, source lock, test matrix, issue triage and roadmap; `tests/Compatibility/` compares package models with native laravel-mongodb models; CI jobs for the exact reference versions, the lowest safe versions and a replica set (transactions).
 - Background synchronisation of target collections through `MongoAutoSyncObserver` and the queued `SyncTargetJob` (opt-in, `use_background_sync`).
+- Database and tenant context for target sync: sources on another connection or in a tenant database are synced in that database, synchronously and in `SyncTargetJob` (payload version 2 with logical identifiers only, checked before any write), with an optional `context_resolver` (`SyncContextResolver`) for runtime tenant databases ([docs/tenancy.md](docs/tenancy.md)).
 - `queue_connection`, `queue_name` and `logging` configuration keys (`MONGO_AUTO_SYNC_QUEUE_CONNECTION`, `MONGO_AUTO_SYNC_QUEUE_NAME`, `MONGO_AUTO_SYNC_LOGGING`).
 - `SyncTargetJob::dispatchFor()`, `SyncHelper::refIds()`, `SyncHelper::sameId()` and `SyncHelper::idVariants()`.
 - `removeRelationWithSync()` on synced models (target-side removal of a mini model).

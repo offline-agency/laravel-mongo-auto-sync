@@ -5,6 +5,7 @@ namespace OfflineAgency\MongoAutoSync\Traits;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
+use OfflineAgency\MongoAutoSync\Context\SyncContext;
 use OfflineAgency\MongoAutoSync\Exceptions\InvalidConfigurationException;
 use OfflineAgency\MongoAutoSync\Exceptions\InvalidRequestException;
 use OfflineAgency\MongoAutoSync\Exceptions\MongoAutoSyncException;
@@ -286,7 +287,7 @@ trait MainMongoTrait
 
         // Init the Target Model
         /** @var MDModel $modelToBeSync */
-        $modelToBeSync = new $modelTarget;
+        $modelToBeSync = SyncContext::targetModel(static::class, SyncContext::connectionName($this), $modelTarget);
 
         $found = $modelToBeSync->find($target_id);
         if ($found instanceof MDModel) {

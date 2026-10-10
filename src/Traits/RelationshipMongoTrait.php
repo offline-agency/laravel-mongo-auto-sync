@@ -10,6 +10,7 @@ use LogicException;
 use MongoDB\BSON\UTCDateTime;
 use MongoDB\Laravel\Connection as MongoConnection;
 use MongoDB\Laravel\Query\Builder as MongoQueryBuilder;
+use OfflineAgency\MongoAutoSync\Context\SyncContext;
 use OfflineAgency\MongoAutoSync\Exceptions\InvalidConfigurationException;
 use OfflineAgency\MongoAutoSync\Exceptions\MongoAutoSyncException;
 use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
@@ -307,8 +308,8 @@ trait RelationshipMongoTrait
         }
 
         /** @var MDModel $modelInstance */
-        $modelInstance = new $modelTarget;
-        $targets = $modelInstance->whereIn('id', $targetIds)->get();
+        $modelInstance = SyncContext::targetModel(static::class, SyncContext::connectionName($this), $modelTarget);
+        $targets = $modelInstance->newQuery()->whereIn('id', $targetIds)->get();
 
         foreach ($targets as $target) {
             /** @var MDModel $target */
