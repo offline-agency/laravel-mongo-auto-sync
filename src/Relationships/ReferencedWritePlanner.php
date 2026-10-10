@@ -5,9 +5,11 @@ namespace OfflineAgency\MongoAutoSync\Relationships;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasOneOrMany;
+use Illuminate\Http\Request;
 use OfflineAgency\MongoAutoSync\Context\SyncContext;
 use OfflineAgency\MongoAutoSync\Exceptions\InvalidConfigurationException;
 use OfflineAgency\MongoAutoSync\Exceptions\InvalidRequestException;
+use OfflineAgency\MongoAutoSync\Exceptions\ReferencedConflictException;
 use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
 use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 
@@ -31,12 +33,16 @@ final class ReferencedWritePlanner
         [$childClass, $foreignKey, $localKey, $instance] = self::relationship($parent, $method, $relation);
         $isHasOne = $instance instanceof HasOne;
 
-        // the declared relation, on the connection of the parent (a child model sharing the parent model's connection
-        // follows a parent stored elsewhere, see SyncContext::targetModel())
+        // every condition of the declared relation (foreign key, local key, extra wheres) and the child's global scopes,
+        // on the connection of the parent (a child model sharing the parent model's connection follows a parent stored
+        // elsewhere, see SyncContext::targetModel()); a new parent owns no child yet
         $childModel = SyncContext::targetModel($parent::class, SyncContext::connectionName($parent), $childClass);
-        $query = $childModel->newQuery()->where($foreignKey, $parent->getAttribute($localKey))->whereNotNull($foreignKey);
+        $owner = $parent->exists ? $childModel->newQuery()->mergeConstraintsFrom($instance->getQuery()) : null;
         /** @var list<MDModel> $children */
-        $children = $parent->exists ? array_values(array_filter($query->get()->all(), fn ($child) => $child instanceof MDModel)) : [];
+        $children = $owner === null ? [] : array_values(array_filter((clone $owner)->get()->all(), fn ($child) => $child instanceof MDModel));
+        if ($isHasOne && count($children) > 1) {
+            throw new ReferencedConflictException("Relationship '{$method}' holds more than one document for this parent: resolve the duplicates before writing it.");
+        }
         $childrenById = [];
         foreach ($children as $child) {
             $childrenById[SyncHelper::toString($child->getKey())] = $child;
@@ -63,6 +69,8 @@ final class ReferencedWritePlanner
             }
 
             if ($id === null) {
+                // the child's own full-request contract, checked before anything is written
+                SyncContext::targetModel($parent::class, SyncContext::connectionName($parent), $childClass)->assertFullRequestIsValid(new Request($attributes));
                 $creates[] = $attributes;
 
                 continue;
@@ -72,15 +80,32 @@ final class ReferencedWritePlanner
             }
             // the same message for an unknown id and for another parent's child: no existence oracle
             $child = $childrenById[$id] ?? throw new InvalidRequestException("Referenced document not found in relationship '{$method}'.");
+            $child->assertFullRequestIsValid(new Request($attributes));
             $retained[$id] = true;
             $updates[] = ['child' => $child, 'attributes' => $attributes];
         }
 
-        // HasOne keeps the 3.x semantics: only the current child (the first one) is replaced
-        $current = $isHasOne ? array_slice($children, 0, 1) : $children;
-        $deletes = array_values(array_filter($current, fn (MDModel $child) => ! isset($retained[SyncHelper::toString($child->getKey())])));
+        $deletes = array_values(array_filter($children, fn (MDModel $child) => ! isset($retained[SyncHelper::toString($child->getKey())])));
 
-        return new ReferencedWritePlan($method, $childClass, SyncContext::connectionName($childModel), $foreignKey, $localKey, $creates, $updates, $deletes);
+        return new ReferencedWritePlan($method, $childClass, SyncContext::connectionName($childModel), $foreignKey, $localKey, $creates, $updates, $deletes, $owner);
+    }
+
+    /**
+     * Every child the parent owns now through the declared relation, as deletes (destroyWithSync with
+     * onParentDelete = delete): no payload, no cardinality check, so legacy HasOne duplicates are deleted too.
+     *
+     * @param  array<string, mixed>  $relation
+     *
+     * @throws InvalidConfigurationException
+     */
+    public static function owned(MDModel $parent, string $method, array $relation): ReferencedWritePlan
+    {
+        [$childClass, $foreignKey, $localKey, $instance] = self::relationship($parent, $method, $relation);
+        $childModel = SyncContext::targetModel($parent::class, SyncContext::connectionName($parent), $childClass);
+        $owner = $parent->exists ? $childModel->newQuery()->mergeConstraintsFrom($instance->getQuery()) : null;
+        $children = $owner === null ? [] : array_values(array_filter((clone $owner)->get()->all(), fn ($child) => $child instanceof MDModel));
+
+        return new ReferencedWritePlan($method, $childClass, SyncContext::connectionName($childModel), $foreignKey, $localKey, [], [], $children, $owner);
     }
 
     /**
@@ -102,7 +127,7 @@ final class ReferencedWritePlanner
         if (! is_string($foreignKey) || $foreignKey === '' || ! is_string($localKey)) {
             throw new InvalidConfigurationException("Relationship '{$method}' must declare its foreignKey.");
         }
-        if (! $instance instanceof HasOneOrMany || $instance->getForeignKeyName() !== $foreignKey || ! $instance->getRelated() instanceof $childClass) {
+        if (! $instance instanceof HasOneOrMany || $instance->getForeignKeyName() !== $foreignKey || $instance->getLocalKeyName() !== $localKey || ! $instance->getRelated() instanceof $childClass) {
             throw new InvalidConfigurationException("Relationship '{$method}' must be a hasOne/hasMany of {$childClass} on '{$foreignKey}'.");
         }
 

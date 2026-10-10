@@ -2,6 +2,7 @@
 
 namespace OfflineAgency\MongoAutoSync\Traits;
 
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
@@ -31,6 +32,14 @@ trait MainMongoTrait
      * @var bool
      */
     protected $has_partial_request;
+
+    /**
+     * Ownership conditions added to the filter of this instance's update and delete queries (referenced children
+     * written on behalf of a parent, see withWriteConstraint()).
+     *
+     * @var list<EloquentBuilder<MDModel>>
+     */
+    private array $writeConstraints = [];
 
     /**
      * Number of withoutTargetSync() scopes open on this instance.
@@ -88,7 +97,7 @@ trait MainMongoTrait
         $this->logSyncDebug('storeWithSync started for model: '.get_class($this));
 
         $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
-        $this->validateRelationshipRequest($request);
+        $this->validateRelationshipRequest($request, $this->getHasPartialRequest());
         $this->withTargetSyncOption($options, fn () => $this->withCoalescedTargetSync(function () use ($request, $options) {
             $this->storeEditAllItems($request, 'add', $options);
             $this->processAllRelationships($request, 'add', '', '', $options);
@@ -118,7 +127,7 @@ trait MainMongoTrait
         $this->logSyncDebug('updateWithSync started for model: '.get_class($this).' with ID: '.SyncHelper::toString($this->getKey()));
 
         $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
-        $this->validateRelationshipRequest($request);
+        $this->validateRelationshipRequest($request, $this->getHasPartialRequest());
         $this->withTargetSyncOption($options, fn () => $this->withCoalescedTargetSync(function () use ($request, $options) {
             $this->storeEditAllItems($request, 'update', $options);
             $this->processAllRelationships($request, 'update', '', '', $options);
@@ -156,6 +165,42 @@ trait MainMongoTrait
         } finally {
             $this->targetSyncDisabledDepth--;
         }
+    }
+
+    /**
+     * Run $operation adding the conditions of $owner (a query of the relation that owns this model) to the filter
+     * of every update and delete of this instance: when the model no longer satisfies them, the write matches no
+     * document instead of overwriting or deleting it.
+     *
+     * @template TReturn
+     *
+     * @param  EloquentBuilder<MDModel>  $owner
+     * @param  callable(static): TReturn  $operation
+     * @return TReturn
+     */
+    public function withWriteConstraint(EloquentBuilder $owner, callable $operation): mixed
+    {
+        $this->writeConstraints[] = $owner;
+
+        try {
+            return $operation($this);
+        } finally {
+            array_pop($this->writeConstraints);
+        }
+    }
+
+    /**
+     * @param  EloquentBuilder<static>  $query
+     * @return EloquentBuilder<static>
+     */
+    protected function setKeysForSaveQuery($query)
+    {
+        parent::setKeysForSaveQuery($query);
+        foreach ($this->writeConstraints as $owner) {
+            $query->mergeConstraintsFrom($owner);
+        }
+
+        return $query;
     }
 
     public function targetSyncEnabled(): bool
@@ -257,12 +302,12 @@ trait MainMongoTrait
      *
      * @throws InvalidRequestException
      */
-    private function validateRelationshipRequest(Request $request): void
+    private function validateRelationshipRequest(Request $request, bool $partial): void
     {
         foreach ($this->getMongoRelation() as $method => $relation) {
             $method = (string) $method;
             if (! $request->has($method)) {
-                if (! $this->getHasPartialRequest()) {
+                if (! $partial) {
                     throw new InvalidRequestException("Missing relationship '{$method}' in the request.");
                 }
 
@@ -277,6 +322,22 @@ trait MainMongoTrait
                 ReferencedWritePlanner::plan($this, $method, $relation, $documents);
             }
         }
+    }
+
+    /**
+     * Check, without writing, the full storeWithSync() / updateWithSync() request a parent sends to this model
+     * as a referenced child: every item and every top-level relationship key present, and every relationship
+     * payload valid (nested referenced relationships included).
+     *
+     * @throws InvalidRequestException
+     * @throws InvalidConfigurationException
+     */
+    public function assertFullRequestIsValid(Request $request): void
+    {
+        foreach (array_keys($this->getItems()) as $key) {
+            $this->checkRequestExistence($request, $key);
+        }
+        $this->validateRelationshipRequest($request, false);
     }
 
     /**
@@ -298,7 +359,7 @@ trait MainMongoTrait
             if (SyncHelper::is_HM($type) || SyncHelper::is_HO($type)) {
                 // referenced children follow their onParentDelete policy; destroyWithSync(false) never deletes them
                 if ($syncTargets && $deletesChildren[$method]) {
-                    $this->deleteReferencedObj($method, SyncHelper::is_HO($type));
+                    $this->deleteReferencedObj($method, $relation);
                 }
 
                 continue;

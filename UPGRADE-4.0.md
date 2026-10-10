@@ -120,7 +120,12 @@ Referenced children are identified only among the children the parent holds thro
 - `foreignKey` is required and must match the relation method (`hasOne` / `hasMany` of the configured `model`); the child model must extend `MDModel`;
 - an `id` of another parent's child, an unknown `id`, or any `id` while the parent is created throws `InvalidRequestException` instead of re-parenting the child or creating a new one;
 - only the child's items and relationships can be written; the foreign key and any other field are rejected;
-- the same child twice, and more than one document in a `HasOne`, are rejected.
+- the same child twice, and more than one document in a `HasOne`, are rejected;
+- `localKey` (default `id`) must match the relation method's local key;
+- extra conditions written in the relation method (`->where(...)`) now apply: a child they exclude is no longer updated or deleted through the payload;
+- a `HasOne` that already holds several stored documents is rejected with `ReferencedConflictException` until the duplicates are resolved;
+- a child whose own full request is incomplete is rejected before the parent is written (it used to fail after);
+- a child that changes owner while the request is written is not overwritten (`ReferencedConflictException`) nor deleted.
 
 `destroyWithSync()` deletes referenced children according to the new `onParentDelete` option (`'delete'` / `'retain'`); without it the pre-release behaviour is kept (deleted only for relationships with a target). See [docs/referenced-relationships.md](docs/referenced-relationships.md).
 
