@@ -4,19 +4,24 @@
     "type": "library",
     "keywords": ["laravel","database","mongodb","eloquent", "relationships"],
     "require": {
-        "php": ">=7.4",
+        "php": "^8.4",
         "ext-json": "*",
-        "ext-mongodb": "*",
-        "illuminate/support": "^5.0|^6.0|^7.0|^8.0",
-        "illuminate/container": "^5.0|^6.0|^7.0|^8.0",
-        "illuminate/database": "^5.0|^6.0|^7.0|^8.0",
-        "illuminate/events": "^5.0|^6.0|^7.0|^8.0",
-        "jenssegers/mongodb": "^3.6|^3.7|^3.8"
+        "ext-mongodb": "^2.4",
+        "laravel/framework": "^12.69|^13.30",
+        "mongodb/laravel-mongodb": "^5.11",
+        "nunomaduro/termwind": "^2.3"
     },
     "require-dev": {
-        "orchestra/testbench": "^3.0|^4.0|^5.0|^6.0",
-        "phpunit/phpcov": "^7.0|^8.0",
-        "phpunit/phpunit": "^5.0|^6.0|^7.0|^8.0|^9.0"
+        "laravel/pint": "^1.0",
+        "larastan/larastan": "^3.0",
+        "orchestra/testbench": "^10.0|^11.0",
+        "pestphp/pest": "^3.7|^4.0",
+        "pestphp/pest-plugin-laravel": "^3.0|^4.0",
+        "mockery/mockery": "^1.6",
+        "brianium/paratest": "^7.7"
+    },
+    "conflict": {
+        "mongodb/mongodb": "<2.4.2"
     },
     "license": "MIT",
     "authors": [
@@ -36,18 +41,22 @@
     "autoload-dev": {
         "psr-4": {
             "Tests\\": "tests/"
-        },
-        "files": [
-            "src/syncUtils.php"
-        ]
+        }
     },
     "scripts": {
-        "test": "vendor/bin/phpunit"
+        "test": "vendor/bin/pest",
+        "test:coverage": "vendor/bin/pest --coverage",
+        "lint": "vendor/bin/pint",
+        "lint:check": "vendor/bin/pint --test",
+        "stan": "vendor/bin/phpstan analyse"
     },
     "config": {
         "preferred-install": "dist",
         "sort-packages": true,
-        "optimize-autoloader": true
+        "optimize-autoloader": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
     },
     "extra": {
         "laravel": {

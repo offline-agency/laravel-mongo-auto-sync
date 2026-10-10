@@ -11,32 +11,20 @@ use OfflineAgency\MongoAutoSync\Traits\Helper;
 use OfflineAgency\MongoAutoSync\Traits\MainMongoTrait;
 use OfflineAgency\MongoAutoSync\Traits\ModelAdditionalMethod;
 
-class ModelAdditionalMethodTest extends SyncTestCase
+class ModelAdditionalMethodTest extends TestCase
 {
-    use ModelAdditionalMethod,
-        Helper,
-        MainMongoTrait;
-
-    protected $ml;
-    protected $md;
-    protected $carbon_date;
-    protected $array;
-
-    protected $request;
-
-    protected $mongoRelation;
-
-    protected $mini_models;
+    use SyncHelpers;
 
     public function test_cast_ml()
     {
-        $this->setRequest();
+        $model = new TestModelWithTraits;
+        $model->setRequest();
 
         // []
 
-        $this->setMl([]);
+        $model->setMl([]);
 
-        $parsed_value = $this->castValueToBeSaved('ml', [
+        $parsed_value = $model->castValueToBeSaved('ml', [
             'is-ml' => true,
         ], 'Tests\Models\MiniSubItem');
 
@@ -45,9 +33,9 @@ class ModelAdditionalMethodTest extends SyncTestCase
 
         // null
 
-        $this->setMl(null);
+        $model->setMl(null);
 
-        $parsed_value = $this->castValueToBeSaved('ml', [
+        $parsed_value = $model->castValueToBeSaved('ml', [
             'is-ml' => true,
         ], 'Tests\Models\MiniSubItem');
 
@@ -57,23 +45,24 @@ class ModelAdditionalMethodTest extends SyncTestCase
 
     public function test_cast_md()
     {
-        $this->setRequest();
+        $model = new TestModelWithTraits;
+        $model->setRequest();
 
         // UTCDateTime
 
-        $this->setMd(new UTCDateTime(new DateTime()));
+        $model->setMd(new UTCDateTime(new DateTime));
 
-        $parsed_value = $this->castValueToBeSaved('md', [
+        $parsed_value = $model->castValueToBeSaved('md', [
             'is-md' => true,
         ], 'Tests\Models\MiniSubItem');
 
-        $this->assertEquals($this->getMd(), $parsed_value);
+        $this->assertEquals($model->getMd(), $parsed_value);
 
         // '' empty string
 
-        $this->setMd('');
+        $model->setMd('');
 
-        $parsed_value = $this->castValueToBeSaved('md', [
+        $parsed_value = $model->castValueToBeSaved('md', [
             'is-md' => true,
         ], 'Tests\Models\MiniSubItem');
 
@@ -81,9 +70,9 @@ class ModelAdditionalMethodTest extends SyncTestCase
 
         // null
 
-        $this->setMd(null);
+        $model->setMd(null);
 
-        $parsed_value = $this->castValueToBeSaved('md', [
+        $parsed_value = $model->castValueToBeSaved('md', [
             'is-md' => true,
         ], 'Tests\Models\MiniSubItem');
 
@@ -91,9 +80,9 @@ class ModelAdditionalMethodTest extends SyncTestCase
 
         // carbon
 
-        $this->setMd(Carbon::now());
+        $model->setMd(Carbon::now());
 
-        $parsed_value = $this->castValueToBeSaved('md', [
+        $parsed_value = $model->castValueToBeSaved('md', [
             'is-md' => true,
         ], 'Tests\Models\MiniSubItem');
 
@@ -102,15 +91,16 @@ class ModelAdditionalMethodTest extends SyncTestCase
 
     public function test_cast_carbon_date()
     {
-        $this->setRequest();
+        $model = new TestModelWithTraits;
+        $model->setRequest();
 
         // Carbon
 
         $now = Carbon::now();
-        $this->setCarbonDate($now);
+        $model->setCarbonDate($now);
         $now_utc = new UTCDateTime($now);
 
-        $parsed_value = $this->castValueToBeSaved('carbon_date', [
+        $parsed_value = $model->castValueToBeSaved('carbon_date', [
             'is-carbon-date' => true,
         ], 'Tests\Models\MiniSubItem');
 
@@ -118,9 +108,9 @@ class ModelAdditionalMethodTest extends SyncTestCase
 
         // '' empty string
 
-        $this->setCarbonDate('');
+        $model->setCarbonDate('');
 
-        $parsed_value = $this->castValueToBeSaved('carbon_date', [
+        $parsed_value = $model->castValueToBeSaved('carbon_date', [
             'is-carbon-date' => true,
         ], 'Tests\Models\MiniSubItem');
 
@@ -128,9 +118,9 @@ class ModelAdditionalMethodTest extends SyncTestCase
 
         // null
 
-        $this->setCarbonDate(null);
+        $model->setCarbonDate(null);
 
-        $parsed_value = $this->castValueToBeSaved('carbon_date', [
+        $parsed_value = $model->castValueToBeSaved('carbon_date', [
             'is-carbon-date' => true,
         ], 'Tests\Models\MiniSubItem');
 
@@ -139,13 +129,14 @@ class ModelAdditionalMethodTest extends SyncTestCase
 
     public function test_cast_array()
     {
-        $this->setRequest();
+        $model = new TestModelWithTraits;
+        $model->setRequest();
 
         // filled array
 
-        $this->setArray(['key' => 'value']);
+        $model->setArray(['key' => 'value']);
 
-        $parsed_value = $this->castValueToBeSaved('array', [
+        $parsed_value = $model->castValueToBeSaved('array', [
             'is-array' => true,
         ], 'Tests\Models\MiniSubItem');
 
@@ -154,9 +145,9 @@ class ModelAdditionalMethodTest extends SyncTestCase
 
         // null
 
-        $this->setArray(null);
+        $model->setArray(null);
 
-        $parsed_value = $this->castValueToBeSaved('array', [
+        $parsed_value = $model->castValueToBeSaved('array', [
             'is-array' => true,
         ], 'Tests\Models\MiniSubItem');
 
@@ -165,9 +156,9 @@ class ModelAdditionalMethodTest extends SyncTestCase
 
         // getAttributes
 
-        $this->setArray($this->createSubItems());
+        $model->setArray($this->createSubItems());
 
-        $parsed_value = $this->castValueToBeSaved('array', [
+        $parsed_value = $model->castValueToBeSaved('array', [
             'is-array' => true,
         ], 'Tests\Models\MiniSubItem');
 
@@ -176,7 +167,8 @@ class ModelAdditionalMethodTest extends SyncTestCase
 
     public function test_unique_mini_model()
     {
-        $this->setMongoRelation([
+        $model = new TestModelWithTraits;
+        $model->setMongoRelation([
             'relation' => [
                 'type' => 'EmbedsMany',
                 'mode' => 'classic',
@@ -188,30 +180,47 @@ class ModelAdditionalMethodTest extends SyncTestCase
 
         $this->expectException(Exception::class);
 
-        $this->getUniqueMiniModelList();
+        $model->getUniqueMiniModelList();
     }
 
     public function test_obj_with_ref_id()
     {
+        $model = new TestModelWithTraits;
         $this->expectException(Exception::class);
 
-        $this->getObjWithRefId('', [
+        $model->getObjWithRefId('', [
             'type' => 'fake',
         ]);
     }
 
     public function test_embed_model()
     {
-        $this->setMiniModels([
+        $model = new TestModelWithTraits;
+        $model->setMiniModels([
             'modelTargets' => 'App\Models\Relation',
         ]);
 
         $this->expectException(Exception::class);
 
-        $this->getEmbedModel('modelTarget');
+        $model->getEmbedModel('modelTarget');
     }
+}
 
-    /* GETTERs & SETTERs */
+class TestModelWithTraits
+{
+    use Helper,
+        MainMongoTrait,
+        ModelAdditionalMethod;
+
+    protected $ml;
+
+    protected $md;
+
+    protected $carbon_date;
+
+    protected $array;
+
+    protected $mongoRelation;
 
     public function getMl()
     {
@@ -253,17 +262,17 @@ class ModelAdditionalMethodTest extends SyncTestCase
         $this->array = $array;
     }
 
-    private function setRequest()
+    public function setRequest()
     {
-        $this->request = new Request();
+        $this->request = new Request;
     }
 
-    private function setMongoRelation($mongoRelation)
+    public function setMongoRelation($mongoRelation)
     {
         $this->mongoRelation = $mongoRelation;
     }
 
-    private function setMiniModels($mini_models)
+    public function setMiniModels($mini_models)
     {
         $this->mini_models = $mini_models;
     }

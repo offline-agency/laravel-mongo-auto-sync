@@ -12,6 +12,7 @@ return [
             'name' => 'mongodb',
             'driver' => 'mongodb',
             'host' => $mongoHost,
+            'port' => $mongoPort,
             'database' => env('MONGO_DATABASE', 'unittest'),
         ],
 

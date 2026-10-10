@@ -1,59 +1,314 @@
+# .github/workflows/build-ci.yml
+# Nome del workflow volutamente invariato ("CI"): il badge del README punta a build-ci.yml
+# e release.yml si aggancia al workflow chiamato "CI".
 name: CI
 
 on:
   push:
-    branches:
-    tags:
+    branches: [master, develop]
   pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  COMPOSER_NO_INTERACTION: 1
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
+  # ------------------------------------------------------------------
+  # Pint e PHPStan girano una sola volta (PHP 8.4, dipendenze più recenti ammesse da composer.json):
+  # non ha senso ripeterli in ogni cella della matrice.
+  # ------------------------------------------------------------------
+  lint:
+    name: Pint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mongodb, mbstring, curl, json
+          coverage: none
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-progress
+
+      - name: Pint
+        run: vendor/bin/pint --test
+
+  static-analysis:
+    name: PHPStan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mongodb, mbstring, curl, json
+          coverage: none
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-progress
+
+      - name: PHPStan
+        run: vendor/bin/phpstan analyse --memory-limit=1G --no-progress --error-format=github
+
+  # ------------------------------------------------------------------
+  # Test: matrice PHP x Laravel x MongoDB.
+  # composer.lock viene ignorato di proposito (composer update): per una
+  # libreria la matrice deve risolvere le dipendenze di ogni cella,
+  # altrimenti le versioni di Laravel supportate non vengono testate davvero.
+  # ------------------------------------------------------------------
+  tests:
+    name: PHP ${{ matrix.php }} / Laravel ${{ matrix.laravel }} / Mongo ${{ matrix.mongodb }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
     strategy:
+      fail-fast: false
       matrix:
-        php: ['7.4', '8.0', '8.1']
-        os: ['ubuntu-latest']
-        mongodb: ['3.6', '4.0', '4.2', '5.0', '6.0', '7.0']
+        php: ['8.4', '8.5']
+        laravel: ['12.*', '13.*']
+        mongodb: ['7.0', '8.0']
+        include:
+          - laravel: '12.*'
+            testbench: '10.*'
+          - laravel: '13.*'
+            testbench: '11.*'
+          # Coverage calcolata su una sola cella (quella più recente)
+          - php: '8.4'
+            laravel: '13.*'
+            mongodb: '8.0'
+            coverage: true
+
     services:
-      mongo:
+      mongodb:
         image: mongo:${{ matrix.mongodb }}
         ports:
           - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok' || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
 
-    name: PHP v${{ matrix.php }} with Mongo v${{ matrix.mongodb }}
     steps:
-    - uses: actions/checkout@v2
-    - name: "Installing php"
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: ${{ matrix.php }}
-        extensions: curl,mbstring,xdebug
-        coverage: xdebug
-        tools: composer
-    - name: Show PHP version
-      run: php -v && composer -V
-    - name: Show Dockerfile version
-      run: if [[ "$DEBUG" == "true" ]]; then docker version && env; fi
-      env:
-        DEBUG: ${{secrets.DEBUG}}
-    - name: Download Composer cache dependencies from cache
-      id: composer-cache
-      run: echo "::set-output name=dir::$(composer config cache-files-dir)"
-    - name: Cache Composer dependencies
-      uses: actions/cache@v1
-      with:
-        path: ${{ steps.composer-cache.outputs.dir }}
-        key: ${{ matrix.os }}-composer-${{ hashFiles('**/composer.json') }}
-        restore-keys: ${{ matrix.os }}-composer-
-    - name: Install dependencies
-      run: |
-        composer install --no-interaction
-    - name: Run tests
-      run: |
-        ./vendor/bin/phpunit --coverage-clover coverage.xml
-      env:
-        MONGO_HOST: 0.0.0.0
-    - uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        fail_ci_if_error: false
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mongodb, mbstring, curl, json
+          coverage: ${{ matrix.coverage == true && 'xdebug' || 'none' }}
+          tools: composer:v2
+
+      - name: Validate composer.json
+        run: composer validate --strict
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ runner.os }}-php${{ matrix.php }}-laravel${{ matrix.laravel }}-mongo${{ matrix.mongodb }}-${{ hashFiles('composer.json') }}
+          restore-keys: |
+            composer-${{ runner.os }}-php${{ matrix.php }}-laravel${{ matrix.laravel }}-
+            composer-${{ runner.os }}-php${{ matrix.php }}-
+
+      - name: Install dependencies (Laravel ${{ matrix.laravel }})
+        run: |
+          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-update
+          composer update --prefer-dist --no-progress --prefer-stable
+
+      - name: Audit and platform requirements
+        run: |
+          composer audit
+          composer check-platform-reqs
+
+      - name: Show resolved versions
+        run: |
+          php -v
+          php -r 'echo "ext-mongodb ", phpversion("mongodb"), PHP_EOL;'
+          for p in laravel/framework mongodb/laravel-mongodb mongodb/mongodb orchestra/testbench pestphp/pest; do
+            composer show "$p" | grep -E '^(name|versions)'
+          done
+
+      - name: Run tests
+        env:
+          MONGO_HOST: 127.0.0.1
+          MONGO_PORT: 27017
+          MONGO_DATABASE: unittest
+        run: vendor/bin/pest ${{ matrix.coverage == true && '--coverage --coverage-clover=coverage.xml' || '' }}
+
+      - name: Upload coverage to Codecov
+        if: matrix.coverage == true
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml
+          fail_ci_if_error: false
+
+  # ------------------------------------------------------------------
+  # REFERENCE: combinazione esatta e riproducibile della release upstream
+  # selezionata (mongodb/laravel-mongodb 5.11.0, mongodb/mongodb 2.5.0).
+  # Il pin vale solo per questa cella, non per i consumatori.
+  # ------------------------------------------------------------------
+  reference:
+    name: Reference / laravel-mongodb 5.11.0 / Laravel ${{ matrix.laravel }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - laravel: '12.*'
+            testbench: '10.*'
+          - laravel: '13.*'
+            testbench: '11.*'
+    services:
+      mongodb:
+        image: mongo:8.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok' || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mongodb, mbstring, curl, json
+          coverage: none
+          tools: composer:v2
+      - name: Install the exact reference versions
+        run: |
+          composer require "mongodb/laravel-mongodb:5.11.0" "mongodb/mongodb:2.5.0" "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-update
+          composer update --prefer-dist --no-progress --prefer-stable
+          composer audit
+          composer check-platform-reqs
+          for p in mongodb/laravel-mongodb mongodb/mongodb laravel/framework; do composer show "$p" | grep -E '^(name|versions)'; done
+      - name: Run tests
+        env:
+          MONGO_HOST: 127.0.0.1
+          MONGO_PORT: 27017
+          MONGO_DATABASE: unittest
+        run: vendor/bin/pest
+
+  # ------------------------------------------------------------------
+  # LOWEST-SAFE: minimi dichiarati senza bypass di sicurezza
+  # (ext-mongodb 2.4.0, mongodb/mongodb 2.4.2, Laravel 12.69 / 13.30).
+  # Pint/PHPStan non girano qui: con il tooling minimo non sono significativi.
+  # ------------------------------------------------------------------
+  lowest:
+    name: Lowest-safe / ext-mongodb 2.4.0 / Laravel ${{ matrix.laravel }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - laravel: '12.*'
+            testbench: '10.*'
+          - laravel: '13.*'
+            testbench: '11.*'
+    services:
+      mongodb:
+        image: mongo:8.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok' || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mongodb-2.4.0, mbstring, curl, json
+          coverage: none
+          tools: composer:v2
+        env:
+          fail-fast: true
+      - name: Check the extension version
+        run: |
+          php -r 'echo "ext-mongodb ", phpversion("mongodb"), PHP_EOL; exit(phpversion("mongodb") === "2.4.0" ? 0 : 1);'
+      - name: Install the lowest safe dependencies
+        run: |
+          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-update
+          composer update --prefer-dist --no-progress --prefer-lowest --prefer-stable
+          composer audit
+          composer check-platform-reqs
+          php -r 'echo "ext-mongodb ", phpversion("mongodb"), PHP_EOL;'
+          for p in mongodb/laravel-mongodb mongodb/mongodb laravel/framework; do composer show "$p" | grep -E '^(name|versions)'; done
+      - name: Run tests
+        env:
+          MONGO_HOST: 127.0.0.1
+          MONGO_PORT: 27017
+          MONGO_DATABASE: unittest
+        run: vendor/bin/pest
+
+  # ------------------------------------------------------------------
+  # Replica set: le transazioni (tests/Compatibility/TransactionTest)
+  # vengono saltate su server standalone; qui girano davvero.
+  # ------------------------------------------------------------------
+  replica-set:
+    name: Replica set / Mongo 8.0 / transactions
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start a single-node replica set
+        run: |
+          docker run -d --name mongo-rs -p 27018:27018 mongo:8.0 --replSet rs0 --port 27018 --bind_ip_all
+          for _ in $(seq 1 30); do docker exec mongo-rs mongosh --port 27018 --quiet --eval 'db.runCommand({ping:1}).ok' && break; sleep 2; done
+          docker exec mongo-rs mongosh --port 27018 --quiet --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"127.0.0.1:27018"}]})'
+          for _ in $(seq 1 30); do docker exec mongo-rs mongosh --port 27018 --quiet --eval 'db.hello().isWritablePrimary' | grep -q true && break; sleep 2; done
+          # fail here, with the server log, when mongod did not start or did not become primary
+          if ! docker exec mongo-rs mongosh --port 27018 --quiet --eval 'db.hello().isWritablePrimary' | grep -q true; then
+            docker ps -a --filter name=mongo-rs
+            docker logs mongo-rs 2>&1 | tail -50
+            echo "::error::the replica set did not start"
+            exit 1
+          fi
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mongodb, mbstring, curl, json
+          coverage: none
+          tools: composer:v2
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-progress --prefer-stable
+      - name: Run tests (transactions must not be skipped)
+        env:
+          MONGO_HOST: 127.0.0.1
+          MONGO_PORT: 27018
+          MONGO_DATABASE: unittest
+        shell: bash
+        run: |
+          set -o pipefail
+          vendor/bin/pest --colors=never --display-skipped | tee pest.log
+          if grep -q "Transactions need a replica set" pest.log; then
+            echo "::error::transaction tests were skipped"
+            exit 1
+          fi
+          # the transaction tests must have run: 3 passed, none skipped
+          vendor/bin/pest --colors=never tests/Compatibility/TransactionTest.php | tee tx.log
+          grep -Eq "Tests: +3 passed" tx.log

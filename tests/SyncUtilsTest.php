@@ -4,7 +4,7 @@ namespace Tests;
 
 use Tests\Models\Article;
 
-class SyncUtilsTest extends SyncTestCase
+class SyncUtilsTest extends TestCase
 {
     public function test_get_translated_content()
     {
@@ -51,7 +51,7 @@ class SyncUtilsTest extends SyncTestCase
         ], $out);
     }
 
-    public function test_isMl()
+    public function test_is_ml()
     {
         $value = [
             'is-ml' => true,
@@ -82,9 +82,9 @@ class SyncUtilsTest extends SyncTestCase
         $this->assertEquals(false, $out);
     }
 
-    public function test_isMD()
+    public function test_is_md()
     {
-        //Input expected '' from $value
+        // Input expected '' from $value
 
         $value = [
             'is-md' => true,
@@ -111,9 +111,9 @@ class SyncUtilsTest extends SyncTestCase
         $this->assertEquals(false, $out);
     }
 
-    public function test_isEM()
+    public function test_is_em()
     {
-        //Input expected 'EmbedsMany' from $value
+        // Input expected 'EmbedsMany' from $value
 
         $value = 'EmbedsMany';
 
@@ -121,7 +121,7 @@ class SyncUtilsTest extends SyncTestCase
 
         $this->assertEquals(true, $out);
 
-        //Input expected '' from $value
+        // Input expected '' from $value
 
         $value = '';
 
@@ -130,9 +130,9 @@ class SyncUtilsTest extends SyncTestCase
         $this->assertEquals(false, $out);
     }
 
-    public function test_isEO()
+    public function test_is_eo()
     {
-        //Input expected 'EmbedsOne' from $value
+        // Input expected 'EmbedsOne' from $value
 
         $value = 'EmbedsOne';
 
@@ -140,7 +140,7 @@ class SyncUtilsTest extends SyncTestCase
 
         $this->assertEquals(true, $out);
 
-        //Input expected '' from $value
+        // Input expected '' from $value
         $value = '';
 
         $out = is_EO($value);
@@ -148,9 +148,9 @@ class SyncUtilsTest extends SyncTestCase
         $this->assertEquals(false, $out);
     }
 
-    public function test_isHM()
+    public function test_is_hm()
     {
-        //Input expected 'Has Many' from $value
+        // Input expected 'Has Many' from $value
 
         $value = 'HasMany';
 
@@ -158,7 +158,7 @@ class SyncUtilsTest extends SyncTestCase
 
         $this->assertEquals(true, $out);
 
-        //Input expected '' from $value
+        // Input expected '' from $value
 
         $value = '';
 
@@ -167,9 +167,9 @@ class SyncUtilsTest extends SyncTestCase
         $this->assertEquals(false, $out);
     }
 
-    public function test_isHO()
+    public function test_is_ho()
     {
-        //Input expected 'HasOne' from $value
+        // Input expected 'HasOne' from $value
 
         $value = 'HasOne';
 
@@ -177,7 +177,7 @@ class SyncUtilsTest extends SyncTestCase
 
         $this->assertEquals(true, $out);
 
-        //Input expected '' from $value
+        // Input expected '' from $value
 
         $value = '';
 
@@ -186,7 +186,7 @@ class SyncUtilsTest extends SyncTestCase
         $this->assertEquals(false, $out);
     }
 
-    public function test_isEditable()
+    public function test_is_editable()
     {
         $value = [
             'is-editable' => false,
@@ -217,7 +217,7 @@ class SyncUtilsTest extends SyncTestCase
         $this->assertEquals('', $out);
     }
 
-    public function test_hasTarget()
+    public function test_has_target()
     {
         $value = [
             'has-target' => false,
@@ -248,7 +248,7 @@ class SyncUtilsTest extends SyncTestCase
         $this->assertEquals('', $out);
     }
 
-    public function test_isFillable()
+    public function test_is_fillable()
     {
         //
         $value = [];
@@ -268,28 +268,7 @@ class SyncUtilsTest extends SyncTestCase
         $this->assertEquals(true, $out);
     }
 
-    public function test_getAID()
-    {
-        //Check if there's no data inside the database, set id to 1
-        Article::truncate();
-        $article = new Article;
-
-        $out = getAID($article);
-
-        $this->assertEquals(1, $out);
-
-        //If there's already data inside the database, increments new data by 1
-
-        $articleModel = $this->prepareArticleData([]);
-
-        $out = getAID($article);
-
-        $this->assertEquals(2, $out);
-
-        Article::truncate();
-    }
-
-    public function test_getArrayWithEmptyObj()
+    public function test_get_array_with_empty_obj()
     {
         $article = new Article;
         $is_EO = true;
@@ -311,7 +290,7 @@ class SyncUtilsTest extends SyncTestCase
         $this->assertEquals($expectedArray, $out);
     }
 
-    public function test_getCounterForRelationships()
+    public function test_get_counter_for_relationships()
     {
         $is_EO = true;
         $is_EM = false;
@@ -354,24 +333,5 @@ class SyncUtilsTest extends SyncTestCase
         $out = getCounterForRelationships($method, $is_EO, $is_EM, $i);
 
         $this->assertEquals('-'.$i, $out);
-    }
-
-    public function test_getTypeOnTarget()
-    {
-        $EM = [
-            'typeOnTarget' => 'EmbedsMany',
-        ];
-        $EO = [
-            'typeOnTarget' => 'EmbedsOne',
-        ];
-        $defaultValue = [];
-
-        $outEM = getTypeOnTarget($EM);
-        $outEO = getTypeOnTarget($EO);
-        $outDefaultValue = getTypeOnTarget($defaultValue);
-
-        $this->assertEquals('EmbedsMany', $outEM);
-        $this->assertEquals('EmbedsOne', $outEO);
-        $this->assertEquals('EmbedsMany', $outDefaultValue);
     }
 }

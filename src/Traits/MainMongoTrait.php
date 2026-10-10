@@ -2,106 +2,340 @@
 
 namespace OfflineAgency\MongoAutoSync\Traits;
 
-use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Log;
+use OfflineAgency\MongoAutoSync\Context\SyncContext;
+use OfflineAgency\MongoAutoSync\Exceptions\InvalidConfigurationException;
+use OfflineAgency\MongoAutoSync\Exceptions\InvalidRequestException;
+use OfflineAgency\MongoAutoSync\Exceptions\MongoAutoSyncException;
+use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
+use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
+use OfflineAgency\MongoAutoSync\Jobs\SyncTargetJob;
+use OfflineAgency\MongoAutoSync\Observers\MongoAutoSyncObserver;
+use OfflineAgency\MongoAutoSync\Relationships\ReferencedWritePlanner;
 use stdClass;
 
 trait MainMongoTrait
 {
+    /**
+     * @return void
+     */
+    public static function bootMainMongoTrait()
+    {
+        // observe() instantiates the model: it must run after booting (Laravel 13 forbids it during boot)
+        static::whenBooted(fn () => static::observe(MongoAutoSyncObserver::class));
+    }
+
+    /**
+     * @var bool
+     */
     protected $has_partial_request;
+
+    /**
+     * Number of withoutTargetSync() scopes open on this instance.
+     */
+    private int $targetSyncDisabledDepth = 0;
+
+    /**
+     * Number of withCoalescedTargetSync() scopes open on this instance.
+     */
+    private int $coalescingDepth = 0;
+
+    /**
+     * Target sync recorded by the observer while coalescing, per relation: the union of the destinations to
+     * clean and whether a save changed the source.
+     *
+     * @var array<string, array{relation: array<string, mixed>, removed: list<string>, changed: bool}>
+     */
+    private array $pendingTargetSync = [];
+
+    /**
+     * @var Request|null
+     */
     protected $request;
+
+    /**
+     * @var array<string, mixed>|null
+     */
     protected $target_additional_data;
+
+    /**
+     * @var Request|null
+     */
     protected $partial_generated_request;
+
+    /**
+     * @var array<string, mixed>|null
+     */
     protected $options;
+
+    /**
+     * @var array<int, array<string, mixed>>|null
+     */
     protected $tempEM;
 
     /**
-     * @param  Request  $request
-     * @param  array  $additionalData
-     * @param  array  $options
-     * @param  array  $target_additional_data
-     * @return $this
+     * @param  array<string, mixed>  $additionalData
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $target_additional_data
+     * @return static
      *
-     * @throws Exception
+     * @throws MongoAutoSyncException
      */
     public function storeWithSync(Request $request, array $additionalData = [], array $options = [], array $target_additional_data = [])
     {
-        $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
-        $this->storeEditAllItems($request, 'add', $options);
-        $this->processAllRelationships($request, 'add', '', '', $options);
+        $this->logSyncDebug('storeWithSync started for model: '.get_class($this));
 
-        //Dispatch the creation event
+        $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
+        $this->validateRelationshipRequest($request);
+        $this->withTargetSyncOption($options, fn () => $this->withCoalescedTargetSync(function () use ($request, $options) {
+            $this->storeEditAllItems($request, 'add', $options);
+            $this->processAllRelationships($request, 'add', '', '', $options);
+        }));
+
+        // Dispatch the creation event
         $this->fireModelEvent('storeWithSync');
 
-        return $this->fresh();
+        $fresh = $this->fresh();
+        if ($fresh === null) {
+            return $this;
+        }
+
+        return $fresh;
     }
 
     /**
-     * @param  Request  $request
-     * @param  array  $additionalData
-     * @param  array  $options
-     * @param  array  $target_additional_data
-     * @return $this
+     * @param  array<string, mixed>  $additionalData
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $target_additional_data
+     * @return static
      *
-     * @throws Exception
+     * @throws MongoAutoSyncException
      */
     public function updateWithSync(Request $request, array $additionalData = [], array $options = [], array $target_additional_data = [])
     {
-        $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
-        $this->storeEditAllItems($request, 'update', $options);
-        $this->processAllRelationships($request, 'update', '', '', $options);
+        $this->logSyncDebug('updateWithSync started for model: '.get_class($this).' with ID: '.SyncHelper::toString($this->getKey()));
 
-        //Dispatch the update event
+        $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
+        $this->validateRelationshipRequest($request);
+        $this->withTargetSyncOption($options, fn () => $this->withCoalescedTargetSync(function () use ($request, $options) {
+            $this->storeEditAllItems($request, 'update', $options);
+            $this->processAllRelationships($request, 'update', '', '', $options);
+        }));
+
+        // Dispatch the update event
         $this->fireModelEvent('updateWithSync');
 
-        return $this->fresh();
+        $fresh = $this->fresh();
+        if ($fresh === null) {
+            return $this;
+        }
+
+        return $fresh;
     }
 
     /**
-     * @return $this
+     * Run $operation with the target sync of THIS model instance disabled: the source and its own (embedded and
+     * referenced) relationships are written and every Eloquent / package event fires, but no target document is
+     * written and no SyncTargetJob is dispatched for this instance (plain save() included). Other models saved
+     * inside the operation keep syncing; scopes nest and are restored after exceptions. Jobs queued by earlier
+     * operations are not cancelled.
+     *
+     * @template TReturn
+     *
+     * @param  callable(static): TReturn  $operation
+     * @return TReturn
      */
-    public function destroyWithSync()
+    public function withoutTargetSync(callable $operation): mixed
     {
-        //Get the relation info
-        $relations = $this->getMongoRelation();
-        //Process all relationships
-        foreach ($relations as $method => $relation) {
-            //Get Relation Save Mode
-            $type = $relation['type'];
-            $hasTarget = hasTarget($relation);
-            if ($hasTarget) {
-                $modelTarget = $relation['modelTarget'];
-                $methodOnTarget = $relation['methodOnTarget'];
-                $modelOnTarget = $relation['modelOnTarget'];
-                $is_EO = is_EO($type);
-                $is_EM = is_EM($type);
-                $is_HO = is_HO($type);
-                $is_HM = is_HM($type);
-                $typeOnTarget = getTypeOnTarget($relation);
-                $is_EM_target = is_EM($typeOnTarget);
-                $is_EO_target = is_EO($typeOnTarget);
-                if ($is_EO || $is_EM) {//EmbedsOne Create - EmbedsMany Create
-                    //Delete EmbedsMany or EmbedsOne on Target
-                    $this->deleteTargetObj($method, $modelTarget, $methodOnTarget, $is_EO, $is_EM, $is_EO_target, $is_EM_target);
-                }
-                //TODO: Need to be implemented
-                /* elseif ($is_HM) {//HasMany
-                 } elseif ($is_HO) {//HasOne Create
-                 }*/
+        $this->targetSyncDisabledDepth++;
+
+        try {
+            return $operation($this);
+        } finally {
+            $this->targetSyncDisabledDepth--;
+        }
+    }
+
+    public function targetSyncEnabled(): bool
+    {
+        return $this->targetSyncDisabledDepth === 0;
+    }
+
+    /**
+     * Run $operation dispatching at most one SyncTargetJob per relation of THIS instance (background sync): the
+     * saves made inside are recorded and, when the outermost scope ends, one job per relation carries the
+     * destinations of the final stored state and the union of every destination left on the way. storeWithSync()
+     * and updateWithSync() run in such a scope. When $operation throws, the work already persisted is still
+     * dispatched before the exception is rethrown. The record lives in memory only: it is not a durable outbox.
+     *
+     * @template TReturn
+     *
+     * @param  callable(static): TReturn  $operation
+     * @return TReturn
+     */
+    public function withCoalescedTargetSync(callable $operation): mixed
+    {
+        $this->coalescingDepth++;
+
+        try {
+            return $operation($this);
+        } finally {
+            if (--$this->coalescingDepth === 0) {
+                $this->flushCoalescedTargetSync();
             }
         }
-        //Delete current object
-        $this->delete();
-        //Dispatch the destroy event
+    }
+
+    public function isCoalescingTargetSync(): bool
+    {
+        return $this->coalescingDepth > 0;
+    }
+
+    /**
+     * Called by the observer instead of dispatching while a coalescing scope is open.
+     *
+     * @param  array<string, mixed>  $relation
+     * @param  list<string>  $removed
+     */
+    public function recordTargetSync(string $method, array $relation, array $removed, bool $changed): void
+    {
+        $pending = $this->pendingTargetSync[$method] ?? ['relation' => $relation, 'removed' => [], 'changed' => false];
+        $this->pendingTargetSync[$method] = [
+            'relation' => $relation,
+            'removed' => array_values(array_unique([...$pending['removed'], ...$removed])),
+            'changed' => $pending['changed'] || $changed,
+        ];
+    }
+
+    private function flushCoalescedTargetSync(): void
+    {
+        $pending = $this->pendingTargetSync;
+        $this->pendingTargetSync = [];
+
+        foreach ($pending as $method => $entry) {
+            $current = SyncHelper::refIds(Arr::get($this->getAttributes(), $method));
+            $removed = array_values(array_diff($entry['removed'], $current));
+            if ($removed !== [] || ($entry['changed'] && $current !== [])) {
+                SyncTargetJob::dispatchFor($this, $method, $entry['relation'], $current, $removed);
+            }
+        }
+    }
+
+    /**
+     * Run $operation honouring the 'sync_targets' option of storeWithSync() / updateWithSync() (default true).
+     *
+     * @param  array<string, mixed>  $options
+     *
+     * @throws InvalidConfigurationException
+     */
+    private function withTargetSyncOption(array $options, callable $operation): void
+    {
+        $syncTargets = $options['sync_targets'] ?? true;
+        if (! is_bool($syncTargets)) {
+            throw new InvalidConfigurationException('The sync_targets option must be a boolean.');
+        }
+
+        $syncTargets ? $operation() : $this->withoutTargetSync($operation);
+    }
+
+    private function logSyncDebug(string $message): void
+    {
+        if (config('laravel-mongo-auto-sync.logging')) {
+            Log::debug($message);
+        }
+    }
+
+    /**
+     * Checks the merged request (body + additionalData) before anything is written or dispatched:
+     * a full request must contain every top-level relationship key (an explicit null, "" or "[]" counts
+     * as present), and relationship payloads must hold a list of documents that reference documents only
+     * by a plain id.
+     * Partial requests leave omitted relationships unchanged. This is not a recursive validation of
+     * nested relationships.
+     *
+     * @throws InvalidRequestException
+     */
+    private function validateRelationshipRequest(Request $request): void
+    {
+        foreach ($this->getMongoRelation() as $method => $relation) {
+            $method = (string) $method;
+            if (! $request->has($method)) {
+                if (! $this->getHasPartialRequest()) {
+                    throw new InvalidRequestException("Missing relationship '{$method}' in the request.");
+                }
+
+                continue;
+            }
+            $value = $request->input($method);
+            SyncHelper::assertSafeRefIds($method, $value, SyncHelper::idKeysFor($relation['type'] ?? null));
+            $documents = $value === null ? [] : SyncHelper::payloadDocuments($method, $value);
+            $type = SyncHelper::toString($relation['type'] ?? null);
+            if (SyncHelper::is_HM($type) || SyncHelper::is_HO($type)) {
+                // reads only: ownership, writable fields, ids and cardinality are checked before anything is written
+                ReferencedWritePlanner::plan($this, $method, $relation, $documents);
+            }
+        }
+    }
+
+    /**
+     * @param  bool  $syncTargets
+     * @return $this
+     */
+    public function destroyWithSync($syncTargets = true)
+    {
+        // Get the relation info
+        $relations = $this->getMongoRelation();
+        // validated for every relationship before anything is deleted
+        $deletesChildren = array_map(fn (array $relation) => SyncHelper::deletesReferencedChildren($relation), $relations);
+
+        // Process all relationships
+        foreach ($relations as $method => $relation) {
+            // Get Relation Save Mode
+            $type = $relation['type'];
+            $hasTarget = SyncHelper::hasTarget($relation);
+            if (SyncHelper::is_HM($type) || SyncHelper::is_HO($type)) {
+                // referenced children follow their onParentDelete policy; destroyWithSync(false) never deletes them
+                if ($syncTargets && $deletesChildren[$method]) {
+                    $this->deleteReferencedObj($method, SyncHelper::is_HO($type));
+                }
+
+                continue;
+            }
+            if ($hasTarget && $syncTargets) {
+                $modelTarget = SyncHelper::toString($relation['modelTarget']);
+                $methodOnTarget = SyncHelper::toString($relation['methodOnTarget']);
+                $modelOnTarget = $relation['modelOnTarget'];
+                $typeOnTarget = Arr::has($relation, 'typeOnTarget') ? Arr::get($relation, 'typeOnTarget') : 'EmbedsMany';
+
+                $is_EO = SyncHelper::is_EO($type);
+                $is_EM = SyncHelper::is_EM($type);
+
+                $is_EO_target = SyncHelper::is_EO($typeOnTarget);
+                $is_EM_target = SyncHelper::is_EM($typeOnTarget);
+
+                if ($is_EO || $is_EM) {// EmbedsOne Create - EmbedsMany Create
+                    // Delete EmbedsMany or EmbedsOne on Target
+                    $this->deleteTargetObj($method, $modelTarget, $methodOnTarget, $is_EO, $is_EO_target, $is_EM_target);
+                }
+            }
+        }
+        // Delete current object (without background sync of the targets when $syncTargets is false)
+        if ($syncTargets) {
+            $this->delete();
+        } else {
+            $this->withoutTargetSync(fn () => $this->delete());
+        }
+
+        // Dispatch the destroy event
         $this->fireModelEvent('destroyWithSync');
 
         return $this;
     }
 
     /**
-     * @param  array  $options
-     * @param  string  $key
+     * @param  array<string, mixed>  $options
      * @return bool|mixed
      */
     private function getOptionValue(array $options, string $key)
@@ -110,46 +344,46 @@ trait MainMongoTrait
     }
 
     /**
-     * @param  $obj
-     * @param  string  $EOkey
+     * @param  object  $obj
      * @param  string  $method
      * @param  string  $model
+     * @return void
      *
-     * @throws Exception
+     * @throws InvalidConfigurationException
      */
     public function checkPropertyExistence($obj, string $EOkey, $method = '', $model = '')
     {
         if (! property_exists($obj, $EOkey)) {
-            $msg = 'Error - '.$EOkey.' attribute not found on obj '.json_encode($obj).' during save of model: '.$model.' and attribute: '.$method;
-            throw new Exception($msg);
+            // the object is not part of the message: it is request payload and may hold personal data
+            $msg = 'Error - '.$EOkey.' attribute not found in relationship '.($method === '' ? '(unknown)' : "'{$method}'").($model === '' ? '' : ' of '.$model).'.';
+            throw new InvalidConfigurationException($msg);
         }
     }
 
     /**
-     * @param  $arr
-     * @param  string  $key
+     * @param  array<string, mixed>  $arr
+     * @return void
      *
-     * @throws Exception
+     * @throws InvalidConfigurationException
      */
     public function checkArrayExistence($arr, string $key)
     {
         if (! Arr::has($arr, $key)) {
-            $msg = ('Error - '.$key.' attribute not found on obj '.json_encode($arr));
-            throw new Exception($msg);
+            $msg = 'Error - '.$key.' attribute not found in the given array.';
+            throw new InvalidConfigurationException($msg);
         }
     }
 
     /**
-     * @param  Request  $request
-     * @param  string  $key
+     * @return void
      *
-     * @throws Exception
+     * @throws InvalidRequestException
      */
     private function checkRequestExistence(Request $request, string $key)
     {
         if (! $request->has($key)) {
-            $msg = ('Error - '.$key.' attribute not found in Request '.json_encode($request->all()));
-            throw new Exception($msg);
+            $msg = "Error - '{$key}' attribute not found in the request.";
+            throw new InvalidRequestException($msg);
         }
     }
 
@@ -180,29 +414,31 @@ trait MainMongoTrait
     }
 
     /**
-     * @param  string  $modelTarget
-     * @param  stdClass  $obj
      * @return MDModel|null
      *
-     * @throws Exception
+     * @throws InvalidConfigurationException
      */
     private function getModelTobeSync(string $modelTarget, stdClass $obj)
     {
         $this->checkPropertyExistence($obj, 'ref_id');
         $target_id = $obj->ref_id;
 
-        //Init the Target Model
-        $modelToBeSync = new $modelTarget;
+        // Init the Target Model
+        /** @var MDModel $modelToBeSync */
+        $modelToBeSync = SyncContext::targetModel(static::class, SyncContext::connectionName($this), $modelTarget);
 
-        return $modelToBeSync->find($target_id);
+        $found = $modelToBeSync->find($target_id);
+        if ($found instanceof MDModel) {
+            return $found;
+        }
+
+        return null;
     }
 
     /**
-     * @param  string  $key
-     * @param  Request  $request
      * @return mixed
      *
-     * @throws Exception
+     * @throws InvalidRequestException
      */
     private function getRelationshipRequest(string $key, Request $request)
     {
@@ -215,7 +451,7 @@ trait MainMongoTrait
     }
 
     /**
-     * @return Request
+     * @return Request|null
      */
     public function getRequest()
     {
@@ -223,17 +459,37 @@ trait MainMongoTrait
     }
 
     /**
-     * @param  Request  $request
-     * @param  array  $additionalData
+     * @param  array<string, mixed>  $additionalData
      */
     public function setRequest(Request $request, array $additionalData): void
     {
-        $request = $request->merge($additionalData);
+        $request = $request->merge(self::plainObjectsToArrays($additionalData));
         $this->request = $request;
     }
 
     /**
-     * @return Request
+     * Symfony's InputBag rejects stdClass values: store them as arrays (same BSON document once saved).
+     *
+     * @param  array<array-key, mixed>  $data
+     * @return array<array-key, mixed>
+     */
+    private static function plainObjectsToArrays(array $data): array
+    {
+        foreach ($data as $key => $value) {
+            if ($value instanceof stdClass) {
+                $value = (array) $value;
+            }
+            if (is_array($value)) {
+                $value = self::plainObjectsToArrays($value);
+            }
+            $data[$key] = $value;
+        }
+
+        return $data;
+    }
+
+    /**
+     * @return Request|null
      */
     public function getPartialGeneratedRequest()
     {
@@ -241,7 +497,7 @@ trait MainMongoTrait
     }
 
     /**
-     * @param  array  $arr
+     * @param  array<string, mixed>  $arr
      */
     public function setPartialGeneratedRequest(array $arr): void
     {
@@ -252,15 +508,19 @@ trait MainMongoTrait
     }
 
     /**
-     * @return array
+     * @return array<string, mixed>
      */
     public function getOptions()
     {
+        if ($this->options === null) {
+            return [];
+        }
+
         return $this->options;
     }
 
     /**
-     * @param  array  $options
+     * @param  array<string, mixed>  $options
      */
     public function setOptions(array $options): void
     {
@@ -268,15 +528,19 @@ trait MainMongoTrait
     }
 
     /**
-     * @return array
+     * @return array<string, mixed>
      */
     public function getTargetAdditionalData()
     {
+        if ($this->target_additional_data === null) {
+            return [];
+        }
+
         return $this->target_additional_data;
     }
 
     /**
-     * @param  array  $target_additional_data
+     * @param  array<string, mixed>  $target_additional_data
      */
     public function setTargetAdditionalData($target_additional_data): void
     {
@@ -284,10 +548,10 @@ trait MainMongoTrait
     }
 
     /**
-     * @param  Request  $request
-     * @param  array  $additionalData
-     * @param  array  $options
-     * @param  array  $target_additional_data
+     * @param  array<string, mixed>  $additionalData
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $target_additional_data
+     * @return void
      */
     public function initDataForSync(Request $request, array $additionalData, array $options, array $target_additional_data)
     {

@@ -1,45 +1,11 @@
 # Laravel MongoDB Relationships
 [![Latest Stable Version](https://poser.pugx.org/offline-agency/laravel-mongo-auto-sync/v/stable)](https://packagist.org/packages/offline-agency/laravel-mongo-auto-sync)
 [![Total Downloads](https://img.shields.io/packagist/dt/offline-agency/laravel-mongo-auto-sync.svg?style=flat-square)](https://packagist.org/packages/offline-agency/laravel-mongo-auto-sync)
-[![Build Status](https://github.com/offline-agency/laravel-mongo-auto-sync/actions/workflows/build-ci.yml/badge.svg)](https://github.com/offline-agency/laravel-mongo-auto-sync/actions/workflows/build-ci.yml)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/offline-agency/laravel-mongo-auto-sync/build-ci.yml)](https://github.com/offline-agency/laravel-mongo-auto-sync/actions)
 [![MIT Licensed](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
-[![Quality Score](https://img.shields.io/scrutinizer/g/offline-agency/laravel-mongo-auto-sync.svg?style=flat-square)](https://scrutinizer-ci.com/g/offline-agency/laravel-mongo-auto-sync)
-[![StyleCI](https://github.styleci.io/repos/167277388/shield)](https://styleci.io/repos/167277388)
-[![codecov](https://codecov.io/gh/offline-agency/laravel-mongo-auto-sync/branch/master/graph/badge.svg?token=0BHADJQYAW)](https://codecov.io/gh/offline-agency/laravel-mongo-auto-sync)
 
 This package provides a better support for [MongoDB](https://www.mongodb.com) relationships in [Laravel](https://laravel.com/) Projects.
-At low level all CRUD operations has been handled by [jenssegers/laravel-mongodb](https://github.com/jenssegers/laravel-mongodb)
-
-## Installation
-
-```bash
-composer require offline-agency/laravel-mongo-auto-sync
-```
-
-### Prerequisites
-Make sure you have the MongoDB PHP driver installed. You can find installation instructions at [http://php.net/manual/en/mongodb.installation.php](http://php.net/manual/en/mongodb.installation.php)
-
-### Package version Compatibility
-
-| This package | Laravel | Laravel MongoDB |
-|--------------|---------|-----------------|
-| 1.x          | 5.8.x   | 3.5.x           |
-| 1.x          | 6.x     | 3.6.x           |
-| 2.x          | 5.8.x   | 3.5.x           |
-| 2.x          | 6.x     | 3.6.x           |
-| 2.x          | 7.x     | 3.7.x           |
-| 2.x          | 8.x     | 3.8.x           |
-| 2.x          | 9.x     | 3.9.x           |
-| 3.x          | 5.8.x   | 3.5.x           |
-| 3.x          | 6.x     | 3.6.x           |
-| 3.x          | 7.x     | 3.7.x           |
-| 3.x          | 8.x     | 3.8.x           |
-| 3.x          | 9.x     | 3.9.x           |
-
-### PHP Version Compatibility
-- Version 1: PHP 7.1, 7.2, 7.3
-- Version 2: PHP 7.4
-- Version 3: PHP 7.4-8.1
+At low level all CRUD operations has been handled by [mongodb/laravel-mongodb](https://github.com/mongodb/laravel-mongodb)
 
 ## Features
 - Sync changes between collection with relationships after CRUD operations
@@ -102,10 +68,11 @@ As you can see the lines of extra code can rapidly increase, and you will write 
   ```
 The sub document article has been updated with the new article, with no need of extra code :tada: 
 
+
 You can see the new article on the category page because the package synchronizes the information for you by reading the Model Setup.
   
 **These example can be applied for all write operations on the database.**
-- Referenced sub documents [TO DO] 
+- Referenced sub documents (`HasOne` / `HasMany`): see [docs/referenced-relationships.md](docs/referenced-relationships.md)
 - Handle sub document as Model in order to exploit Laravel ORM support during write operation (without sync feature) [TO BE TEST] 
 - Handle referenced sub document as Model in order to exploit Laravel ORM support during write operation (without sync feature) [TO DO] 
 - Advance cast field support
@@ -116,29 +83,146 @@ You can see the new article on the category page because the package synchronize
 - API System for mobile application o for generated static site
 - Any projects that require fast read operations and (slow) write operations that can be run on background
 
+## Installation
+
+```bash
+composer require offline-agency/laravel-mongo-auto-sync
+```
+### Laravel version Compatibility
+
+| Laravel     | PHP    | Package     |
+| ----------- | ------ | ----------- |
+| 12.69+ / 13.30+ | 8.4, 8.5 | 4.x     |
+| 5.x - 8.x   | ≥ 7.4  | 2.x / 3.x   |
+
+Package 4.x requires `laravel/framework` ^12.69 | ^13.30, `mongodb/laravel-mongodb` ^5.11 and `ext-mongodb` ^2.4 (with `mongodb/mongodb` 2.4.2 or later), and is tested on MongoDB 7.0 and 8.0 standalone and on a MongoDB 8.0 replica set. Details and the exact verified combinations: [docs/compatibility](docs/compatibility/test-matrix.md).
+
+Upgrading from 3.x? Read [UPGRADE-4.0.md](UPGRADE-4.0.md).
+
 ## Documentation
 You can find the documentation [here](https://docs.offlineagency.com/laravel-mongo-auto-sync/)
 
-## Testing
+## Configuration
 
-Run this command inside your project's route
-``` bash
-docker-compose up
+Publish the configuration file using:
+```bash
+php artisan vendor:publish --provider="OfflineAgency\MongoAutoSync\MongoAutoSyncServiceProvider" --tag="config"
 ```
 
-Now run the tests with:
+Available options:
+
+| Key | Env variable | Default | Description |
+| --- | --- | --- | --- |
+| `model_path` | | `app_path('Models')` | Path to your models (used by the console commands). |
+| `model_namespace` | | `App\Models` | Namespace of your models. |
+| `use_background_sync` | `MONGO_AUTO_SYNC_BACKGROUND_SYNC` | `false` | `false`: target collections are updated synchronously inside `storeWithSync()` / `updateWithSync()` / `destroyWithSync()`. `true`: the target updates are dispatched as a queued `SyncTargetJob` (eventual consistency): a queue worker must be running. |
+| `queue_connection` | `MONGO_AUTO_SYNC_QUEUE_CONNECTION` | `null` | Queue connection used by `SyncTargetJob` (`null` = the application default). |
+| `queue_name` | `MONGO_AUTO_SYNC_QUEUE_NAME` | `null` | Queue name used by `SyncTargetJob` (`null` = the connection default). |
+| `logging` | `MONGO_AUTO_SYNC_LOGGING` | `false` | Log `storeWithSync` / `updateWithSync` calls at `debug` level. |
+
+A full request must contain every relationship declared in `$mongoRelation` (send `null`, `""` or `"[]"` for an empty one), otherwise `InvalidRequestException` is thrown before anything is written: see [UPGRADE-4.0.md](UPGRADE-4.0.md#4-full-requests-must-contain-every-relationship-55). Partial requests are an option of the sync methods, not a config key: `$model->updateWithSync($request, $data, ['request_type' => 'partial'])`.
+
+### Background sync
+
+With `use_background_sync=true`, saving or deleting a model dispatches a `SyncTargetJob` for each relationship with a target whose references or data changed. The job carries ids only (no request data), rebuilds the mini model from the stored source when it runs, and writes the targets with atomic MongoDB updates: running a job twice, or the jobs of one source out of order, gives the same final state, and jobs of different sources on the same target do not overwrite each other. Two workers syncing **the same source at the same time** can still leave the older values on a target (see [roadmap B](docs/compatibility/roadmap.md)). Inside `DB::transaction()` the target writes join the transaction; with a queue that is not part of the transaction, jobs wait for the commit only when the queue connection has `after_commit => true`, and laravel-mongodb 5.11 can still run the deferred dispatches of a rolled-back `transaction()` at the next commit (see UPGRADE-4.0.md). Run a worker on the configured connection and queue, for example:
+
+```bash
+php artisan queue:work --queue=mongo_auto_sync
+```
+
+Nested targets (level > 1) are not synchronised, on either path.
+
+Sources stored on another connection or in a tenant database are synced in their own database, on both paths: see [docs/tenancy.md](docs/tenancy.md).
+
+One `storeWithSync()` / `updateWithSync()` dispatches at most one job per relationship, even though it saves the model more than once; an operation that changes nothing dispatches none. Group your own saves the same way with `withCoalescedTargetSync()`:
+
+```php
+$subItem->withCoalescedTargetSync(function (SubItem $subItem) {
+    $subItem->navigation = $first;  $subItem->save();
+    $subItem->navigation = $second; $subItem->save();
+});   // one job: the final navigation, and both previous ones to clean
+```
+
+The grouping is kept in memory for the operation only: if the operation throws, the work already saved is still dispatched before the exception is rethrown, but a crash of the process loses it (durable delivery is a separate design, [docs/architecture/durable-sync-delivery.md](docs/architecture/durable-sync-delivery.md)).
+
+### Disabling target sync for one operation
+
+Write a source (and its own embedded / referenced relationships) without touching or scheduling the targets of that operation ([#45](https://github.com/offline-agency/laravel-mongo-auto-sync/issues/45), [#47](https://github.com/offline-agency/laravel-mongo-auto-sync/issues/47)):
+
+```php
+$article->storeWithSync($request, [], ['sync_targets' => false]);
+$article->updateWithSync($request, [], ['sync_targets' => false]);
+$article->destroyWithSync(false);           // the source is deleted, targets and referenced children are left as they are
+
+$article->withoutTargetSync(function (Article $article) {
+    $article->title = ['en' => 'Draft'];
+    $article->save();                        // no target write, no SyncTargetJob for this instance
+});
+```
+
+The switch applies to the model instance and the operation only: validation (#55), referenced-child ownership (#46) and every Eloquent / package event still run; other models saved inside the callback keep syncing; scopes nest and are restored after an exception. It does not cancel jobs queued by **earlier** operations: such a job rebuilds the mini model from the stored source when it runs, so it can still propagate values written with the switch off.
+
+## Console Commands
+
+### Check Model Configuration
+Validate your model configurations and relationships:
+```bash
+php artisan mongo-sync:check-config
+```
+
+### Analyse Database
+Check that every embedded reference with a target (`EmbedsOne` / `EmbedsMany`) points to an existing target document that embeds the source back:
+```bash
+php artisan mongo-sync:analyse [--fix]
+```
+- Models are discovered under `model_path` (sub-directories keep their sub-namespace) and in `other_models`; abstract and non-model classes are skipped, an absent optional `other_models` class is only noted.
+- Exit code `0` only when the scan finds no anomaly and no error; `1` for a missing target, a missing back reference, an invalid configuration, an unreadable relation or a `HasOne`/`HasMany` relation with a target (not supported by the analyser).
+- Without `--fix` nothing is written and no job is dispatched. With `--fix` at most one `SyncTargetJob` per source document and relation is dispatched (on `queue_connection` / `queue_name`) for missing back references; deleted targets are never recreated. The exit code stays `1`: run the command again after the worker to confirm.
+- `--fix` treats the scanned document (the side holding the reference) as authoritative. A target whose `EmbedsOne` inverse already embeds another document is reported as a conflict and not repaired. The synchronous `updateWithSync()` does not clear `EmbedsOne` targets that a source stops referencing (3.x behaviour), so such stale copies appear as conflicts.
+- Class names are compared case-insensitively; a model that cannot be loaded, a namespace that matches no class in `model_path` and a malformed `other_models` are configuration errors.
+- The scan reads documents one by one: it is not a consistent snapshot, it does not compare embedded values and it does not look for orphan copies on the target side.
+
+### Sync Collection
+Dispatch a `SyncTargetJob` for every document of a model:
+```bash
+php artisan mongo-sync:sync-collection "App\Models\Article"
+```
+
+### Benchmark
+Measure insert, read, update and delete times for a model:
+```bash
+php artisan mongo-sync:benchmark "App\Models\Article" 100
+```
+
+### Generate Model Documentation
+Generate PHPDoc for your models:
+```bash
+php artisan model-doc:generate {collection_name}
+```
+
+## Exceptions
+
+The package throws specific exceptions for better error handling:
+- `InvalidConfigurationException`: Model or relationship configuration errors.
+- `ModelNotFoundException`: Target model cannot be found.
+- `InvalidRelationshipException`: Invalid relationship type.
+- `InvalidRequestException`: Invalid request data.
+
+## Troubleshooting
+
+- **Sync not working?** Set `MONGO_AUTO_SYNC_LOGGING=true` and check the debug logs starting with `storeWithSync` or `updateWithSync`. With background sync enabled, make sure a queue worker is running.
+- **Model not found?** Ensure your `model_path` and `model_namespace` in config are correct.
+- **Invalid configuration?** Run `php artisan mongo-sync:check-config` to identify issues.
+
+## Testing
+Run the tests with:
 ``` bash
 composer test
 ```
 
 ## Roadmap :rocket:
-- Refactor target synchronization to Observer pattern, so all this operation can be run on background using [Laravel Queue System](https://laravel.com/docs/5.8/queues). This will also speed up all the operations in the collection that is primary involved in write operations.
-- Command Analyse Database: This command will analyse the database in order to find some relationship error. 
-Ex: An article with a category associated that is not present on the Category's sub document.
-- Refactor **save()** method in order to handle CRUD operation on relationship also without sync.
-- Support for [referenced relationships](https://docs.mongodb.com/manual/tutorial/model-referenced-one-to-many-relationships-between-documents/).
+- Nested target synchronisation (level > 1).
 - Better support for all field types.
-- DestroyWithSync() without delete sub documents on other collections.
 - Add more tests.
 - Nested relationships.
 - Benchmark MongoDB vs Mysql (write and read operation).
@@ -149,8 +233,6 @@ Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
 
 ## Security
 If you discover any security-related issues, please email support@offlineagency.com instead of using the issue tracker.
-
-
 
 ## Credits
 - [Giacomo Fabbian](https://github.com/Giacomo92)

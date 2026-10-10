@@ -5,3 +5,7 @@ storage/
 bootstrap/
 .idea
 .phpunit.result.cache
+build/phpstan
+composer.lock
+coverage.xml
+.phpunit.cache/

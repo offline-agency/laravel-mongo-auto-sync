@@ -1,46 +1,38 @@
 <?php
 
-namespace Tests;
+test('generate model documentation', function () {
+    $output = getOutput();
 
-class GenerateModelDocumentationTest extends TestCase
+    /*$this->artisan('model-doc:generate', ['collection_name' => 'Article'])
+        ->expectsOutput($output)
+        ->assertExitCode(0);*/
+    expect(true)->toBeTrue();
+});
+
+test('generate model documentation for article', function () {
+    /*$this->artisan('model-doc:generate', ['collection_name' => 'article'])
+        ->expectsOutput('')
+        ->assertExitCode(0);*/
+
+    expect(true)->toBeTrue();
+});
+
+test('exception model not found', function () {
+    $this->expectExceptionMessage('Error ModelThatDoesNotExist Model not found');
+    $this->artisan('model-doc:generate', ['collection_name' => 'ModelThatDoesNotExist'])
+        ->assertExitCode(0);
+});
+
+test('exception path not found', function () {
+    config()->set('laravel-mongo-auto-sync.model_path', 'path_that_does_not_exist');
+    $this->expectExceptionMessage('Error directory path_that_does_not_exist not found');
+    $this->artisan('model-doc:generate', ['collection_name' => 'ModelThatDoesNotExist'])
+        ->assertExitCode(0);
+});
+
+function getOutput()
 {
-    public function test_generate_model_documentation()
-    {
-        $output = $this->getOutput();
-
-        /*$this->artisan('model-doc:generate', ['collection_name' => 'Article'])
-            ->expectsOutput($output)
-            ->assertExitCode(0);*/
-        $this->assertTrue(true);
-    }
-
-    public function test_generate_model_documentation_for_article()
-    {
-        /*$this->artisan('model-doc:generate', ['collection_name' => 'article'])
-            ->expectsOutput('')
-            ->assertExitCode(0);*/
-
-        $this->assertTrue(true);
-    }
-
-    public function test_exception_model_not_found()
-    {
-        $this->expectExceptionMessage('Error ModelThatDoesNotExist Model not found');
-        $this->artisan('model-doc:generate', ['collection_name' => 'ModelThatDoesNotExist'])
-            ->assertExitCode(0);
-    }
-
-    public function test_exception_path_not_found()
-    {
-        config()->set('laravel-mongo-auto-sync.model_path', 'path_that_does_not_exist');
-        $this->expectExceptionMessage('Error directory path_that_does_not_exist not found');
-        $this->artisan('model-doc:generate', ['collection_name' => 'ModelThatDoesNotExist'])
-            ->assertExitCode(0);
-    }
-
-    private function getOutput()
-    {
-        return '
+    return '
 
 
 
@@ -54,5 +46,4 @@ class GenerateModelDocumentationTest extends TestCase
 *
 *
 *';
-    }
 }

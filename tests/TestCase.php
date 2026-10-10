@@ -2,25 +2,26 @@
 
 namespace Tests;
 
-use Jenssegers\Mongodb\MongodbQueueServiceProvider;
-use Jenssegers\Mongodb\MongodbServiceProvider;
+use Illuminate\Database\Eloquent\Model;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
+use MongoDB\Laravel\MongoDBServiceProvider;
 use OfflineAgency\MongoAutoSync\MongoAutoSyncServiceProvider;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
 {
-    use CreatesApplication;
+    use MockeryPHPUnitIntegration, SyncHelpers;
 
     protected function setUp(): void
     {
         parent::setUp();
+        Model::setConnectionResolver($this->app['db']);
     }
 
     protected function getPackageProviders($app)
     {
         return [
-            MongodbServiceProvider::class,
-            MongodbQueueServiceProvider::class,
+            MongoDBServiceProvider::class,
             MongoAutoSyncServiceProvider::class,
         ];
     }
@@ -44,9 +45,10 @@ abstract class TestCase extends BaseTestCase
         $app['config']->set('auth.providers.users.model', 'User');
         $app['config']->set('cache.driver', 'array');
 
-        $app['config']->set('queue.default', 'database');
-        $app['config']->set('queue.connections.database', [
+        $app['config']->set('queue.default', 'sync');
+        $app['config']->set('queue.connections.mongodb', [
             'driver' => 'mongodb',
+            'connection' => 'mongodb',
             'table' => 'jobs',
             'queue' => 'default',
             'expire' => 60,
