@@ -51,7 +51,7 @@ final class SyncTargetJob implements ShouldQueue
     {
         $job = new self(
             $source::class,
-            (string) $source->getKey(),
+            SyncHelper::toString($source->getKey()),
             $method,
             $relation,
             array_values($currentTargetIds),
@@ -82,8 +82,8 @@ final class SyncTargetJob implements ShouldQueue
     {
         /** @var class-string<MDModel> $modelTarget */
         $modelTarget = $this->relation['modelTarget'];
-        $methodOnTarget = (string) $this->relation['methodOnTarget'];
-        $modelOnTarget = (string) $this->relation['modelOnTarget'];
+        $methodOnTarget = SyncHelper::toString($this->relation['methodOnTarget']);
+        $modelOnTarget = SyncHelper::toString($this->relation['modelOnTarget']);
         $typeOnTarget = Arr::get($this->relation, 'typeOnTarget', 'EmbedsMany');
         $is_EO_target = SyncHelper::is_EO($typeOnTarget);
         $is_EM_target = SyncHelper::is_EM($typeOnTarget);
@@ -103,7 +103,7 @@ final class SyncTargetJob implements ShouldQueue
         $targets = $modelTarget::query()
             ->whereIn('id', [...$upsertIds, ...$removeIds])
             ->get()
-            ->keyBy(fn (MDModel $target) => (string) $target->getKey());
+            ->keyBy(fn (MDModel $target) => SyncHelper::toString($target->getKey()));
 
         // 1. removals first
         foreach ($removeIds as $id) {

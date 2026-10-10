@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use LogicException;
+use MongoDB\BSON\Int64;
 use MongoDB\BSON\UTCDateTime;
 use OfflineAgency\MongoAutoSync\Eloquent\Builder;
 use OfflineAgency\MongoAutoSync\Exceptions\InvalidConfigurationException;
@@ -42,7 +43,12 @@ trait ModelAdditionalMethod
      */
     public function getItems(): array
     {
-        return $this->items ?? [];
+        $items = $this->items ?? [];
+        if (! is_array($items)) {
+            throw new InvalidConfigurationException('The $items property of '.static::class.' must be an array.');
+        }
+
+        return SyncHelper::attributes($items);
     }
 
     /**
@@ -50,11 +56,20 @@ trait ModelAdditionalMethod
      */
     public function getMongoRelation(): array
     {
-        if (! empty($this->mongoRelation)) {
-            return $this->mongoRelation;
-        } else {
-            return [];
+        $relations = $this->mongoRelation ?? [];
+        if (! is_array($relations)) {
+            throw new InvalidConfigurationException('The $mongoRelation property of '.static::class.' must be an array.');
         }
+
+        $configured = [];
+        foreach ($relations as $method => $relation) {
+            if (! is_array($relation)) {
+                throw new InvalidConfigurationException("The configuration of relationship '{$method}' in ".static::class.' must be an array.');
+            }
+            $configured[(string) $method] = SyncHelper::attributes($relation);
+        }
+
+        return $configured;
     }
 
     /**
@@ -129,7 +144,7 @@ trait ModelAdditionalMethod
             if ($hasTarget) {
                 $relationshipsContainsTarget = Arr::has($relationship, 'modelOnTarget');
                 if ($relationshipsContainsTarget) {
-                    $models[] = Arr::get($relationship, 'modelOnTarget');
+                    $models[] = SyncHelper::toString(Arr::get($relationship, 'modelOnTarget'));
                     $embedded_object[$method] = $this->getObjWithRefId($method, $relationship);
                 } else {
                     throw new InvalidConfigurationException('modelOnTarget not found on relationship '.$method.' array. Check your Model configuration '.get_class($this));
@@ -138,7 +153,7 @@ trait ModelAdditionalMethod
         }
         $this->setPartialGeneratedRequest($embedded_object);
 
-        return collect($models)->unique()->toArray();
+        return array_unique($models);
     }
 
     /**
@@ -174,7 +189,7 @@ trait ModelAdditionalMethod
     }
 
     /**
-     * @param  array<string, mixed>  $item
+     * @param  mixed  $item  the field options from $items
      * @return array<string, mixed>|UTCDateTime|mixed|null
      *
      * @throws Exception
@@ -188,7 +203,7 @@ trait ModelAdditionalMethod
 
         $value = $this->getObjValueToBeSaved($key, $mini_model_path);
         if ($is_ML) {
-            return is_array($value) ? $value : SyncHelper::ml([], (string) $value);
+            return is_array($value) ? $value : SyncHelper::ml([], SyncHelper::toString($value));
         } elseif ($is_MD) {
             if (empty($value)) {
                 return null;
@@ -200,7 +215,7 @@ trait ModelAdditionalMethod
                     return new UTCDateTime($value);
                 }
 
-                return new UTCDateTime(new DateTime($value));
+                return new UTCDateTime(new DateTime(SyncHelper::toString($value)));
             }
         } elseif ($is_carbon_date) {
             if ($value instanceof UTCDateTime) {
@@ -213,8 +228,18 @@ trait ModelAdditionalMethod
                 return new UTCDateTime(new DateTime($value));
             }
 
+            // a timestamp must be an integer number of milliseconds: numeric strings and floats are rejected, as
+            // the driver did, instead of being read as milliseconds (Unix seconds would become a 1970 date)
+            if ($value !== null && ! is_int($value) && ! $value instanceof Int64) {
+                throw new InvalidRequestException(sprintf("Invalid date for '%s': expected a date string or an integer timestamp in milliseconds, got %s.", $key, is_string($value) ? 'a numeric string' : get_debug_type($value)));
+            }
+
             return new UTCDateTime($value);
         } elseif ($is_array) {
+            if ($value !== null && ! is_array($value) && ! $value instanceof Model) {
+                throw new InvalidRequestException(sprintf("Invalid value for '%s': expected an array, got %s.", $key, get_debug_type($value)));
+            }
+
             return is_null($value) ? [] : (is_array($value) ? $value : $value->getAttributes());
         } else {
             return $value;
@@ -309,7 +334,7 @@ trait ModelAdditionalMethod
                 }
             }
         } else {
-            throw new InvalidRelationshipException('Relationship '.$method.' type '.$type.' is not valid! Possible values are: EmbedsMany and EmbedsOne');
+            throw new InvalidRelationshipException('Relationship '.$method.' type '.SyncHelper::toString($type).' is not valid! Possible values are: EmbedsMany and EmbedsOne');
         }
 
         $result = json_encode($objs);

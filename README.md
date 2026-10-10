@@ -92,8 +92,10 @@ composer require offline-agency/laravel-mongo-auto-sync
 
 | Laravel     | PHP    | Package     |
 | ----------- | ------ | ----------- |
-| 12.x / 13.x | ≥ 8.4  | 4.x         |
+| 12.69+ / 13.30+ | 8.4, 8.5 | 4.x     |
 | 5.x - 8.x   | ≥ 7.4  | 2.x / 3.x   |
+
+Package 4.x requires `laravel/framework` ^12.69 | ^13.30, `mongodb/laravel-mongodb` ^5.11 and `ext-mongodb` ^2.4 (with `mongodb/mongodb` 2.4.2 or later), and is tested on MongoDB 7.0 and 8.0 standalone and on a MongoDB 8.0 replica set. Details and the exact verified combinations: [docs/compatibility](docs/compatibility/test-matrix.md).
 
 Upgrading from 3.x? Read [UPGRADE-4.0.md](UPGRADE-4.0.md).
 
@@ -118,11 +120,11 @@ Available options:
 | `queue_name` | `MONGO_AUTO_SYNC_QUEUE_NAME` | `null` | Queue name used by `SyncTargetJob` (`null` = the connection default). |
 | `logging` | `MONGO_AUTO_SYNC_LOGGING` | `false` | Log `storeWithSync` / `updateWithSync` calls at `debug` level. |
 
-Partial requests are an option of the sync methods, not a config key: `$model->updateWithSync($request, $data, ['request_type' => 'partial'])`.
+A full request must contain every relationship declared in `$mongoRelation` (send `null`, `""` or `"[]"` for an empty one), otherwise `InvalidRequestException` is thrown before anything is written: see [UPGRADE-4.0.md](UPGRADE-4.0.md#4-full-requests-must-contain-every-relationship-55). Partial requests are an option of the sync methods, not a config key: `$model->updateWithSync($request, $data, ['request_type' => 'partial'])`.
 
 ### Background sync
 
-With `use_background_sync=true`, saving or deleting a model dispatches a `SyncTargetJob` for each relationship with a target whose references or data changed. The job carries ids only (no request data), rebuilds the mini model from the stored source when it runs, and writes the targets with atomic MongoDB updates, so it can safely run twice, out of order, or concurrently with other jobs. Run a worker on the configured connection and queue, for example:
+With `use_background_sync=true`, saving or deleting a model dispatches a `SyncTargetJob` for each relationship with a target whose references or data changed. The job carries ids only (no request data), rebuilds the mini model from the stored source when it runs, and writes the targets with atomic MongoDB updates: running a job twice, or the jobs of one source out of order, gives the same final state, and jobs of different sources on the same target do not overwrite each other. Two workers syncing **the same source at the same time** can still leave the older values on a target (see [roadmap B](docs/compatibility/roadmap.md)). Inside `DB::transaction()` the target writes join the transaction; with a queue that is not part of the transaction, jobs wait for the commit only when the queue connection has `after_commit => true`, and laravel-mongodb 5.11 can still run the deferred dispatches of a rolled-back `transaction()` at the next commit (see UPGRADE-4.0.md). Run a worker on the configured connection and queue, for example:
 
 ```bash
 php artisan queue:work --queue=mongo_auto_sync
@@ -139,10 +141,16 @@ php artisan mongo-sync:check-config
 ```
 
 ### Analyse Database
-Find embedded references that are missing on the target side (`--fix` dispatches a `SyncTargetJob` for each inconsistency):
+Check that every embedded reference with a target (`EmbedsOne` / `EmbedsMany`) points to an existing target document that embeds the source back:
 ```bash
 php artisan mongo-sync:analyse [--fix]
 ```
+- Models are discovered under `model_path` (sub-directories keep their sub-namespace) and in `other_models`; abstract and non-model classes are skipped, an absent optional `other_models` class is only noted.
+- Exit code `0` only when the scan finds no anomaly and no error; `1` for a missing target, a missing back reference, an invalid configuration, an unreadable relation or a `HasOne`/`HasMany` relation with a target (not supported by the analyser).
+- Without `--fix` nothing is written and no job is dispatched. With `--fix` at most one `SyncTargetJob` per source document and relation is dispatched (on `queue_connection` / `queue_name`) for missing back references; deleted targets are never recreated. The exit code stays `1`: run the command again after the worker to confirm.
+- `--fix` treats the scanned document (the side holding the reference) as authoritative. A target whose `EmbedsOne` inverse already embeds another document is reported as a conflict and not repaired. The synchronous `updateWithSync()` does not clear `EmbedsOne` targets that a source stops referencing (3.x behaviour), so such stale copies appear as conflicts.
+- Class names are compared case-insensitively; a model that cannot be loaded, a namespace that matches no class in `model_path` and a malformed `other_models` are configuration errors.
+- The scan reads documents one by one: it is not a consistent snapshot, it does not compare embedded values and it does not look for orphan copies on the target side.
 
 ### Sync Collection
 Dispatch a `SyncTargetJob` for every document of a model:

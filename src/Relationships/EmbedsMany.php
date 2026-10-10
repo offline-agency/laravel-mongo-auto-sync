@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
+use LogicException;
 use MongoDB\BSON\ObjectId;
 use MongoDB\Laravel\Query\Builder;
 
@@ -207,10 +208,13 @@ class EmbedsMany extends EmbedsOneOrMany
     /**
      * Delete all embedded models.
      *
+     * @param  null  $id  not supported: always null (an id throws LogicException, as in laravel-mongodb)
      * @return int
      */
-    public function delete()
+    public function delete($id = null)
     {
+        throw_if($id !== null, new LogicException('The id parameter should not be used.'));
+
         // Overwrite the local key with an empty array.
         $result = $this->query->update([$this->localKey => []]);
 
@@ -341,18 +345,13 @@ class EmbedsMany extends EmbedsOneOrMany
      * Get embedded models as indexed array for EmbedsMany.
      * This is a helper method that returns the indexed array format.
      *
-     * @return array<int, array<string, mixed>>
+     * @return list<array<mixed>>
      */
     protected function getEmbeddedAsIndexed()
     {
         $embedded = $this->getEmbedded();
         if ($embedded === null) {
             return [];
-        }
-        // Convert associative array to indexed array if needed
-        if (array_is_list($embedded)) {
-            /** @var array<int, array<string, mixed>> $embedded */
-            return $embedded;
         }
         // Convert to indexed array
         $result = [];
@@ -374,12 +373,12 @@ class EmbedsMany extends EmbedsOneOrMany
      */
     protected function setEmbedded($models)
     {
-        // The parent expects an associative array (or null): keep only the
-        // embedded documents, preserving their keys.
+        // Keep only the embedded documents and re-index them, as laravel-mongodb does: keys left by a
+        // removed item would make MongoDB store the list as an object.
         $records = [];
-        foreach ($models ?? [] as $key => $value) {
+        foreach ($models ?? [] as $value) {
             if (is_array($value)) {
-                $records[(string) $key] = $value;
+                $records[] = $value;
             }
         }
 

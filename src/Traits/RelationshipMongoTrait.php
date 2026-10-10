@@ -3,12 +3,14 @@
 namespace OfflineAgency\MongoAutoSync\Traits;
 
 use DateTime;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use LogicException;
 use MongoDB\BSON\UTCDateTime;
-use MongoDB\Collection;
-use MongoDB\Laravel\Connection;
+use MongoDB\Laravel\Connection as MongoConnection;
+use MongoDB\Laravel\Query\Builder as MongoQueryBuilder;
+use OfflineAgency\MongoAutoSync\Exceptions\InvalidConfigurationException;
 use OfflineAgency\MongoAutoSync\Exceptions\MongoAutoSyncException;
 use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
 use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
@@ -32,13 +34,13 @@ trait RelationshipMongoTrait
         // Process all relationships
         foreach ($relations as $method => $relation) {
             // Get Relation Save Mode
-            $type = $relation['type'];
-            $model = $relation['model'];
+            $type = SyncHelper::toString($relation['type']);
+            $model = SyncHelper::toString($relation['model']);
             $hasTarget = SyncHelper::hasTarget($relation);
             if ($hasTarget) {
-                $modelTarget = $relation['modelTarget'];
-                $methodOnTarget = $relation['methodOnTarget'];
-                $modelOnTarget = $relation['modelOnTarget'];
+                $modelTarget = SyncHelper::toString($relation['modelTarget']);
+                $methodOnTarget = SyncHelper::toString($relation['methodOnTarget']);
+                $modelOnTarget = SyncHelper::toString($relation['modelOnTarget']);
                 $typeOnTarget = Arr::has($relation, 'typeOnTarget') ? Arr::get($relation, 'typeOnTarget') : 'EmbedsMany';
             } else {
                 $modelTarget = '';
@@ -69,7 +71,8 @@ trait RelationshipMongoTrait
             $is_embeds_has_to_be_updated = $request->has($key);
 
             if (! is_null($value) && ! ($value == '') && ! ($value == '[]')) {
-                $objs = json_decode($value);
+                SyncHelper::assertSafeRefIds($key, $value, SyncHelper::idKeysFor($type));
+                $objs = SyncHelper::payloadDocuments($key, $value);
             } else {
                 $objs = SyncHelper::getArrayWithEmptyObj($model, $is_EO, $is_EM);
             }
@@ -115,10 +118,11 @@ trait RelationshipMongoTrait
                         $i++;
                     }
 
-                    if ($is_EM) {
+                    // a relationship absent from the request is only propagated to its targets: keep the stored copy
+                    if ($is_EM && $is_embeds_has_to_be_updated) {
                         $this->$method = $this->tempEM;
                     }
-                } else {
+                } elseif ($is_embeds_has_to_be_updated) {
                     $this->$method = [];
                 }
                 $this->save();
@@ -137,6 +141,7 @@ trait RelationshipMongoTrait
     /**
      * Upsert the mini model of a source on this target with atomic updates: concurrent jobs writing other
      * sources on the same target cannot overwrite each other, and the same source is never duplicated.
+     * The updates run through the laravel-mongodb query builder, so they join the connection's transaction.
      *
      * @param  object  $mini_model
      * @param  bool  $is_EO_target
@@ -147,38 +152,57 @@ trait RelationshipMongoTrait
     {
         /** @var MDModel $mini_model */
         $mini_attributes = $mini_model->getAttributes();
-        $collection = $this->getMongoCollection();
-        $filter = ['_id' => ['$in' => SyncHelper::idVariants((string) $this->getKey())]];
-        $touch = $this->usesTimestamps() ? [$this->getUpdatedAtColumn() => $this->fromDateTime($this->freshTimestamp())] : [];
+        $touch = $this->touchedTimestamp();
 
         if ($is_EM_target) {
             $ref_ids = SyncHelper::idVariants($mini_attributes['ref_id'] ?? null);
             // a null field cannot be pushed to
-            $collection->updateOne($filter + [$method_on_target => null], ['$set' => [$method_on_target => []]]);
+            $this->targetQuery()->whereNull($method_on_target)->update(['$set' => [$method_on_target => []]]);
             if ($ref_ids !== []) {
-                $collection->updateOne($filter, ['$pull' => [$method_on_target => ['ref_id' => ['$in' => $ref_ids]]]]);
+                $this->targetQuery()->update(['$pull' => [$method_on_target => ['ref_id' => ['$in' => $ref_ids]]]]);
             }
             $update = ['$push' => [$method_on_target => $mini_attributes]];
             if ($touch !== []) {
                 $update['$set'] = $touch;
             }
             // skip the push when a concurrent job for the same source already added it
-            $collection->updateOne($filter + [$method_on_target.'.ref_id' => ['$nin' => $ref_ids]], $update);
+            $this->targetQuery()->whereNotIn($method_on_target.'.ref_id', $ref_ids)->update($update);
         } else {
-            $collection->updateOne($filter, ['$set' => [$method_on_target => $mini_attributes] + $touch]);
+            $this->targetQuery()->update(['$set' => [$method_on_target => $mini_attributes] + $touch]);
         }
 
         $this->reloadEmbedded($method_on_target);
     }
 
-    private function getMongoCollection(): Collection
+    /**
+     * The updated_at value to $set with an atomic target write (none without timestamps or updated_at column).
+     *
+     * @return array<string, mixed>
+     */
+    private function touchedTimestamp(): array
+    {
+        $column = $this->getUpdatedAtColumn();
+        if (! $this->usesTimestamps() || $column === null) {
+            return [];
+        }
+
+        return [$column => $this->fromDateTime($this->freshTimestamp())];
+    }
+
+    /**
+     * laravel-mongodb query on this document only (inherits session, maxTimeMS and read preference).
+     */
+    private function targetQuery(): MongoQueryBuilder
     {
         $connection = $this->getConnection();
-        if (! $connection instanceof Connection) {
+        $query = $connection instanceof MongoConnection ? $this->newQueryWithoutScopes()->getQuery() : null;
+        if (! $query instanceof MongoQueryBuilder) {
             throw new LogicException('Target sync requires a MongoDB connection, got '.get_class($connection));
         }
 
-        return $connection->getCollection($this->getTable());
+        // raw filter: whereIn('_id') would convert a 24-hex string id to an ObjectId and miss documents stored with a string _id
+        // @phpstan-ignore argument.type (laravel-mongodb's whereRaw() accepts a filter array; the phpdoc is inherited from Illuminate)
+        return $query->whereRaw(['_id' => ['$in' => SyncHelper::idVariants(SyncHelper::toString($this->getKey()))]]);
     }
 
     /**
@@ -207,11 +231,7 @@ trait RelationshipMongoTrait
             return;
         }
 
-        $filter = [
-            '_id' => ['$in' => SyncHelper::idVariants((string) $this->getKey())],
-            $method_on_target.'.ref_id' => ['$in' => $ref_ids],
-        ];
-        $touch = $this->usesTimestamps() ? [$this->getUpdatedAtColumn() => $this->fromDateTime($this->freshTimestamp())] : [];
+        $touch = $this->touchedTimestamp();
 
         if ($is_EM_target) {
             $update = ['$pull' => [$method_on_target => ['ref_id' => ['$in' => $ref_ids]]]];
@@ -223,12 +243,13 @@ trait RelationshipMongoTrait
             $update = ['$set' => [$method_on_target => null] + $touch];
         }
 
-        $this->getMongoCollection()->updateOne($filter, $update);
+        // only documents that still reference the source are touched
+        $this->targetQuery()->whereIn($method_on_target.'.ref_id', $ref_ids)->update($update);
         $this->reloadEmbedded($method_on_target);
     }
 
     /**
-     * @param  object  $obj
+     * @param  object|null  $obj
      * @param  string  $type
      * @param  string  $model
      * @param  string  $method
@@ -268,20 +289,7 @@ trait RelationshipMongoTrait
             return;
         }
 
-        $targetIds = [];
-
-        if ($is_EO) {
-            $embedObj = $this->$method;
-            if (! is_null($embedObj)) {
-                $targetIds[] = $embedObj->ref_id;
-            }
-        } else {
-            if (is_iterable($this->$method)) {
-                foreach ($this->$method as $target) {
-                    $targetIds[] = $target->ref_id;
-                }
-            }
-        }
+        $targetIds = SyncHelper::refIds($this->$method);
 
         if (! empty($targetIds)) {
             $this->batchHandleSubTarget($targetIds, $modelTarget, $methodOnTarget, $is_EO_target, $is_EM_target);
@@ -325,7 +333,7 @@ trait RelationshipMongoTrait
     }
 
     /**
-     * @param  array<int, object>  $objs
+     * @param  array<int, object|null>  $objs
      * @param  string  $method
      * @param  array<string, mixed>  $relation
      * @param  bool  $is_HO
@@ -333,34 +341,23 @@ trait RelationshipMongoTrait
      */
     public function syncReferencedDelete($objs, $method, $relation, $is_HO)
     {
-        $current = $this->$method;
         $currentIds = [];
-
-        if ($is_HO) {
-            if ($current) {
-                $currentIds[] = $current->id;
-            }
-        } else {
-            if ($current) {
-                foreach ($current as $item) {
-                    $currentIds[] = $item->id;
-                }
-            }
+        foreach ($this->referencedModels($method, $is_HO) as $item) {
+            $currentIds[] = SyncHelper::toString($item->getAttribute('id'));
         }
 
         $incomingIds = [];
-        if (! empty($objs)) {
-            foreach ($objs as $obj) {
-                if (isset($obj->id)) {
-                    $incomingIds[] = $obj->id;
-                } elseif (isset($obj->_id)) {
-                    $incomingIds[] = $obj->_id;
-                }
+        foreach ($objs as $obj) {
+            if (isset($obj->id)) {
+                $incomingIds[] = SyncHelper::toString($obj->id);
+            } elseif (isset($obj->_id)) {
+                $incomingIds[] = SyncHelper::toString($obj->_id);
             }
         }
 
         $toDelete = array_diff($currentIds, $incomingIds);
         $modelClass = $relation['model'];
+        throw_unless(is_string($modelClass) && is_subclass_of($modelClass, Model::class), new InvalidConfigurationException("The model of relationship '{$method}' must be an Eloquent model class."));
 
         if (! empty($toDelete)) {
             // For Mongo, we might need to check how destroy works
@@ -370,7 +367,7 @@ trait RelationshipMongoTrait
     }
 
     /**
-     * @param  array<int, object>  $objs
+     * @param  array<int, object|null>  $objs
      * @param  string  $method
      * @param  array<string, mixed>  $relation
      * @param  string  $event
@@ -428,18 +425,30 @@ trait RelationshipMongoTrait
      */
     public function deleteReferencedObj($method, $is_HO)
     {
+        foreach ($this->referencedModels($method, $is_HO) as $item) {
+            $item->delete();
+        }
+    }
+
+    /**
+     * The models currently held by a referenced relationship: the related model (HasOne) or the related
+     * collection (HasMany); anything else holds none.
+     *
+     * @return list<Model>
+     */
+    private function referencedModels(string $method, bool $is_HO): array
+    {
         $relationData = $this->$method;
-        if ($is_HO) {
-            if ($relationData) {
-                $relationData->delete();
-            }
-        } else {
-            if ($relationData) {
-                foreach ($relationData as $item) {
-                    $item->delete();
-                }
+        $items = $is_HO ? [$relationData] : (is_iterable($relationData) ? $relationData : []);
+
+        $models = [];
+        foreach ($items as $item) {
+            if ($item instanceof Model) {
+                $models[] = $item;
             }
         }
+
+        return $models;
     }
 
     /**
@@ -479,7 +488,7 @@ trait RelationshipMongoTrait
                     if ($obj->$EOkey == '' || $obj->$EOkey == null) {
                         $embedObj->$EOkey = null;
                     } else {
-                        $embedObj->$EOkey = new UTCDateTime(new DateTime($obj->$EOkey));
+                        $embedObj->$EOkey = new UTCDateTime(new DateTime(SyncHelper::toString($obj->$EOkey)));
                     }
                 } else {
                     $embedObj->$EOkey = $obj->$EOkey;
@@ -510,7 +519,7 @@ trait RelationshipMongoTrait
 
     /**
      * @param  string  $modelTarget
-     * @param  object  $obj
+     * @param  object|null  $obj
      * @param  string  $methodOnTarget
      * @param  string  $modelOnTarget
      * @param  bool  $is_EO_target

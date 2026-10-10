@@ -67,6 +67,7 @@ trait MainMongoTrait
         $this->logSyncDebug('storeWithSync started for model: '.get_class($this));
 
         $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
+        $this->validateRelationshipRequest($request);
         $this->storeEditAllItems($request, 'add', $options);
         $this->processAllRelationships($request, 'add', '', '', $options);
 
@@ -91,9 +92,10 @@ trait MainMongoTrait
      */
     public function updateWithSync(Request $request, array $additionalData = [], array $options = [], array $target_additional_data = [])
     {
-        $this->logSyncDebug('updateWithSync started for model: '.get_class($this).' with ID: '.$this->getKey());
+        $this->logSyncDebug('updateWithSync started for model: '.get_class($this).' with ID: '.SyncHelper::toString($this->getKey()));
 
         $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
+        $this->validateRelationshipRequest($request);
         $this->storeEditAllItems($request, 'update', $options);
         $this->processAllRelationships($request, 'update', '', '', $options);
 
@@ -116,6 +118,35 @@ trait MainMongoTrait
     }
 
     /**
+     * Checks the merged request (body + additionalData) before anything is written or dispatched:
+     * a full request must contain every top-level relationship key (an explicit null, "" or "[]" counts
+     * as present), and relationship payloads must hold a list of documents that reference documents only
+     * by a plain id.
+     * Partial requests leave omitted relationships unchanged. This is not a recursive validation of
+     * nested relationships.
+     *
+     * @throws InvalidRequestException
+     */
+    private function validateRelationshipRequest(Request $request): void
+    {
+        foreach ($this->getMongoRelation() as $method => $relation) {
+            $method = (string) $method;
+            if (! $request->has($method)) {
+                if (! $this->getHasPartialRequest()) {
+                    throw new InvalidRequestException("Missing relationship '{$method}' in the request.");
+                }
+
+                continue;
+            }
+            $value = $request->input($method);
+            SyncHelper::assertSafeRefIds($method, $value, SyncHelper::idKeysFor($relation['type'] ?? null));
+            if ($value !== null) {
+                SyncHelper::payloadDocuments($method, $value);
+            }
+        }
+    }
+
+    /**
      * @param  bool  $syncTargets
      * @return $this
      */
@@ -130,8 +161,8 @@ trait MainMongoTrait
             $type = $relation['type'];
             $hasTarget = SyncHelper::hasTarget($relation);
             if ($hasTarget && $syncTargets) {
-                $modelTarget = $relation['modelTarget'];
-                $methodOnTarget = $relation['methodOnTarget'];
+                $modelTarget = SyncHelper::toString($relation['modelTarget']);
+                $methodOnTarget = SyncHelper::toString($relation['methodOnTarget']);
                 $modelOnTarget = $relation['modelOnTarget'];
                 $typeOnTarget = Arr::has($relation, 'typeOnTarget') ? Arr::get($relation, 'typeOnTarget') : 'EmbedsMany';
 
@@ -184,7 +215,8 @@ trait MainMongoTrait
     public function checkPropertyExistence($obj, string $EOkey, $method = '', $model = '')
     {
         if (! property_exists($obj, $EOkey)) {
-            $msg = 'Error - '.$EOkey.' attribute not found on obj '.json_encode($obj).' during save of model: '.$model.' and attribute: '.$method;
+            // the object is not part of the message: it is request payload and may hold personal data
+            $msg = 'Error - '.$EOkey.' attribute not found in relationship '.($method === '' ? '(unknown)' : "'{$method}'").($model === '' ? '' : ' of '.$model).'.';
             throw new InvalidConfigurationException($msg);
         }
     }
@@ -198,7 +230,7 @@ trait MainMongoTrait
     public function checkArrayExistence($arr, string $key)
     {
         if (! Arr::has($arr, $key)) {
-            $msg = ('Error - '.$key.' attribute not found on obj '.json_encode($arr));
+            $msg = 'Error - '.$key.' attribute not found in the given array.';
             throw new InvalidConfigurationException($msg);
         }
     }
@@ -211,7 +243,7 @@ trait MainMongoTrait
     private function checkRequestExistence(Request $request, string $key)
     {
         if (! $request->has($key)) {
-            $msg = ('Error - '.$key.' attribute not found in Request '.json_encode($request->all()));
+            $msg = "Error - '{$key}' attribute not found in the request.";
             throw new InvalidRequestException($msg);
         }
     }

@@ -4,8 +4,10 @@ namespace OfflineAgency\MongoAutoSync\Relationships;
 
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use LogicException;
 use MongoDB\Laravel\Eloquent\Builder;
 use MongoDB\Laravel\Eloquent\Model;
+use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
 
 /**
  * @template TRelatedModel of Model
@@ -135,7 +137,9 @@ abstract class EmbedsOneOrMany extends Relation
     public function match(array $models, Collection $results, $relation)
     {
         foreach ($models as $model) {
-            $results = $model->$relation()->getResults();
+            $instance = $model->$relation();
+            throw_unless($instance instanceof Relation, new LogicException(sprintf('%s::%s() is not a relationship.', $model::class, $relation)));
+            $results = $instance->getResults();
 
             if (method_exists($model, 'setParentRelation')) {
                 $model->setParentRelation($this);
@@ -270,7 +274,7 @@ abstract class EmbedsOneOrMany extends Relation
     /**
      * {@inheritdoc}
      *
-     * @return array<string, mixed>|null
+     * @return array<mixed>|null
      */
     protected function getEmbedded()
     {
@@ -286,7 +290,7 @@ abstract class EmbedsOneOrMany extends Relation
     /**
      * {@inheritdoc}
      *
-     * @param  array<string, mixed>|null  $records
+     * @param  array<array-key, mixed>|null  $records  attributes of one document (EmbedsOne) or a list of documents (EmbedsMany)
      * @return void
      */
     protected function setEmbedded($records)
@@ -324,7 +328,7 @@ abstract class EmbedsOneOrMany extends Relation
     /**
      * Convert an array of records to a Collection.
      *
-     * @param  array<int, array<string, mixed>>  $records
+     * @param  array<int, array<mixed>>  $records
      * @return Collection<array-key, TRelatedModel>
      */
     protected function toCollection(array $records = [])
@@ -346,7 +350,7 @@ abstract class EmbedsOneOrMany extends Relation
     /**
      * Create a related model instanced.
      *
-     * @param  array<string, mixed>|null  $attributes
+     * @param  array<mixed>|null  $attributes
      * @return Model|null null when nothing is embedded
      */
     protected function toModel($attributes = [])
@@ -358,7 +362,7 @@ abstract class EmbedsOneOrMany extends Relation
         $connection = $this->related->getConnection();
 
         $model = $this->related->newFromBuilder(
-            (array) $attributes,
+            SyncHelper::attributes($attributes),
             $connection ? $connection->getName() : null
         );
 
@@ -459,9 +463,9 @@ abstract class EmbedsOneOrMany extends Relation
     }
 
     /**
-     * Get the primary key value of the parent.
+     * Get the primary key value of the parent (an ObjectId or the stored scalar).
      *
-     * @return string
+     * @return mixed
      */
     protected function getParentKey()
     {

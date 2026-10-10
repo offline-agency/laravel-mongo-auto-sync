@@ -1,11 +1,8 @@
 <?php
 
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Query\Builder as BaseQueryBuilder;
 use Illuminate\Database\Query\Expression;
-use Illuminate\Support\Facades\DB;
 use MongoDB\Model\BSONDocument;
-use OfflineAgency\MongoAutoSync\Eloquent\Builder;
 use Tests\Models\ElqChild;
 use Tests\Models\ElqParent;
 use Tests\Models\ElqUntimed;
@@ -143,12 +140,9 @@ test('raw returns scalar results untouched', function () {
     expect(ElqParent::raw(fn ($collection) => $collection->countDocuments(['name' => 'raw-count'])))->toBe(1);
 });
 
-test('raw requires a MongoDB query builder', function () {
-    $builder = new Builder(new BaseQueryBuilder(DB::connection('mongodb')));
-    $builder->setModel(new ElqParent);
-
-    $builder->raw();
-})->throws(LogicException::class, 'raw() requires a MongoDB query builder');
+test('raw delegates to laravel-mongodb and hands the model collection to the closure', function () {
+    expect(ElqParent::raw(fn ($collection) => $collection->getCollectionName()))->toBe('elq_parents');
+});
 
 test('update on a model without timestamps does not add an updated_at column', function () {
     $model = ElqUntimed::create(['name' => 'before']);

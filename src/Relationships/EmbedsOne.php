@@ -5,6 +5,7 @@ namespace OfflineAgency\MongoAutoSync\Relationships;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
+use LogicException;
 use MongoDB\BSON\ObjectId;
 use MongoDB\Laravel\Query\Builder;
 
@@ -158,10 +159,13 @@ class EmbedsOne extends EmbedsOneOrMany
     /**
      * Delete all embedded models.
      *
+     * @param  null  $id  not supported: always null (an id throws LogicException, as in laravel-mongodb)
      * @return int
      */
-    public function delete()
+    public function delete($id = null)
     {
+        throw_if($id !== null, new LogicException('The id parameter should not be used.'));
+
         $model = $this->getResults();
         if ($model === null) {
             return 0;

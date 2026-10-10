@@ -4,8 +4,6 @@ namespace OfflineAgency\MongoAutoSync\Eloquent;
 
 use Illuminate\Database\Eloquent\Model as BaseModel;
 use Illuminate\Database\Eloquent\Relations\Relation;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
 use MongoDB\Laravel\Eloquent\Model as MongoDbModel;
 
 class Model extends MongoDbModel
@@ -41,41 +39,22 @@ class Model extends MongoDbModel
     }
 
     /**
+     * Delegates to laravel-mongodb (operator check on id/_id, ObjectId conversion, decimal casts,
+     * dot notation, unset cancellation). Only addition: a dotted timestamp column (getDates(), for
+     * example CREATED_AT = 'meta.created_at') is stored as UTCDateTime. The $dates property is not
+     * used by Laravel 12/13: declare date casts for other fields.
+     *
      * {@inheritdoc}
      */
     public function setAttribute($key, $value)
     {
-        // Convert _id (and its laravel-mongodb 5 alias id) to ObjectID.
-        if (($key === '_id' || $key === 'id') && is_string($value)) {
-            /** @var \MongoDB\Laravel\Query\Builder $builder */
-            $builder = $this->newBaseQueryBuilder();
+        $key = (string) $key;
 
-            $value = $builder->convertKey($value);
-        } // Support keys in dot notation.
-        elseif (Str::contains($key, '.')) {
-            if (in_array($key, $this->getDates()) && $value) {
-                $value = $this->fromDateTime($value);
-            }
-
-            Arr::set($this->attributes, $key, $value);
-
-            return;
+        if (str_contains($key, '.') && $value && in_array($key, $this->getDates(), true)) {
+            $value = $this->fromDateTime($value);
         }
 
-        return BaseModel::setAttribute($key, $value);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getAttribute($key)
-    {
-        // This checks for embedded relation support.
-        if (method_exists($this, $key) && ! method_exists(self::class, $key)) {
-            return $this->getRelationValue($key);
-        }
-
-        return BaseModel::getAttribute($key);
+        return parent::setAttribute($key, $value);
     }
 
     /**

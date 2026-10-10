@@ -1,3 +1,5 @@
+> Historical document of PR #89. Current requirements and behaviour: README.md, UPGRADE-4.0.md and docs/compatibility/.
+
 # PR #40 Review Fixes Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task (chosen by the spec). Steps use checkbox (`- [ ]`) syntax for tracking.
