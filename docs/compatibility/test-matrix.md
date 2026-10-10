@@ -34,12 +34,15 @@ Coverage (pcov, PHP 8.4, replica set, branch A at `0c1bb44`): **100.00 %** of li
 | `lowest` | ext-mongodb 2.4.0 (checked), `--prefer-lowest`, Laravel 12 and 13, Pest only | yes |
 | `replica-set` | single-node rs0 on MongoDB 8.0; fails when the transaction tests are skipped or do not pass | yes |
 
-## Not executed locally (CI only, pending the first run of the pull request)
+## Executed in CI only (not locally)
+
+Run [38046934757](https://github.com/offline-agency/laravel-mongo-auto-sync/actions/runs/38046934757) on `52de868`: all 17 checks pass (8 `tests` cells, `reference` L12/L13, `lowest` L12/L13 with ext-mongodb 2.4.0, `replica-set` with 335 passed and the 3 transaction tests passed, PHPStan, Pint). The first run on `c5a67db` failed in `reference`/`lowest` (`composer show` called with several packages) and in `replica-set` (ANSI colours broke the summary check); both were CI script defects, fixed in `52de868`.
 
 | Cell | Status |
 | --- | --- |
-| PHP 8.4 x Laravel 12 x MongoDB 7.0 | CI `tests` |
-| PHP 8.5 x Laravel 12 (MongoDB 7.0 and 8.0), PHP 8.5 x Laravel 13 x MongoDB 7.0 | CI `tests` |
+| PHP 8.4 x Laravel 12 x MongoDB 7.0 | CI `tests`, pass |
+| PHP 8.5 x Laravel 12 (MongoDB 7.0 and 8.0), PHP 8.5 x Laravel 13 x MongoDB 7.0 | CI `tests`, pass |
+| Lowest-safe on Laravel 12/13 (ext 2.4.0), reference on Laravel 12 | CI, pass (also run locally) |
 
 ## Not executed anywhere (no support is claimed from these cells)
 
