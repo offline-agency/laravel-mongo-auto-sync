@@ -6,6 +6,7 @@ Target sync resolves the source and its targets in the database the source lives
 
 - A source stored on another connection (`$model->setConnection('tenant_b')`, `Model::on('tenant_b')`) syncs its targets on that connection.
 - A target model declared on the **same** connection as the source model follows the source; a target model declared on **its own** connection (`protected $connection = 'catalog'`) is always written there.
+- Referenced (`HasOne` / `HasMany`) children follow the same rule: they are looked up and created on the parent's connection unless the child model declares its own.
 - The queue connection (`queue_connection`) and the data connection are independent: jobs can be stored in any queue.
 
 When a job is dispatched it records a `SyncContext` with logical identifiers only:

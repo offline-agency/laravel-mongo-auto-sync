@@ -348,7 +348,7 @@ trait RelationshipMongoTrait
             $update['child']->updateWithSync(new Request($update['attributes']));
         }
         foreach ($plan->creates as $attributes) {
-            $child = new ($plan->childClass);
+            $child = (new ($plan->childClass))->setConnection($plan->childConnection);
             $child->setAttribute($plan->foreignKey, $parentKey);
             $child->storeWithSync(new Request($attributes));
         }

@@ -5,6 +5,7 @@ namespace OfflineAgency\MongoAutoSync\Relationships;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasOneOrMany;
+use OfflineAgency\MongoAutoSync\Context\SyncContext;
 use OfflineAgency\MongoAutoSync\Exceptions\InvalidConfigurationException;
 use OfflineAgency\MongoAutoSync\Exceptions\InvalidRequestException;
 use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
@@ -30,8 +31,12 @@ final class ReferencedWritePlanner
         [$childClass, $foreignKey, $localKey, $instance] = self::relationship($parent, $method, $relation);
         $isHasOne = $instance instanceof HasOne;
 
+        // the declared relation, on the connection of the parent (a child model sharing the parent model's connection
+        // follows a parent stored elsewhere, see SyncContext::targetModel())
+        $childModel = SyncContext::targetModel($parent::class, SyncContext::connectionName($parent), $childClass);
+        $query = $childModel->newQuery()->where($foreignKey, $parent->getAttribute($localKey))->whereNotNull($foreignKey);
         /** @var list<MDModel> $children */
-        $children = $parent->exists ? array_values(array_filter($instance->get()->all(), fn ($child) => $child instanceof MDModel)) : [];
+        $children = $parent->exists ? array_values(array_filter($query->get()->all(), fn ($child) => $child instanceof MDModel)) : [];
         $childrenById = [];
         foreach ($children as $child) {
             $childrenById[SyncHelper::toString($child->getKey())] = $child;
@@ -75,7 +80,7 @@ final class ReferencedWritePlanner
         $current = $isHasOne ? array_slice($children, 0, 1) : $children;
         $deletes = array_values(array_filter($current, fn (MDModel $child) => ! isset($retained[SyncHelper::toString($child->getKey())])));
 
-        return new ReferencedWritePlan($method, $childClass, $foreignKey, $localKey, $creates, $updates, $deletes);
+        return new ReferencedWritePlan($method, $childClass, SyncContext::connectionName($childModel), $foreignKey, $localKey, $creates, $updates, $deletes);
     }
 
     /**
