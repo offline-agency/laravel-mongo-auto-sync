@@ -120,7 +120,8 @@ trait MainMongoTrait
     /**
      * Checks the merged request (body + additionalData) before anything is written or dispatched:
      * a full request must contain every top-level relationship key (an explicit null, "" or "[]" counts
-     * as present), and relationship payloads may only reference documents by a plain id.
+     * as present), and relationship payloads must hold a list of documents that reference documents only
+     * by a plain id.
      * Partial requests leave omitted relationships unchanged. This is not a recursive validation of
      * nested relationships.
      *
@@ -137,7 +138,11 @@ trait MainMongoTrait
 
                 continue;
             }
-            SyncHelper::assertSafeRefIds($method, $request->input($method), SyncHelper::idKeysFor($relation['type'] ?? null));
+            $value = $request->input($method);
+            SyncHelper::assertSafeRefIds($method, $value, SyncHelper::idKeysFor($relation['type'] ?? null));
+            if ($value !== null) {
+                SyncHelper::payloadDocuments($method, $value);
+            }
         }
     }
 

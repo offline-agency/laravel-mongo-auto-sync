@@ -31,8 +31,8 @@ See [UPGRADE-4.0.md](UPGRADE-4.0.md) for the migration guide.
 - `updateRelationWithSync()` replaces an existing entry with the same `ref_id` instead of appending a duplicate.
 - `storeWithSync()` / `updateWithSync()` log at `debug` level, and only when `logging` is enabled.
 - Stricter parameter and return types across the helpers and traits (PHPStan `max`). Inputs that used to raise a PHP error or warning now raise a package exception:
-  - a relationship payload that decodes to a scalar (`"5"`), or whose items are not JSON objects or `null` (`["a"]`): `InvalidRequestException`;
-  - a carbon date field holding a value that is not a date, a number or `Int64`, and an `is-array` field holding a scalar: `InvalidRequestException`;
+  - a relationship payload that decodes to a scalar (`"5"`), or whose items are not JSON objects or `null` (`["a"]`): `InvalidRequestException`, raised before the source is written. **Breaking:** `"0"` and `"false"` used to be read as an empty relationship (clearing it on update) and are now rejected; send `""`, `"[]"` or `"null"` to clear a relationship;
+  - a carbon date field holding a value that is not a date string, a date, an integer timestamp in milliseconds or `Int64` (numeric strings and floats, which the driver already rejected, included), and an `is-array` field holding a scalar: `InvalidRequestException`;
   - a model whose `$items`, `$mongoRelation` or relationship configuration is not an array, a referenced relationship whose `model` is not an Eloquent class: `InvalidConfigurationException`;
   - `mongo-sync:benchmark` with a class that is not an Eloquent model exits with code 1.
   A multi-language field whose stored value is not an array is rewritten as a new multi-language value instead of failing.
