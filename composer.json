@@ -7,12 +7,8 @@
         "php": "^8.4",
         "ext-json": "*",
         "ext-mongodb": "^2.4",
-        "illuminate/container": "^12.69|^13.30",
-        "illuminate/database": "^12.69|^13.30",
-        "illuminate/events": "^12.69|^13.30",
-        "illuminate/support": "^12.69|^13.30",
+        "laravel/framework": "^12.69|^13.30",
         "mongodb/laravel-mongodb": "^5.11",
-        "mongodb/mongodb": "^2.4.2",
         "nunomaduro/termwind": "^2.3"
     },
     "require-dev": {
@@ -23,6 +19,9 @@
         "pestphp/pest-plugin-laravel": "^3.0|^4.0",
         "mockery/mockery": "^1.6",
         "brianium/paratest": "^7.7"
+    },
+    "conflict": {
+        "mongodb/mongodb": "<2.4.2"
     },
     "license": "MIT",
     "authors": [

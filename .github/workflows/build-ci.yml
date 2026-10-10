@@ -123,14 +123,14 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: composer-${{ runner.os }}-php${{ matrix.php }}-laravel${{ matrix.laravel }}-${{ hashFiles('composer.json') }}
+          key: composer-${{ runner.os }}-php${{ matrix.php }}-laravel${{ matrix.laravel }}-mongo${{ matrix.mongodb }}-${{ hashFiles('composer.json') }}
           restore-keys: |
             composer-${{ runner.os }}-php${{ matrix.php }}-laravel${{ matrix.laravel }}-
             composer-${{ runner.os }}-php${{ matrix.php }}-
 
       - name: Install dependencies (Laravel ${{ matrix.laravel }})
         run: |
-          composer require "illuminate/support:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-update
+          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-update
           composer update --prefer-dist --no-progress --prefer-stable
 
       - name: Audit and platform requirements
@@ -198,7 +198,7 @@ jobs:
           tools: composer:v2
       - name: Install the exact reference versions
         run: |
-          composer require "mongodb/laravel-mongodb:5.11.0" "mongodb/mongodb:2.5.0" "illuminate/support:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-update
+          composer require "mongodb/laravel-mongodb:5.11.0" "mongodb/mongodb:2.5.0" "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-update
           composer update --prefer-dist --no-progress --prefer-stable
           composer audit
           composer check-platform-reqs
@@ -245,9 +245,14 @@ jobs:
           extensions: mongodb-2.4.0, mbstring, curl, json
           coverage: none
           tools: composer:v2
+        env:
+          fail-fast: true
+      - name: Check the extension version
+        run: |
+          php -r 'echo "ext-mongodb ", phpversion("mongodb"), PHP_EOL; exit(phpversion("mongodb") === "2.4.0" ? 0 : 1);'
       - name: Install the lowest safe dependencies
         run: |
-          composer require "illuminate/support:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-update
+          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-update
           composer update --prefer-dist --no-progress --prefer-lowest --prefer-stable
           composer audit
           composer check-platform-reqs
@@ -289,6 +294,14 @@ jobs:
           MONGO_HOST: 127.0.0.1
           MONGO_PORT: 27018
           MONGO_DATABASE: unittest
+        shell: bash
         run: |
+          set -o pipefail
           vendor/bin/pest --display-skipped | tee pest.log
-          ! grep -q "Transactions need a replica set" pest.log
+          if grep -q "Transactions need a replica set" pest.log; then
+            echo "::error::transaction tests were skipped"
+            exit 1
+          fi
+          # the transaction tests must have run: 3 passed, none skipped
+          vendor/bin/pest tests/Compatibility/TransactionTest.php | tee tx.log
+          grep -Eq "Tests: +3 passed" tx.log
