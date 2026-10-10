@@ -108,22 +108,22 @@ test('store with embeds many on target', function () {
     // Add more sub items and restart test
     $navigation->sub_items = [
         [
-            'ref_id' => $faker->uuid,
-            'text' => $faker->text,
-            'code' => $faker->name,
-            'href' => $faker->url,
+            'ref_id' => $faker->uuid(),
+            'text' => $faker->text(),
+            'code' => $faker->name(),
+            'href' => $faker->url(),
         ],
         [
-            'ref_id' => $faker->uuid,
-            'text' => $faker->text,
-            'code' => $faker->name,
-            'href' => $faker->url,
+            'ref_id' => $faker->uuid(),
+            'text' => $faker->text(),
+            'code' => $faker->name(),
+            'href' => $faker->url(),
         ],
         [
-            'ref_id' => $faker->uuid,
-            'text' => $faker->text,
-            'code' => $faker->name,
-            'href' => $faker->url,
+            'ref_id' => $faker->uuid(),
+            'text' => $faker->text(),
+            'code' => $faker->name(),
+            'href' => $faker->url(),
         ],
     ];
 

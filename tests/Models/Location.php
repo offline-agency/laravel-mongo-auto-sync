@@ -8,7 +8,7 @@ class Location extends MDModel
 {
     protected $connection = 'mongodb';
 
-    protected $collection = 'locations';
+    protected $table = 'locations';
 
     protected static $unguarded = true;
 }

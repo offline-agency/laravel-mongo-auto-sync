@@ -3,8 +3,11 @@
 namespace OfflineAgency\MongoAutoSync\Console;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\File;
+use MongoDB\Laravel\Eloquent\Model;
 use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
+use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 use OfflineAgency\MongoAutoSync\Jobs\SyncTargetJob;
 
 use function Termwind\render;
@@ -28,7 +31,7 @@ class AnalyseDatabase extends Command
             $model = new $modelClass;
             try {
                 if (method_exists($model, 'getMongoRelation')) {
-                    /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $model */
+                    /** @var MDModel $model */
                     $relations = $model->getMongoRelation();
                 } else {
                     continue;
@@ -61,7 +64,7 @@ class AnalyseDatabase extends Command
         $is_EO = SyncHelper::is_EO($type);
 
         // Check if modelInstance is a Model to call count and chunk
-        if (! $modelInstance instanceof \MongoDB\Laravel\Eloquent\Model) {
+        if (! $modelInstance instanceof Model) {
             return;
         }
 
@@ -113,17 +116,8 @@ class AnalyseDatabase extends Command
                         if (! $found) {
                             render("<div class='text-yellow-500'>Inconsistency: {$modelClass} {$item->id} links to {$modelTarget} {$ref_id}, but target missing back reference.</div>");
 
-                            if ($this->option('fix')) {
-                                dispatch(new SyncTargetJob(
-                                    $item,
-                                    $relation,
-                                    $method,
-                                    'save',
-                                    $item->$method,
-                                    [],
-                                    [],
-                                    $item->id
-                                ));
+                            if ($this->option('fix') && $item instanceof MDModel) {
+                                SyncTargetJob::dispatchFor($item, $method, $relation, SyncHelper::refIds(Arr::get($item->getAttributes(), $method)), []);
                             }
                         }
                     }

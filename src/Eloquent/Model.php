@@ -15,14 +15,14 @@ class Model extends MongoDbModel
     /**
      * The parent relation instance.
      *
-     * @var Relation<\Illuminate\Database\Eloquent\Model, \Illuminate\Database\Eloquent\Model, mixed>|null
+     * @var Relation<BaseModel, BaseModel, mixed>|null
      */
     protected $parentRelation;
 
     /**
      * Set the parent relation.
      *
-     * @param  Relation<\Illuminate\Database\Eloquent\Model, \Illuminate\Database\Eloquent\Model, mixed>  $relation
+     * @param  Relation<BaseModel, BaseModel, mixed>  $relation
      * @return void
      */
     public function setParentRelation(Relation $relation)
@@ -33,7 +33,7 @@ class Model extends MongoDbModel
     /**
      * Get the parent relation.
      *
-     * @return Relation<\Illuminate\Database\Eloquent\Model, \Illuminate\Database\Eloquent\Model, mixed>|null
+     * @return Relation<BaseModel, BaseModel, mixed>|null
      */
     public function getParentRelation(): ?Relation
     {
@@ -45,8 +45,8 @@ class Model extends MongoDbModel
      */
     public function setAttribute($key, $value)
     {
-        // Convert _id to ObjectID.
-        if ($key == '_id' && is_string($value)) {
+        // Convert _id (and its laravel-mongodb 5 alias id) to ObjectID.
+        if (($key === '_id' || $key === 'id') && is_string($value)) {
             /** @var \MongoDB\Laravel\Query\Builder $builder */
             $builder = $this->newBaseQueryBuilder();
 

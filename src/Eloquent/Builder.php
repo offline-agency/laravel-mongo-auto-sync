@@ -2,10 +2,17 @@
 
 namespace OfflineAgency\MongoAutoSync\Eloquent;
 
+use Closure;
+use Illuminate\Contracts\Database\Query\Expression;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Database\Eloquent\Collection;
+use LogicException;
 use MongoDB\Driver\Cursor;
 use MongoDB\Laravel\Eloquent\Builder as MongoDbEloquentBuilder;
+use MongoDB\Laravel\Eloquent\Model;
+use MongoDB\Laravel\Query\Builder as QueryBuilder;
 use MongoDB\Model\BSONDocument;
+use OfflineAgency\MongoAutoSync\Relationships\EmbedsOneOrMany;
 
 /**
  * @template TModel of \Illuminate\Database\Eloquent\Model
@@ -25,8 +32,8 @@ class Builder extends MongoDbEloquentBuilder
         // Intercept operations on embedded models and delegate logic
         // to the parent relation instance.
         if (method_exists($this->model, 'getParentRelation') && $relation = $this->model->getParentRelation()) {
-            /** @var \OfflineAgency\MongoAutoSync\Relationships\EmbedsOneOrMany<\MongoDB\Laravel\Eloquent\Model, \MongoDB\Laravel\Eloquent\Model, \Illuminate\Database\Eloquent\Collection<int, \MongoDB\Laravel\Eloquent\Model>> $relation */
-            /** @var \MongoDB\Laravel\Eloquent\Model $model */
+            /** @var EmbedsOneOrMany<Model, Model, Collection<int, Model>> $relation */
+            /** @var Model $model */
             $model = $this->model;
             $relation->performUpdate($model, $values);
 
@@ -94,7 +101,7 @@ class Builder extends MongoDbEloquentBuilder
     /**
      * {@inheritdoc}
      *
-     * @param  string|\Illuminate\Contracts\Database\Query\Expression  $column
+     * @param  string|Expression  $column
      * @param  float|int  $amount
      * @param  array<mixed>  $extra
      * @return int
@@ -104,7 +111,11 @@ class Builder extends MongoDbEloquentBuilder
         // Intercept operations on embedded models and delegate logic
         // to the parent relation instance.
         if (method_exists($this->model, 'getParentRelation') && $relation = $this->model->getParentRelation()) {
-            /** @var \OfflineAgency\MongoAutoSync\Relationships\EmbedsOneOrMany $relation */
+            // Embedded documents can only be incremented by attribute name.
+            if (! is_string($column)) {
+                return 0;
+            }
+
             /** @var mixed $value */
             $value = $this->model->{$column};
 
@@ -112,20 +123,12 @@ class Builder extends MongoDbEloquentBuilder
             // sync the original attributes. We need to change the attribute
             // temporary in order to trigger an update query.
             $this->model->{$column} = null;
+            $this->model->syncOriginalAttribute($column);
 
-            if (is_string($column)) {
-                $this->model->syncOriginalAttribute($column);
-            }
+            /** @var array<string, mixed> $updateData */
+            $updateData = [$column => $value];
 
-            if (is_string($column)) {
-                /** @var array<string, mixed> $updateData */
-                $updateData = [$column => $value];
-                $result = $this->model->update($updateData);
-            } else {
-                $result = false;
-            }
-
-            return (int) $result;
+            return (int) $this->model->update($updateData);
         }
 
         return EloquentBuilder::increment($column, $amount, $extra);
@@ -134,7 +137,7 @@ class Builder extends MongoDbEloquentBuilder
     /**
      * {@inheritdoc}
      *
-     * @param  string|\Illuminate\Contracts\Database\Query\Expression  $column
+     * @param  string|Expression  $column
      * @param  float|int  $amount
      * @param  array<mixed>  $extra
      * @return int
@@ -144,7 +147,11 @@ class Builder extends MongoDbEloquentBuilder
         // Intercept operations on embedded models and delegate logic
         // to the parent relation instance.
         if (method_exists($this->model, 'getParentRelation') && $relation = $this->model->getParentRelation()) {
-            /** @var \OfflineAgency\MongoAutoSync\Relationships\EmbedsOneOrMany $relation */
+            // Embedded documents can only be decremented by attribute name.
+            if (! is_string($column)) {
+                return 0;
+            }
+
             /** @var mixed $value */
             $value = $this->model->{$column};
 
@@ -152,16 +159,12 @@ class Builder extends MongoDbEloquentBuilder
             // sync the original attributes. We need to change the attribute
             // temporary in order to trigger an update query.
             $this->model->{$column} = null;
+            $this->model->syncOriginalAttribute($column);
 
-            if (is_string($column)) {
-                $this->model->syncOriginalAttribute($column);
-                /** @var array<string, mixed> $updateData */
-                $updateData = [$column => $value];
+            /** @var array<string, mixed> $updateData */
+            $updateData = [$column => $value];
 
-                return (int) $this->model->update($updateData);
-            }
-
-            return 0;
+            return (int) $this->model->update($updateData);
         }
 
         return EloquentBuilder::decrement($column, $amount, $extra);
@@ -169,27 +172,24 @@ class Builder extends MongoDbEloquentBuilder
 
     /**
      * {@inheritdoc}
-     */
-    public function chunkById($count, callable $callback, $column = '_id', $alias = null)
-    {
-        return EloquentBuilder::chunkById($count, $callback, $column, $alias);
-    }
-
-    /**
-     * {@inheritdoc}
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, TModel>|BSONDocument|TModel|array<mixed>|mixed
+     * @param  (Closure(\MongoDB\Collection): mixed)|\Illuminate\Database\Query\Expression<literal-string|int|float>|null  $expression
+     * @return Collection<int, TModel>|BSONDocument|TModel|array<mixed>|mixed
      */
     public function raw($expression = null)
     {
-        // Get raw results from the query builder.
-        $results = $this->query->raw($expression);
+        // Get raw results from the MongoDB query builder (its raw() accepts a closure or an expression).
+        $query = $this->getQuery();
+        if (! $query instanceof QueryBuilder) {
+            throw new LogicException('raw() requires a MongoDB query builder, got '.get_class($query));
+        }
+        $results = $query->raw($expression);
 
         // Convert MongoCursor results to a collection of models.
         if ($results instanceof Cursor) {
             $results = iterator_to_array($results, false);
 
-            /** @var \Illuminate\Database\Eloquent\Collection<int, TModel> */
+            /** @var Collection<int, TModel> */
             return $this->model->hydrate($results);
         } // Convert Mongo BSONDocument to a single object.
         elseif ($results instanceof BSONDocument) {

@@ -86,15 +86,16 @@ You can see the new article on the category page because the package synchronize
 ## Installation
 
 ```bash
-composer require offlineagency/laravel-mongo-auto-sync
+composer require offline-agency/laravel-mongo-auto-sync
 ```
 ### Laravel version Compatibility
 
-| Laravel     | Package     |
-| ----------- | ----------- |
-| 11.x / 12.x | 4.x         |
-| 10.x        | 3.x         |
-| 5.8.x - 9.x | 1.x / 2.x   |
+| Laravel     | PHP    | Package     |
+| ----------- | ------ | ----------- |
+| 12.x / 13.x | ≥ 8.4  | 4.x         |
+| 5.x - 8.x   | ≥ 7.4  | 2.x / 3.x   |
+
+Upgrading from 3.x? Read [UPGRADE-4.0.md](UPGRADE-4.0.md).
 
 ## Documentation
 You can find the documentation [here](https://docs.offlineagency.com/laravel-mongo-auto-sync/)
@@ -107,10 +108,27 @@ php artisan vendor:publish --provider="OfflineAgency\MongoAutoSync\MongoAutoSync
 ```
 
 Available options:
-- `request_type`: Set to `partial` to handle partial requests.
-- `use_background_sync`: Set to `true` to disable sync on target models (useful if handled by jobs).
-- `model_path`: Path to your models.
-- `model_namespace`: Namespace of your models.
+
+| Key | Env variable | Default | Description |
+| --- | --- | --- | --- |
+| `model_path` | | `app_path('Models')` | Path to your models (used by the console commands). |
+| `model_namespace` | | `App\Models` | Namespace of your models. |
+| `use_background_sync` | `MONGO_AUTO_SYNC_BACKGROUND_SYNC` | `false` | `false`: target collections are updated synchronously inside `storeWithSync()` / `updateWithSync()` / `destroyWithSync()`. `true`: the target updates are dispatched as a queued `SyncTargetJob` (eventual consistency): a queue worker must be running. |
+| `queue_connection` | `MONGO_AUTO_SYNC_QUEUE_CONNECTION` | `null` | Queue connection used by `SyncTargetJob` (`null` = the application default). |
+| `queue_name` | `MONGO_AUTO_SYNC_QUEUE_NAME` | `null` | Queue name used by `SyncTargetJob` (`null` = the connection default). |
+| `logging` | `MONGO_AUTO_SYNC_LOGGING` | `false` | Log `storeWithSync` / `updateWithSync` calls at `debug` level. |
+
+Partial requests are an option of the sync methods, not a config key: `$model->updateWithSync($request, $data, ['request_type' => 'partial'])`.
+
+### Background sync
+
+With `use_background_sync=true`, saving or deleting a model dispatches a `SyncTargetJob` for each relationship with a target whose references or data changed. The job carries ids only (no request data), rebuilds the mini model from the stored source when it runs, and writes the targets with atomic MongoDB updates, so it can safely run twice, out of order, or concurrently with other jobs. Run a worker on the configured connection and queue, for example:
+
+```bash
+php artisan queue:work --queue=mongo_auto_sync
+```
+
+Nested targets (level > 1) are not synchronised, on either path.
 
 ## Console Commands
 
@@ -118,6 +136,24 @@ Available options:
 Validate your model configurations and relationships:
 ```bash
 php artisan mongo-sync:check-config
+```
+
+### Analyse Database
+Find embedded references that are missing on the target side (`--fix` dispatches a `SyncTargetJob` for each inconsistency):
+```bash
+php artisan mongo-sync:analyse [--fix]
+```
+
+### Sync Collection
+Dispatch a `SyncTargetJob` for every document of a model:
+```bash
+php artisan mongo-sync:sync-collection "App\Models\Article"
+```
+
+### Benchmark
+Measure insert, read, update and delete times for a model:
+```bash
+php artisan mongo-sync:benchmark "App\Models\Article" 100
 ```
 
 ### Generate Model Documentation
@@ -136,7 +172,7 @@ The package throws specific exceptions for better error handling:
 
 ## Troubleshooting
 
-- **Sync not working?** Check `laravel.log` for logs starting with `storeWithSync` or `updateWithSync`.
+- **Sync not working?** Set `MONGO_AUTO_SYNC_LOGGING=true` and check the debug logs starting with `storeWithSync` or `updateWithSync`. With background sync enabled, make sure a queue worker is running.
 - **Model not found?** Ensure your `model_path` and `model_namespace` in config are correct.
 - **Invalid configuration?** Run `php artisan mongo-sync:check-config` to identify issues.
 
@@ -147,11 +183,9 @@ composer test
 ```
 
 ## Roadmap :rocket:
-- Refactor target synchronization to Observer pattern, so all this operation can be run on background using [Laravel Queue System](https://laravel.com/docs/5.8/queues). This will also speed up all the operations in the collection that is primary involved in write operations.
-- Command Analyse Database: This command will analyse the database in order to find some relationship error. 
-Ex: An article with a category associated that is not present on the Category's sub document.
+- Nested target synchronisation (level > 1).
 - Refactor **save()** method in order to handle CRUD operation on relationship also without sync.
-- Support for [referenced relationships](https://docs.mongodb.com/manual/tutorial/model-referenced-one-to-many-relationships-between-documents/).
+- Tests for referenced relationships (`HasOne` / `HasMany`).
 - Better support for all field types.
 - DestroyWithSync() without delete sub documents on other collections.
 - Add more tests.

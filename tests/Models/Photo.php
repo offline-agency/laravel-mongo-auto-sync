@@ -8,7 +8,7 @@ class Photo extends MDModel
 {
     protected $connection = 'mongodb';
 
-    protected $collection = 'photos';
+    protected $table = 'photos';
 
     protected static $unguarded = true;
 }

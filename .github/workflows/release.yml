@@ -1,0 +1,212 @@
+# .github/workflows/release.yml
+#
+# Crea automaticamente tag + GitHub Release su master.
+#
+# Trigger:
+#   1. Al termine del workflow "CI" su master (solo se verde): calcola il bump
+#      dai conventional commits dall'ultimo tag:
+#        feat!: / refactor!: / "BREAKING CHANGE:" nel body  -> major
+#        feat:                                                -> minor
+#        fix: / perf: / refactor: / revert:                   -> patch
+#        solo docs/chore/ci/test/style                        -> nessuna release
+#   2. Manuale (workflow_dispatch): bump forzato o dry run.
+#
+# Note:
+#   - Il file deve stare su master: workflow_run si legge solo dal branch di default.
+#   - I tag pushati con GITHUB_TOKEN non riattivano altri workflow (CI non gira sul tag,
+#     ed è voluto: il commit è già stato testato).
+#   - Packagist si aggiorna da solo se il repo ha l'hook GitHub attivo. In alternativa
+#     impostare i secret PACKAGIST_USERNAME e PACKAGIST_TOKEN: lo step finale fa il ping.
+#   - Aggiungere "[skip release]" al messaggio dell'ultimo commit per saltare una release.
+
+name: Release
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Tipo di bump (auto = calcolato dai conventional commits)"
+        type: choice
+        default: auto
+        options: [auto, major, minor, patch]
+      dry_run:
+        description: "Dry run: calcola la versione senza creare tag e release"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.repository }}
+  cancel-in-progress: false
+
+env:
+  # Prefisso dei tag. I tag esistenti (3.1.1, 3.0.0 ...) non hanno prefisso:
+  # lasciare vuoto per restare coerenti, oppure "v" per passare a v4.0.0.
+  TAG_PREFIX: ""
+
+jobs:
+  release:
+    name: Tag and release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_branch == 'master'
+      )
+    defaults:
+      run:
+        shell: bash
+    env:
+      # I secret vanno mappati qui: il contesto `secrets` non è usabile negli `if` degli step
+      PACKAGIST_USERNAME: ${{ secrets.PACKAGIST_USERNAME }}
+      PACKAGIST_TOKEN: ${{ secrets.PACKAGIST_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Con workflow_run si rilascia esattamente il commit testato da CI
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Compute next version
+        id: version
+        env:
+          INPUT_BUMP: ${{ inputs.bump || 'auto' }}
+          DRY_RUN: ${{ inputs.dry_run || false }}
+        run: |
+          set -euo pipefail
+
+          PREFIX="${TAG_PREFIX}"
+          HEAD_SHA="$(git rev-parse HEAD)"
+
+          if git log -1 --format=%B | grep -qiE '\[(skip|no) release\]'; then
+            echo "Ultimo commit marcato [skip release]: nessuna release."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Ultimo tag semver "pulito" (ignora pre-release e tag incompleti tipo 2.0)
+          LAST_TAG="$(git tag --list "${PREFIX}[0-9]*" --sort=-v:refname \
+            | grep -E "^${PREFIX}[0-9]+\.[0-9]+\.[0-9]+$" | head -n1 || true)"
+
+          if [ -z "$LAST_TAG" ]; then
+            LAST_VERSION="0.0.0"
+            RANGE="HEAD"
+            echo "Nessun tag semver trovato: parto da 0.0.0"
+          else
+            LAST_VERSION="${LAST_TAG#"$PREFIX"}"
+            RANGE="${LAST_TAG}..HEAD"
+            echo "Ultimo tag: ${LAST_TAG}"
+          fi
+
+          BUMP="${INPUT_BUMP}"
+          if [ "$BUMP" = "auto" ]; then
+            if [ -z "$(git rev-list "$RANGE" | head -n1)" ]; then
+              BUMP="none"
+            else
+              # Subject + body di ogni commit dall'ultimo tag (merge commit inclusi)
+              LOG="$(git log --format='%s%n%b' "$RANGE")"
+              if   grep -Eq '^[a-zA-Z]+(\([^)]*\))?!:' <<<"$LOG" \
+                || grep -Eq '^BREAKING[ -]CHANGE:'       <<<"$LOG"; then BUMP="major"
+              elif grep -Eq '^feat(\([^)]*\))?:'         <<<"$LOG"; then BUMP="minor"
+              elif grep -Eq '^(fix|perf|refactor|revert)(\([^)]*\))?:' <<<"$LOG"; then BUMP="patch"
+              else BUMP="none"
+              fi
+            fi
+          fi
+
+          echo "Bump calcolato: ${BUMP}"
+
+          if [ "$BUMP" = "none" ]; then
+            echo "Nessun commit rilasciabile dall'ultimo tag: nessuna release."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          IFS=. read -r MAJOR MINOR PATCH <<<"$LAST_VERSION"
+          case "$BUMP" in
+            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH + 1)) ;;
+            *) echo "::error::Bump non valido: ${BUMP}"; exit 1 ;;
+          esac
+
+          NEXT_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          TAG="${PREFIX}${NEXT_VERSION}"
+
+          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+            echo "::error::Il tag ${TAG} esiste già"
+            exit 1
+          fi
+
+          {
+            echo "release=true"
+            echo "bump=${BUMP}"
+            echo "last_tag=${LAST_TAG}"
+            echo "version=${NEXT_VERSION}"
+            echo "tag=${TAG}"
+            echo "sha=${HEAD_SHA}"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "## Release ${TAG} (${BUMP})"
+            echo
+            echo "- Precedente: \`${LAST_TAG:-nessuno}\`"
+            echo "- Commit: \`${HEAD_SHA}\`"
+            echo "- Dry run: \`${DRY_RUN:-false}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Dry run
+        if: steps.version.outputs.release == 'true' && inputs.dry_run == true
+        run: |
+          echo "DRY RUN: avrei creato il tag ${{ steps.version.outputs.tag }} (bump ${{ steps.version.outputs.bump }}) su ${{ steps.version.outputs.sha }}"
+
+      - name: Create tag
+        if: steps.version.outputs.release == 'true' && inputs.dry_run != true
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+          SHA: ${{ steps.version.outputs.sha }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" "$SHA" -m "Release $TAG"
+          git push origin "refs/tags/$TAG"
+
+      - name: Create GitHub release
+        if: steps.version.outputs.release == 'true' && inputs.dry_run != true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          LAST_TAG: ${{ steps.version.outputs.last_tag }}
+          SHA: ${{ steps.version.outputs.sha }}
+        run: |
+          set -euo pipefail
+          ARGS=(--title "$TAG" --target "$SHA" --generate-notes)
+          if [ -n "$LAST_TAG" ]; then
+            ARGS+=(--notes-start-tag "$LAST_TAG")
+          fi
+          gh release create "$TAG" "${ARGS[@]}"
+          echo "Release ${TAG} creata: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${TAG}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Notify Packagist (optional)
+        if: >-
+          steps.version.outputs.release == 'true' &&
+          inputs.dry_run != true &&
+          env.PACKAGIST_USERNAME != '' &&
+          env.PACKAGIST_TOKEN != ''
+        run: |
+          curl -fsS -X POST \
+            "https://packagist.org/api/update-package?username=${PACKAGIST_USERNAME}&apiToken=${PACKAGIST_TOKEN}" \
+            -H 'Content-Type: application/json' \
+            -d "{\"repository\":{\"url\":\"${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}\"}}"

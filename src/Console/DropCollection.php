@@ -49,23 +49,19 @@ class DropCollection extends Command
 
         $model = $this->getModel($modelPath);
 
-        if (! is_null($model)) {
-            $count = $model->count();
-            $bar = $this->output->createProgressBar($count);
+        $count = $model->count();
+        $bar = $this->output->createProgressBar($count);
 
-            if ($count > 0) {
-                $i = 0;
-                foreach ($model->cursor() as $item) {
-                    $bar->advance();
-                    $item->destroyWithSync();
-                    $this->line(($i + 1).') Destroy item document with id #'.$item->getId());
-                    $i++;
-                }
-            } else {
-                $this->warn('No record found on collection '.strtolower($collection_name));
+        if ($count > 0) {
+            $i = 0;
+            foreach ($model->cursor() as $item) {
+                $bar->advance();
+                $item->destroyWithSync();
+                $this->line(($i + 1).') Destroy item document with id #'.$item->getId());
+                $i++;
             }
         } else {
-            $this->error('Error Model not found \n');
+            $this->warn('No record found on collection '.strtolower($collection_name));
         }
     }
 
@@ -95,28 +91,10 @@ class DropCollection extends Command
      */
     public function checkOaModels($path, $collection_name)
     {
-        $out = '';
-
-        try {
-            $results = scandir($path);
-        } catch (Exception $e) {
-            throw new InvalidConfigurationException('Error directory '.config('laravel-mongo-auto-sync.model_path').' not found');
-        }
-
-        if ($results === false) {
-            return '';
-        }
-
-        foreach ($results as $result) {
-            if ($result === '.' or $result === '..') {
-                continue;
-            }
-            $filename = $path.'/'.$result;
-            if (is_dir($filename)) {
-                $out = $this->checkOaModels($filename, $collection_name);
-            } elseif (strtolower(substr($result, 0, -4)) == strtolower($collection_name)) {
-                return config('laravel-mongo-auto-sync.model_namespace').'\\'.substr($result, 0, -4);
-            }
+        $namespace = config('laravel-mongo-auto-sync.model_namespace');
+        $found = $this->findModelInDirectory($path, $collection_name, is_string($namespace) ? $namespace : '');
+        if ($found !== '') {
+            return $found;
         }
 
         foreach (config('laravel-mongo-auto-sync.other_models') as $key => $values) {
@@ -125,7 +103,37 @@ class DropCollection extends Command
             }
         }
 
-        return $out;
+        return '';
+    }
+
+    /**
+     * Search $path recursively; a model in a subdirectory lives in the matching sub-namespace (PSR-4).
+     *
+     * @throws InvalidConfigurationException
+     */
+    private function findModelInDirectory(string $path, string $collection_name, string $namespace): string
+    {
+        $results = @scandir($path);
+        if ($results === false) {
+            throw new InvalidConfigurationException('Error directory '.config('laravel-mongo-auto-sync.model_path').' not found');
+        }
+
+        foreach ($results as $result) {
+            if ($result === '.' or $result === '..') {
+                continue;
+            }
+            $filename = $path.'/'.$result;
+            if (is_dir($filename)) {
+                $found = $this->findModelInDirectory($filename, $collection_name, $namespace.'\\'.$result);
+                if ($found !== '') {
+                    return $found;
+                }
+            } elseif (strtolower(substr($result, 0, -4)) == strtolower($collection_name)) {
+                return $namespace.'\\'.substr($result, 0, -4);
+            }
+        }
+
+        return '';
     }
 
     /**

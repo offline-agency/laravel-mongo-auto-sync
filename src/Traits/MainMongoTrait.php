@@ -9,6 +9,7 @@ use OfflineAgency\MongoAutoSync\Exceptions\InvalidConfigurationException;
 use OfflineAgency\MongoAutoSync\Exceptions\InvalidRequestException;
 use OfflineAgency\MongoAutoSync\Exceptions\MongoAutoSyncException;
 use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
+use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 use OfflineAgency\MongoAutoSync\Observers\MongoAutoSyncObserver;
 use stdClass;
 
@@ -19,7 +20,8 @@ trait MainMongoTrait
      */
     public static function bootMainMongoTrait()
     {
-        static::observe(MongoAutoSyncObserver::class);
+        // observe() instantiates the model: it must run after booting (Laravel 13 forbids it during boot)
+        static::whenBooted(fn () => static::observe(MongoAutoSyncObserver::class));
     }
 
     /**
@@ -62,7 +64,7 @@ trait MainMongoTrait
      */
     public function storeWithSync(Request $request, array $additionalData = [], array $options = [], array $target_additional_data = [])
     {
-        Log::info('storeWithSync started for model: '.get_class($this));
+        $this->logSyncDebug('storeWithSync started for model: '.get_class($this));
 
         $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
         $this->storeEditAllItems($request, 'add', $options);
@@ -89,7 +91,7 @@ trait MainMongoTrait
      */
     public function updateWithSync(Request $request, array $additionalData = [], array $options = [], array $target_additional_data = [])
     {
-        Log::info('updateWithSync started for model: '.get_class($this).' with ID: '.$this->id);
+        $this->logSyncDebug('updateWithSync started for model: '.get_class($this).' with ID: '.$this->getKey());
 
         $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
         $this->storeEditAllItems($request, 'update', $options);
@@ -104,6 +106,13 @@ trait MainMongoTrait
         }
 
         return $fresh;
+    }
+
+    private function logSyncDebug(string $message): void
+    {
+        if (config('laravel-mongo-auto-sync.logging')) {
+            Log::debug($message);
+        }
     }
 
     /**
@@ -142,8 +151,12 @@ trait MainMongoTrait
                 }
             }
         }
-        // Delete current object
-        $this->delete();
+        // Delete current object (without background sync of the targets when $syncTargets is false)
+        if ($syncTargets) {
+            $this->delete();
+        } else {
+            MongoAutoSyncObserver::withoutDispatching(fn () => $this->delete());
+        }
 
         // Dispatch the destroy event
         $this->fireModelEvent('destroyWithSync');
@@ -230,7 +243,7 @@ trait MainMongoTrait
     }
 
     /**
-     * @return \OfflineAgency\MongoAutoSync\Http\Models\MDModel|null
+     * @return MDModel|null
      *
      * @throws InvalidConfigurationException
      */
@@ -240,11 +253,11 @@ trait MainMongoTrait
         $target_id = $obj->ref_id;
 
         // Init the Target Model
-        /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $modelToBeSync */
+        /** @var MDModel $modelToBeSync */
         $modelToBeSync = new $modelTarget;
 
         $found = $modelToBeSync->find($target_id);
-        if ($found instanceof \OfflineAgency\MongoAutoSync\Http\Models\MDModel) {
+        if ($found instanceof MDModel) {
             return $found;
         }
 
@@ -279,8 +292,29 @@ trait MainMongoTrait
      */
     public function setRequest(Request $request, array $additionalData): void
     {
-        $request = $request->merge($additionalData);
+        $request = $request->merge(self::plainObjectsToArrays($additionalData));
         $this->request = $request;
+    }
+
+    /**
+     * Symfony's InputBag rejects stdClass values: store them as arrays (same BSON document once saved).
+     *
+     * @param  array<array-key, mixed>  $data
+     * @return array<array-key, mixed>
+     */
+    private static function plainObjectsToArrays(array $data): array
+    {
+        foreach ($data as $key => $value) {
+            if ($value instanceof stdClass) {
+                $value = (array) $value;
+            }
+            if (is_array($value)) {
+                $value = self::plainObjectsToArrays($value);
+            }
+            $data[$key] = $value;
+        }
+
+        return $data;
     }
 
     /**

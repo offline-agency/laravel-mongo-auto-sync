@@ -5,9 +5,14 @@ namespace OfflineAgency\MongoAutoSync\Traits;
 use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use LogicException;
 use MongoDB\BSON\UTCDateTime;
+use MongoDB\Collection;
+use MongoDB\Laravel\Connection;
 use OfflineAgency\MongoAutoSync\Exceptions\MongoAutoSyncException;
 use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
+use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
+use stdClass;
 
 trait RelationshipMongoTrait
 {
@@ -130,6 +135,9 @@ trait RelationshipMongoTrait
     }
 
     /**
+     * Upsert the mini model of a source on this target with atomic updates: concurrent jobs writing other
+     * sources on the same target cannot overwrite each other, and the same source is never duplicated.
+     *
      * @param  object  $mini_model
      * @param  bool  $is_EO_target
      * @param  bool  $is_EM_target
@@ -137,21 +145,86 @@ trait RelationshipMongoTrait
      */
     public function updateRelationWithSync($mini_model, string $method_on_target, $is_EO_target, $is_EM_target)
     {
+        /** @var MDModel $mini_model */
+        $mini_attributes = $mini_model->getAttributes();
+        $collection = $this->getMongoCollection();
+        $filter = ['_id' => ['$in' => SyncHelper::idVariants((string) $this->getKey())]];
+        $touch = $this->usesTimestamps() ? [$this->getUpdatedAtColumn() => $this->fromDateTime($this->freshTimestamp())] : [];
+
         if ($is_EM_target) {
-            $new_values = [];
-            foreach ($this->$method_on_target as $temp) {
-                /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $temp */
-                $new_values[] = $temp->attributes;
+            $ref_ids = SyncHelper::idVariants($mini_attributes['ref_id'] ?? null);
+            // a null field cannot be pushed to
+            $collection->updateOne($filter + [$method_on_target => null], ['$set' => [$method_on_target => []]]);
+            if ($ref_ids !== []) {
+                $collection->updateOne($filter, ['$pull' => [$method_on_target => ['ref_id' => ['$in' => $ref_ids]]]]);
             }
-            /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $mini_model */
-            $new_values[] = $mini_model->attributes;
+            $update = ['$push' => [$method_on_target => $mini_attributes]];
+            if ($touch !== []) {
+                $update['$set'] = $touch;
+            }
+            // skip the push when a concurrent job for the same source already added it
+            $collection->updateOne($filter + [$method_on_target.'.ref_id' => ['$nin' => $ref_ids]], $update);
         } else {
-            /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $mini_model */
-            $new_values = $mini_model->attributes;
+            $collection->updateOne($filter, ['$set' => [$method_on_target => $mini_attributes] + $touch]);
         }
 
-        $this->$method_on_target = $new_values;
-        $this->save();
+        $this->reloadEmbedded($method_on_target);
+    }
+
+    private function getMongoCollection(): Collection
+    {
+        $connection = $this->getConnection();
+        if (! $connection instanceof Connection) {
+            throw new LogicException('Target sync requires a MongoDB connection, got '.get_class($connection));
+        }
+
+        return $connection->getCollection($this->getTable());
+    }
+
+    /**
+     * Refresh the in-memory value of $method after an atomic update.
+     */
+    private function reloadEmbedded(string $method): void
+    {
+        $fresh = $this->newQueryWithoutScopes()->find($this->getKey());
+        if (! $fresh instanceof MDModel) {
+            return;
+        }
+
+        $this->setRawAttributes(array_merge($this->getAttributes(), [$method => $fresh->getAttributes()[$method] ?? null]), true);
+        $this->unsetRelation($method);
+    }
+
+    /**
+     * Remove the mini model of the source $ref_id from this target (atomic update).
+     *
+     * @return void
+     */
+    public function removeRelationWithSync(string $method_on_target, mixed $ref_id, bool $is_EO_target, bool $is_EM_target)
+    {
+        $ref_ids = SyncHelper::idVariants($ref_id);
+        if ($ref_ids === [] || (! $is_EM_target && ! $is_EO_target)) {
+            return;
+        }
+
+        $filter = [
+            '_id' => ['$in' => SyncHelper::idVariants((string) $this->getKey())],
+            $method_on_target.'.ref_id' => ['$in' => $ref_ids],
+        ];
+        $touch = $this->usesTimestamps() ? [$this->getUpdatedAtColumn() => $this->fromDateTime($this->freshTimestamp())] : [];
+
+        if ($is_EM_target) {
+            $update = ['$pull' => [$method_on_target => ['ref_id' => ['$in' => $ref_ids]]]];
+            if ($touch !== []) {
+                $update['$set'] = $touch;
+            }
+        } else {
+            // only clear the EmbedsOne when it still points at this source
+            $update = ['$set' => [$method_on_target => null] + $touch];
+        }
+
+        $this->getMongoCollection()->updateOne($filter, $update);
+        $this->reloadEmbedded($method_on_target);
     }
 
     /**
@@ -221,31 +294,17 @@ trait RelationshipMongoTrait
      */
     public function batchHandleSubTarget(array $targetIds, string $modelTarget, string $methodOnTarget, bool $is_EO_target, bool $is_EM_target)
     {
-        if ($is_EM_target) {
-            /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $modelInstance */
-            $modelInstance = new $modelTarget;
-            // Use whereIn for batch retrieval
-            $targets = $modelInstance->whereIn('id', $targetIds)->get();
+        if (! $is_EM_target) {
+            return; // the synchronous path only cleans EmbedsMany targets (unchanged since 3.x)
+        }
 
-            foreach ($targets as $target) {
-                if (! is_null($target)) {
-                    $new_values = [];
-                    // Check if the relationship exists and is iterable
-                    if (isset($target->$methodOnTarget) && is_iterable($target->$methodOnTarget)) {
-                        foreach ($target->$methodOnTarget as $temp) {
-                            // Check if property exists to avoid undefined property notice
-                            if (property_exists($temp, 'ref_id') && $temp->ref_id !== $this->getId()) {
-                                $new_values[] = $temp->attributes ?? $temp;
-                            } elseif (isset($temp['ref_id']) && $temp['ref_id'] !== $this->getId()) {
-                                // Handle array case just in case
-                                $new_values[] = $temp;
-                            }
-                        }
-                    }
-                    $target->$methodOnTarget = $new_values;
-                    $target->save();
-                }
-            }
+        /** @var MDModel $modelInstance */
+        $modelInstance = new $modelTarget;
+        $targets = $modelInstance->whereIn('id', $targetIds)->get();
+
+        foreach ($targets as $target) {
+            /** @var MDModel $target */
+            $target->removeRelationWithSync($methodOnTarget, $this->getId(), $is_EO_target, $is_EM_target);
         }
     }
 
@@ -328,17 +387,17 @@ trait RelationshipMongoTrait
             $attributes = (array) $obj;
             $id = $attributes['id'] ?? ($attributes['_id'] ?? null);
 
-            /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $child */
+            /** @var MDModel $child */
             $child = new $modelClass;
             if ($id) {
                 $found = $child->find($id);
                 if ($found !== null) {
-                    /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $child */
+                    /** @var MDModel $child */
                     $child = $found;
                 }
             }
 
-            if ($child instanceof \OfflineAgency\MongoAutoSync\Http\Models\MDModel) {
+            if ($child instanceof MDModel) {
                 foreach ($attributes as $k => $v) {
                     if ($k !== 'id' && $k !== '_id') {
                         $child->$k = $v;
@@ -400,7 +459,7 @@ trait RelationshipMongoTrait
     private function processEmbedOnCurrentCollection(Request $request, $obj, $type, $model, $method, $event, $is_EO, $is_EM, $i, array $options)
     {
         // Init the embed one model
-        /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $embedObj */
+        /** @var MDModel $embedObj */
         $embedObj = new $model;
 
         $EOitems = $embedObj->getItems();
@@ -469,17 +528,19 @@ trait RelationshipMongoTrait
             return;
         }
 
-        /** @var \stdClass $obj */
+        // nothing to sync for an empty EmbedsOne (null, or the all-null mini model of a missing relation)
+        if (! $obj instanceof stdClass || (property_exists($obj, 'ref_id') && $obj->ref_id === null)) {
+            return;
+        }
+
         $modelToBeSync = $this->getModelTobeSync($modelTarget, $obj);
         if (! is_null($modelToBeSync)) {
-            /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $modelToBeSync */
-            /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $miniModel */
+            /** @var MDModel $modelToBeSync */
+            /** @var MDModel $miniModel */
             $miniModel = $this->getEmbedModel($modelOnTarget);
             $modelToBeSync->updateRelationWithSync($miniModel, $methodOnTarget, $is_EO_target, $is_EM_target);
-            // Sync target on level > 1
-            if ($request && $event) {
-                $modelToBeSync->processAllRelationships($request, $event, $methodOnTarget, $methodOnTarget.'-', $options);
-            }
+            // TODO: sync targets on level > 1 is not implemented (the previous call built the request key
+            // "<method><method><method>-" and threw InvalidRequestException on every target sync).
         }
     }
 }

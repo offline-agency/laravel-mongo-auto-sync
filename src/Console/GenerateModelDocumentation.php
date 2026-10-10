@@ -105,16 +105,31 @@ class GenerateModelDocumentation extends Command
      */
     public function checkOaModels($path, $collection_name)
     {
-        $out = '';
-
-        try {
-            $results = scandir($path);
-        } catch (Exception $e) {
-            throw new InvalidConfigurationException('Error directory '.config('laravel-mongo-auto-sync.model_path').' not found');
+        $namespace = config('laravel-mongo-auto-sync.model_namespace');
+        $found = $this->findModelInDirectory($path, $collection_name, is_string($namespace) ? $namespace : '');
+        if ($found !== '') {
+            return $found;
         }
 
+        foreach (config('laravel-mongo-auto-sync.other_models') as $key => $values) {
+            if (strtolower($collection_name) == $key) {
+                return $values['model_namespace'].'\\'.Str::ucfirst($key);
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * Search $path recursively; a model in a subdirectory lives in the matching sub-namespace (PSR-4).
+     *
+     * @throws InvalidConfigurationException
+     */
+    private function findModelInDirectory(string $path, string $collection_name, string $namespace): string
+    {
+        $results = @scandir($path);
         if ($results === false) {
-            return '';
+            throw new InvalidConfigurationException('Error directory '.config('laravel-mongo-auto-sync.model_path').' not found');
         }
 
         foreach ($results as $result) {
@@ -123,18 +138,16 @@ class GenerateModelDocumentation extends Command
             }
             $filename = $path.'/'.$result;
             if (is_dir($filename)) {
-                $out = $this->checkOaModels($filename, $collection_name);
+                $found = $this->findModelInDirectory($filename, $collection_name, $namespace.'\\'.$result);
+                if ($found !== '') {
+                    return $found;
+                }
             } elseif (strtolower(substr($result, 0, -4)) == strtolower($collection_name)) {
-                return config('laravel-mongo-auto-sync.model_namespace').'\\'.substr($result, 0, -4);
-            }
-        }
-        foreach (config('laravel-mongo-auto-sync.other_models') as $key => $values) {
-            if (strtolower($collection_name) == $key) {
-                return $values['model_namespace'].'\\'.Str::ucfirst($key);
+                return $namespace.'\\'.substr($result, 0, -4);
             }
         }
 
-        return $out;
+        return '';
     }
 
     /**

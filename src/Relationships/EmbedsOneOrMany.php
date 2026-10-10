@@ -3,7 +3,6 @@
 namespace OfflineAgency\MongoAutoSync\Relationships;
 
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use MongoDB\Laravel\Eloquent\Builder;
 use MongoDB\Laravel\Eloquent\Model;
@@ -326,14 +325,17 @@ abstract class EmbedsOneOrMany extends Relation
      * Convert an array of records to a Collection.
      *
      * @param  array<int, array<string, mixed>>  $records
-     * @return Collection<int, Model>
+     * @return Collection<array-key, TRelatedModel>
      */
     protected function toCollection(array $records = [])
     {
         $models = [];
 
         foreach ($records as $attributes) {
-            $models[] = $this->toModel($attributes);
+            $model = $this->toModel($attributes);
+            if ($model !== null) {
+                $models[] = $model;
+            }
         }
 
         // Note: Eager loading is handled by the query builder, not needed here
@@ -345,12 +347,12 @@ abstract class EmbedsOneOrMany extends Relation
      * Create a related model instanced.
      *
      * @param  array<string, mixed>|null  $attributes
-     * @return Model
+     * @return Model|null null when nothing is embedded
      */
     protected function toModel($attributes = [])
     {
         if ($attributes === null) {
-            return $this->related->newInstance();
+            return null;
         }
 
         $connection = $this->related->getConnection();
@@ -492,16 +494,5 @@ abstract class EmbedsOneOrMany extends Relation
     public function getQualifiedForeignKeyName()
     {
         return $this->foreignKey;
-    }
-
-    /**
-     * Get the name of the "where in" method for eager loading.
-     *
-     * @param  string  $key
-     * @return string
-     */
-    protected function whereInMethod(EloquentModel $model, $key)
-    {
-        return 'whereIn';
     }
 }

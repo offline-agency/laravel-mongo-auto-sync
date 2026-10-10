@@ -3,7 +3,10 @@
 namespace OfflineAgency\MongoAutoSync\Console;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Arr;
+use OfflineAgency\MongoAutoSync\Eloquent\Model;
 use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
+use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 use OfflineAgency\MongoAutoSync\Jobs\SyncTargetJob;
 
 class SyncCollection extends Command
@@ -12,20 +15,17 @@ class SyncCollection extends Command
 
     protected $description = 'Sync relationships for a collection';
 
-    /**
-     * @return void
-     */
-    public function handle()
+    public function handle(): int
     {
         $modelClass = $this->argument('model');
         if (! is_string($modelClass) || ! class_exists($modelClass)) {
             $className = is_string($modelClass) ? $modelClass : (is_null($modelClass) ? 'null' : gettype($modelClass));
             $this->error("Class $className does not exist.");
 
-            return;
+            return self::FAILURE;
         }
 
-        /** @var \OfflineAgency\MongoAutoSync\Eloquent\Model $model */
+        /** @var Model $model */
         $model = new $modelClass;
         $count = $model->count();
         $bar = $this->output->createProgressBar($count);
@@ -33,20 +33,11 @@ class SyncCollection extends Command
         $model::chunk(100, function ($items) use ($bar) {
             foreach ($items as $item) {
                 if (method_exists($item, 'getMongoRelation')) {
-                    /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $item */
+                    /** @var MDModel $item */
                     $relations = $item->getMongoRelation();
                     foreach ($relations as $method => $relation) {
                         if (SyncHelper::hasTarget($relation)) {
-                            dispatch(new SyncTargetJob(
-                                $item,
-                                $relation,
-                                $method,
-                                'save',
-                                $item->$method,
-                                [],
-                                [],
-                                $item->id
-                            ));
+                            SyncTargetJob::dispatchFor($item, $method, $relation, SyncHelper::refIds(Arr::get($item->getAttributes(), $method)), []);
                         }
                     }
                 }
@@ -57,5 +48,7 @@ class SyncCollection extends Command
         $bar->finish();
         $this->newLine();
         $this->info('Sync dispatching complete.');
+
+        return self::SUCCESS;
     }
 }

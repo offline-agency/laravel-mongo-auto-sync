@@ -3,7 +3,7 @@
 namespace OfflineAgency\MongoAutoSync\Console;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Benchmark;
+use Illuminate\Support\Benchmark;
 
 use function Termwind\render;
 
@@ -13,10 +13,7 @@ class BenchmarkCommand extends Command
 
     protected $description = 'Benchmark MongoDB operations';
 
-    /**
-     * @return void
-     */
-    public function handle()
+    public function handle(): int
     {
         /** @var string */
         $modelClass = $this->argument('model');
@@ -26,7 +23,7 @@ class BenchmarkCommand extends Command
         if (! class_exists($modelClass)) {
             $this->error("Class $modelClass does not exist.");
 
-            return;
+            return self::FAILURE;
         }
 
         render('<div class="px-1 bg-green-500 text-white">Starting Benchmark...</div>');
@@ -34,7 +31,6 @@ class BenchmarkCommand extends Command
         $times = [];
 
         // Insert
-        // @phpstan-ignore-next-line
         $times['Insert'] = Benchmark::measure(function () use ($modelClass, $count) {
             for ($i = 0; $i < $count; $i++) {
                 $model = new $modelClass;
@@ -48,14 +44,12 @@ class BenchmarkCommand extends Command
         });
 
         // Read
-        // @phpstan-ignore-next-line
         $times['Read'] = Benchmark::measure(function () use ($modelClass, $count) {
             $modelClass::limit($count)->get();
         });
 
         // Update
         $items = $modelClass::limit($count)->get();
-        // @phpstan-ignore-next-line
         $times['Update'] = Benchmark::measure(function () use ($items) {
             foreach ($items as $item) {
                 $item->touch();
@@ -63,7 +57,6 @@ class BenchmarkCommand extends Command
         });
 
         // Delete
-        // @phpstan-ignore-next-line
         $times['Delete'] = Benchmark::measure(function () use ($items) {
             foreach ($items as $item) {
                 $item->delete();
@@ -101,5 +94,7 @@ class BenchmarkCommand extends Command
                 </tr>
             </tbody>
         </table>');
+
+        return self::SUCCESS;
     }
 }

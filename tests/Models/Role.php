@@ -8,7 +8,7 @@ class Role extends MDModel
 {
     protected $connection = 'mongodb';
 
-    protected $collection = 'roles';
+    protected $table = 'roles';
 
     protected static $unguarded = true;
 }

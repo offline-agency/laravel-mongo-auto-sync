@@ -2,9 +2,13 @@
 
 namespace OfflineAgency\MongoAutoSync\Helpers;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
+use MongoDB\BSON\ObjectId;
+use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 use stdClass;
+use Stringable;
 
 class SyncHelper
 {
@@ -16,11 +20,13 @@ class SyncHelper
     {
         $cl = Config::get('app.locale');
 
-        if (is_array($mlCollection) && (array_key_exists('en_EN', $mlCollection) || array_key_exists('it_IT', $mlCollection))) {
-            return $mlCollection[$cl] ?? '';
-        } else {
+        if (! is_array($mlCollection)) {
             return '';
         }
+
+        $value = $mlCollection[$cl] ?? '';
+
+        return is_string($value) ? $value : '';
     }
 
     /**
@@ -138,6 +144,83 @@ class SyncHelper
     }
 
     /**
+     * Distinct ref_id values (as strings) of an embedded relation value: null, a single mini model or array
+     * (EmbedsOne), or an iterable of mini models or arrays (EmbedsMany).
+     *
+     * @return list<string>
+     */
+    public static function refIds(mixed $value): array
+    {
+        if ($value === null) {
+            return [];
+        }
+
+        $items = self::isSingleEmbedded($value) ? [$value] : $value;
+        if (! is_iterable($items)) {
+            return [];
+        }
+
+        $ids = [];
+        foreach ($items as $item) {
+            $refId = match (true) {
+                is_array($item) => $item['ref_id'] ?? null,
+                $item instanceof Model => $item->getAttribute('ref_id'),
+                is_object($item) => $item->ref_id ?? null,
+                default => null,
+            };
+            if (is_string($refId) || $refId instanceof ObjectId) {
+                $ids[] = (string) $refId;
+            }
+        }
+
+        return array_values(array_unique(array_filter($ids, fn (string $id) => $id !== '')));
+    }
+
+    /**
+     * Compare two ids regardless of their representation (MongoDB\BSON\ObjectId or string).
+     */
+    public static function sameId(mixed $a, mixed $b): bool
+    {
+        if ($a === null || $b === null) {
+            return false;
+        }
+        if (! (is_scalar($a) || $a instanceof Stringable) || ! (is_scalar($b) || $b instanceof Stringable)) {
+            return false;
+        }
+
+        return (string) $a === (string) $b;
+    }
+
+    /**
+     * Both stored forms of an id (string and ObjectId), to match documents written by either.
+     *
+     * @return list<string|ObjectId>
+     */
+    public static function idVariants(mixed $id): array
+    {
+        if ($id instanceof ObjectId) {
+            return [$id, (string) $id];
+        }
+        if (! is_string($id) || $id === '') {
+            return [];
+        }
+
+        return strlen($id) === 24 && ctype_xdigit($id) ? [$id, new ObjectId($id)] : [$id];
+    }
+
+    private static function isSingleEmbedded(mixed $value): bool
+    {
+        if ($value instanceof Model) {
+            return true;
+        }
+        if (is_array($value)) {
+            return array_key_exists('ref_id', $value);
+        }
+
+        return $value instanceof stdClass;
+    }
+
+    /**
      * @param  mixed  $value
      * @param  string  $event
      * @return bool
@@ -160,7 +243,7 @@ class SyncHelper
     public static function getRequestToBeSync($ref_id, $modelOnTarget, Request $request, $methodOnTarget)
     {
         $new_req_embeded = new stdClass;
-        /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $model */
+        /** @var MDModel $model */
         $model = new $modelOnTarget;
         /** @var array<string, mixed> $items */
         $items = $model->getItems();
@@ -227,7 +310,7 @@ class SyncHelper
         $arr = [];
         if ($is_EO) {
             $obj = new stdClass;
-            /** @var \OfflineAgency\MongoAutoSync\Http\Models\MDModel $embedObj */
+            /** @var MDModel $embedObj */
             $embedObj = new $model;
             /** @var array<string, mixed> $EOitems */
             $EOitems = $embedObj->getItems();
@@ -252,13 +335,8 @@ class SyncHelper
      */
     public static function getCounterForRelationships($method, $is_EO, $is_EM, $i)
     {
-        if ($method === '') {
-            return '';
-        }
-        if ($is_EO) {
-            return '';
-        }
-        if ($is_EM) {
+        // Same rule as 3.x: no counter on the root level and for EmbedsOne, "-<i>" for nested EmbedsMany items
+        if ($method === '' || $is_EO) {
             return '';
         }
 

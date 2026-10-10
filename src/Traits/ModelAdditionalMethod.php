@@ -4,8 +4,12 @@ namespace OfflineAgency\MongoAutoSync\Traits;
 
 use DateTime;
 use Exception;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use LogicException;
 use MongoDB\BSON\UTCDateTime;
+use OfflineAgency\MongoAutoSync\Eloquent\Builder;
 use OfflineAgency\MongoAutoSync\Exceptions\InvalidConfigurationException;
 use OfflineAgency\MongoAutoSync\Exceptions\InvalidRelationshipException;
 use OfflineAgency\MongoAutoSync\Exceptions\InvalidRequestException;
@@ -22,17 +26,12 @@ trait ModelAdditionalMethod
     protected $mini_models;
 
     /**
-     * @var array<string, array<int, string>>
-     */
-    protected static $mini_model_list_cache = [];
-
-    /**
-     * @param  array<int, \Illuminate\Database\Eloquent\Model>  $models
-     * @return \Illuminate\Database\Eloquent\Collection<int, static>
+     * @param  array<int, Model>  $models
+     * @return Collection<int, static>
      */
     public function newCollection(array $models = [])
     {
-        /** @var \Illuminate\Database\Eloquent\Collection<int, static> $collection */
+        /** @var Collection<int, static> $collection */
         $collection = new MongoCollection($models);
 
         return $collection;
@@ -72,14 +71,20 @@ trait ModelAdditionalMethod
             throw new InvalidRequestException('You have requested a number of record bigger than the count collection record ( '.$totalRow.')');
         }
 
-        $raw = $this->raw(function ($collection) use ($numberOfRandomRow) {
+        $query = $this->newQuery();
+        if (! $query instanceof Builder) {
+            throw new LogicException('getRandomRow() requires the MongoAutoSync Eloquent builder');
+        }
+
+        // The package builder already hydrates the aggregation cursor into a collection of models
+        $results = $query->raw(function ($collection) use ($numberOfRandomRow) {
             return $collection->aggregate([
                 ['$sample' => ['size' => $numberOfRandomRow]],
             ]);
         });
-
-        /** @var \Traversable<int|string, mixed> $raw */
-        $results = $this->hydrate(iterator_to_array($raw));
+        if (! $results instanceof Collection) {
+            throw new LogicException('getRandomRow() expected the aggregation to return a collection of models');
+        }
 
         if ($numberOfRandomRow == 1) {
             return $results->first();
@@ -114,50 +119,6 @@ trait ModelAdditionalMethod
      */
     public function getUniqueMiniModelList()
     {
-        $cacheKey = get_class($this);
-
-        if (isset(self::$mini_model_list_cache[$cacheKey])) {
-            $result = self::$mini_model_list_cache[$cacheKey];
-            // Restore partial generated request from cache or re-generate it?
-            // The method sets partial generated request as a side effect.
-            // We need to be careful. The side effect depends on the instance data ($this->getObjWithRefId which depends on attributes).
-            // Actually getUniqueMiniModelList calls getObjWithRefId.
-            // Wait, getObjWithRefId depends on $this attributes (ref_id).
-            // So we CANNOT cache the result across instances blindly if the result depends on instance data.
-
-            // Let's check getUniqueMiniModelList implementation again.
-            // It calls getObjWithRefId.
-            // getObjWithRefId calls getObjValueToBeSaved -> getDbValue -> $this->$key.
-            // So it DOES depend on instance data.
-            // So static caching is NOT safe if it depends on instance state.
-
-            // However, the LIST of mini models (classes) should be constant for the Model Class.
-            // But the method ALSO sets $this->setPartialGeneratedRequest($embedded_object);
-            // $embedded_object depends on instance data.
-
-            // So I can cache the 'models' list but I still need to iterate to build $embedded_object.
-            // The previous implementation was:
-            /*
-            foreach ($relationships as $method => $relationship) {
-                $hasTarget = SyncHelper::hasTarget($relationship);
-                if ($hasTarget) {
-                    $relationshipsContainsTarget = Arr::has($relationship, 'modelOnTarget');
-                    if ($relationshipsContainsTarget) {
-                        $models[] = Arr::get($relationship, 'modelOnTarget');
-                        $embedded_object[$method] = $this->getObjWithRefId($method, $relationship);
-                    } else {
-                        throw new Exception...
-                    }
-                }
-            }
-            $this->setPartialGeneratedRequest($embedded_object);
-            return collect($models)->unique()->toArray();
-            */
-
-            // I can optimize by caching which relationships have targets and what their modelOnTarget is.
-            // But the 'embedded_object' part needs to run for every instance.
-        }
-
         $relationships = $this->getMongoRelation();
 
         $models = [];
@@ -334,9 +295,8 @@ trait ModelAdditionalMethod
         $is_EM = SyncHelper::is_EM($type);
 
         if ($is_EO) {
-            $obj = new stdClass;
-            $obj->ref_id = $this->getObjValueToBeSaved($method, '', false);
-            $objs[] = $obj;
+            // The embedded mini model itself (it already carries ref_id), as in 3.x
+            $objs[] = $this->getObjValueToBeSaved($method, '', false);
         } elseif ($is_EM) {
             $methodValue = $this->$method;
             if (! is_null($methodValue) && is_iterable($methodValue)) {

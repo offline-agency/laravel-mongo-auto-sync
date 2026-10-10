@@ -79,8 +79,8 @@ test('update with embeds many on target', function () {
     $navigation = new Navigation;
 
     $text = $faker->text(50);
-    $code = $faker->creditCardNumber;
-    $href = $faker->url;
+    $code = $faker->creditCardNumber();
+    $href = $faker->url();
     $date = Date::now();
     $target = $faker->text(50);
     $title = null;
@@ -134,22 +134,22 @@ test('update with embeds many on target', function () {
     // Add more sub items and restart test
     $navigation->sub_items = [
         [
-            'ref_id' => $faker->uuid,
-            'text' => $faker->text,
-            'code' => $faker->name,
-            'href' => $faker->url,
+            'ref_id' => $faker->uuid(),
+            'text' => $faker->text(),
+            'code' => $faker->name(),
+            'href' => $faker->url(),
         ],
         [
-            'ref_id' => $faker->uuid,
-            'text' => $faker->text,
-            'code' => $faker->name,
-            'href' => $faker->url,
+            'ref_id' => $faker->uuid(),
+            'text' => $faker->text(),
+            'code' => $faker->name(),
+            'href' => $faker->url(),
         ],
         [
-            'ref_id' => $faker->uuid,
-            'text' => $faker->text,
-            'code' => $faker->name,
-            'href' => $faker->url,
+            'ref_id' => $faker->uuid(),
+            'text' => $faker->text(),
+            'code' => $faker->name(),
+            'href' => $faker->url(),
         ],
     ];
 

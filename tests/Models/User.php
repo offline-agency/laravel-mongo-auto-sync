@@ -2,6 +2,7 @@
 
 namespace Tests\Models;
 
+use Carbon\Carbon;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
@@ -16,9 +17,9 @@ use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
  * @property string $name
  * @property string $title
  * @property int $age
- * @property \Carbon\Carbon $birthday
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
+ * @property Carbon $birthday
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 class User extends MDModel implements AuthenticatableContract, CanResetPasswordContract
 {

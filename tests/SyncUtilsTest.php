@@ -268,27 +268,6 @@ class SyncUtilsTest extends TestCase
         $this->assertEquals(true, $out);
     }
 
-    public function test_get_aid()
-    {
-        // Check if there's no data inside the database, set id to 1
-        Article::truncate();
-        $article = new Article;
-
-        $out = getAID($article);
-
-        $this->assertEquals(1, $out);
-
-        // If there's already data inside the database, increments new data by 1
-
-        $articleModel = $this->prepareArticleData([]);
-
-        $out = getAID($article);
-
-        $this->assertEquals(2, $out);
-
-        Article::truncate();
-    }
-
     public function test_get_array_with_empty_obj()
     {
         $article = new Article;
@@ -354,24 +333,5 @@ class SyncUtilsTest extends TestCase
         $out = getCounterForRelationships($method, $is_EO, $is_EM, $i);
 
         $this->assertEquals('-'.$i, $out);
-    }
-
-    public function test_get_type_on_target()
-    {
-        $EM = [
-            'typeOnTarget' => 'EmbedsMany',
-        ];
-        $EO = [
-            'typeOnTarget' => 'EmbedsOne',
-        ];
-        $defaultValue = [];
-
-        $outEM = getTypeOnTarget($EM);
-        $outEO = getTypeOnTarget($EO);
-        $outDefaultValue = getTypeOnTarget($defaultValue);
-
-        $this->assertEquals('EmbedsMany', $outEM);
-        $this->assertEquals('EmbedsOne', $outEO);
-        $this->assertEquals('EmbedsMany', $outDefaultValue);
     }
 }

@@ -8,9 +8,10 @@ use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use MongoDB\BSON\ObjectId;
+use MongoDB\Laravel\Query\Builder;
 
 /**
- * @extends EmbedsOneOrMany<\MongoDB\Laravel\Eloquent\Model, \MongoDB\Laravel\Eloquent\Model, \Illuminate\Database\Eloquent\Collection<int, \MongoDB\Laravel\Eloquent\Model>>
+ * @extends EmbedsOneOrMany<\MongoDB\Laravel\Eloquent\Model, \MongoDB\Laravel\Eloquent\Model, Collection<int, \MongoDB\Laravel\Eloquent\Model>>
  */
 class EmbedsMany extends EmbedsOneOrMany
 {
@@ -29,11 +30,11 @@ class EmbedsMany extends EmbedsOneOrMany
     /**
      * {@inheritdoc}
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, \MongoDB\Laravel\Eloquent\Model>
+     * @return Collection<int, \MongoDB\Laravel\Eloquent\Model>
      */
     public function getResults()
     {
-        /** @var \Illuminate\Database\Eloquent\Collection<int, \MongoDB\Laravel\Eloquent\Model> $results */
+        /** @var Collection<int, \MongoDB\Laravel\Eloquent\Model> $results */
         $results = $this->toCollection($this->getEmbeddedAsIndexed());
 
         return $results;
@@ -47,8 +48,8 @@ class EmbedsMany extends EmbedsOneOrMany
     public function performInsert(Model $model)
     {
         // Generate a new key if needed.
-        if ($model->getKeyName() == '_id' && ! $model->getKey()) {
-            $model->setAttribute('_id', new ObjectId);
+        if (in_array($model->getKeyName(), ['_id', 'id'], true) && ! $model->getKey()) {
+            $model->setAttribute($model->getKeyName(), new ObjectId);
         }
 
         // For deeply nested documents, let the parent handle the changes.
@@ -59,7 +60,7 @@ class EmbedsMany extends EmbedsOneOrMany
         }
 
         // Push the new model to the database.
-        /** @var \MongoDB\Laravel\Query\Builder $baseQuery */
+        /** @var Builder $baseQuery */
         $baseQuery = $this->getBaseQuery();
         $result = $baseQuery->push($this->localKey, $model->getAttributes(), true);
 
@@ -120,7 +121,7 @@ class EmbedsMany extends EmbedsOneOrMany
         // Get the correct foreign key value.
         $foreignKey = $this->getForeignKeyValue($model);
 
-        /** @var \MongoDB\Laravel\Query\Builder $baseQuery */
+        /** @var Builder $baseQuery */
         $baseQuery = $this->getBaseQuery();
         $result = $baseQuery->pull($this->localKey, [$model->getKeyName() => $foreignKey]);
 
@@ -237,18 +238,18 @@ class EmbedsMany extends EmbedsOneOrMany
      * @return Model
      */
     /**
-     * @return \Illuminate\Database\Eloquent\Model
+     * @return EloquentModel
      */
     public function attach(Model $model)
     {
         /** @var \MongoDB\Laravel\Eloquent\Model $model */
         $result = $this->save($model);
         if ($result === false) {
-            /** @var \Illuminate\Database\Eloquent\Model $model */
+            /** @var EloquentModel $model */
             return $model;
         }
 
-        /** @var \Illuminate\Database\Eloquent\Model $result */
+        /** @var EloquentModel $result */
         return $result;
     }
 
@@ -256,13 +257,13 @@ class EmbedsMany extends EmbedsOneOrMany
      * Associate a new model instance to the given parent, without saving it to the database.
      *
      * @param  Model  $model
-     * @return \Illuminate\Database\Eloquent\Model
+     * @return EloquentModel
      */
     protected function associateNew($model)
     {
         // Create a new key if needed.
-        if ($model->getKeyName() === '_id' && ! $model->getAttribute('_id')) {
-            $model->setAttribute('_id', new ObjectId);
+        if (in_array($model->getKeyName(), ['_id', 'id'], true) && ! $model->getKey()) {
+            $model->setAttribute($model->getKeyName(), new ObjectId);
         }
 
         $records = $this->getEmbeddedAsIndexed();
@@ -279,7 +280,7 @@ class EmbedsMany extends EmbedsOneOrMany
      * Associate an existing model instance to the given parent, without saving it to the database.
      *
      * @param  Model  $model
-     * @return \Illuminate\Database\Eloquent\Model
+     * @return EloquentModel
      */
     protected function associateExisting($model)
     {
@@ -292,7 +293,7 @@ class EmbedsMany extends EmbedsOneOrMany
 
         // Replace the document in the parent model.
         foreach ($records as &$record) {
-            if ($record[$primaryKey] == $key) {
+            if (isset($record[$primaryKey]) && $record[$primaryKey] == $key) {
                 $record = $model->getAttributes();
                 break;
             }
@@ -337,27 +338,6 @@ class EmbedsMany extends EmbedsOneOrMany
     }
 
     /**
-     * Get embedded models for EmbedsMany relationship.
-     * This overrides the parent method to return the correct type.
-     *
-     * @return array<string, mixed>|null
-     */
-    protected function getEmbedded()
-    {
-        $embedded = parent::getEmbedded();
-        if ($embedded === null) {
-            return null;
-        }
-        // Ensure it's an array
-        if (! is_array($embedded)) {
-            return null;
-        }
-
-        // Return as-is, maintaining parent's type signature
-        return $embedded;
-    }
-
-    /**
      * Get embedded models as indexed array for EmbedsMany.
      * This is a helper method that returns the indexed array format.
      *
@@ -394,24 +374,16 @@ class EmbedsMany extends EmbedsOneOrMany
      */
     protected function setEmbedded($models)
     {
-        if ($models === null) {
-            parent::setEmbedded(null);
-
-            return;
-        }
-        if (! is_array($models)) {
-            $models = [$models];
-        }
-        // Convert to the format expected by parent (array<string, mixed>|null)
-        // For EmbedsMany, we store as indexed array, but parent expects associative or null
-        // We need to convert the indexed array to an associative array
-        $associativeArray = [];
-        foreach ($models as $key => $value) {
+        // The parent expects an associative array (or null): keep only the
+        // embedded documents, preserving their keys.
+        $records = [];
+        foreach ($models ?? [] as $key => $value) {
             if (is_array($value)) {
-                $associativeArray[(string) $key] = $value;
+                $records[(string) $key] = $value;
             }
         }
-        parent::setEmbedded($associativeArray);
+
+        parent::setEmbedded($models === null ? null : $records);
     }
 
     /**
@@ -431,16 +403,5 @@ class EmbedsMany extends EmbedsOneOrMany
         }
 
         return parent::__call($method, $parameters);
-    }
-
-    /**
-     * Get the name of the "where in" method for eager loading.
-     *
-     * @param  string  $key
-     * @return string
-     */
-    protected function whereInMethod(EloquentModel $model, $key)
-    {
-        return 'whereIn';
     }
 }

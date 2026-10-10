@@ -14,10 +14,7 @@ class CheckModelConfig extends Command
 
     protected $description = 'Check model configurations for errors';
 
-    /**
-     * @return void
-     */
-    public function handle()
+    public function handle(): int
     {
         $this->info('Checking model configurations...');
 
@@ -25,9 +22,25 @@ class CheckModelConfig extends Command
         if (! is_string($modelPath)) {
             $this->error('Model path is not a string');
 
-            return;
+            return self::FAILURE;
         }
-        $models = $this->getAllModels($modelPath);
+        if (! is_dir($modelPath)) {
+            $this->error("Directory $modelPath not found");
+
+            return self::FAILURE;
+        }
+        $namespace = config('laravel-mongo-auto-sync.model_namespace');
+        try {
+            $models = array_merge(
+                $this->getAllModels($modelPath, is_string($namespace) ? $namespace : ''),
+                $this->getOtherModels()
+            );
+        } catch (InvalidConfigurationException $e) {
+            $this->error($e->getMessage());
+
+            return self::FAILURE;
+        }
+        $hasErrors = false;
 
         foreach ($models as $modelClass) {
             $this->info("Checking $modelClass...");
@@ -47,10 +60,13 @@ class CheckModelConfig extends Command
                 }
             } catch (Exception $e) {
                 $this->error("Error in $modelClass: ".$e->getMessage());
+                $hasErrors = true;
             }
         }
 
         $this->info('Check completed.');
+
+        return $hasErrors ? self::FAILURE : self::SUCCESS;
     }
 
     /**
@@ -97,22 +113,18 @@ class CheckModelConfig extends Command
     }
 
     /**
-     * @param  string  $path
+     * Models found recursively under $path; a model in a subdirectory lives in the matching sub-namespace (PSR-4).
+     *
      * @return array<string>
+     *
+     * @throws InvalidConfigurationException
      */
-    private function getAllModels($path)
+    private function getAllModels(string $path, string $namespace): array
     {
         $out = [];
-        try {
-            $results = scandir($path);
-        } catch (Exception $e) {
-            $this->error("Directory $path not found");
-
-            return [];
-        }
-
+        $results = @scandir($path);
         if ($results === false) {
-            return [];
+            throw new InvalidConfigurationException("Directory $path is not readable");
         }
 
         foreach ($results as $result) {
@@ -121,16 +133,24 @@ class CheckModelConfig extends Command
             }
             $filename = $path.'/'.$result;
             if (is_dir($filename)) {
-                $out = array_merge($out, $this->getAllModels($filename));
+                $out = array_merge($out, $this->getAllModels($filename, $namespace.'\\'.$result));
             } elseif (substr($result, -4) === '.php') {
-                $className = config('laravel-mongo-auto-sync.model_namespace').'\\'.substr($result, 0, -4);
+                $className = $namespace.'\\'.substr($result, 0, -4);
                 if (class_exists($className)) {
                     $out[] = $className;
                 }
             }
         }
 
-        // Also add other_models from config
+        return $out;
+    }
+
+    /**
+     * @return array<string>
+     */
+    private function getOtherModels(): array
+    {
+        $out = [];
         $otherModels = config('laravel-mongo-auto-sync.other_models', []);
         if (is_array($otherModels)) {
             foreach ($otherModels as $key => $values) {

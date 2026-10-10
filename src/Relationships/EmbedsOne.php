@@ -2,9 +2,11 @@
 
 namespace OfflineAgency\MongoAutoSync\Relationships;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 use MongoDB\BSON\ObjectId;
+use MongoDB\Laravel\Query\Builder;
 
 /**
  * @extends EmbedsOneOrMany<\MongoDB\Laravel\Eloquent\Model, \MongoDB\Laravel\Eloquent\Model, \MongoDB\Laravel\Eloquent\Model>
@@ -26,11 +28,25 @@ class EmbedsOne extends EmbedsOneOrMany
     /**
      * {@inheritdoc}
      *
-     * @return \MongoDB\Laravel\Eloquent\Model
+     * @return \MongoDB\Laravel\Eloquent\Model|null
      */
     public function getResults()
     {
         return $this->toModel($this->getEmbedded());
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * EmbedsOne only brings one result, but eager loading needs a collection.
+     *
+     * @return Collection<int, \MongoDB\Laravel\Eloquent\Model>
+     */
+    public function getEager()
+    {
+        $result = $this->getResults();
+
+        return $this->related->newCollection($result === null ? [] : [$result]);
     }
 
     /**
@@ -41,8 +57,8 @@ class EmbedsOne extends EmbedsOneOrMany
     public function performInsert(Model $model)
     {
         // Generate a new key if needed.
-        if ($model->getKeyName() == '_id' && ! $model->getKey()) {
-            $model->setAttribute('_id', new ObjectId);
+        if (in_array($model->getKeyName(), ['_id', 'id'], true) && ! $model->getKey()) {
+            $model->setAttribute($model->getKeyName(), new ObjectId);
         }
 
         // For deeply nested documents, let the parent handle the changes.
@@ -103,7 +119,7 @@ class EmbedsOne extends EmbedsOneOrMany
         }
 
         // Overwrite the local key with null.
-        /** @var \MongoDB\Laravel\Query\Builder $baseQuery */
+        /** @var Builder $baseQuery */
         $baseQuery = $this->getBaseQuery();
         $result = $baseQuery->update([$this->localKey => null]);
 
@@ -118,7 +134,7 @@ class EmbedsOne extends EmbedsOneOrMany
     /**
      * Attach the model to its parent.
      *
-     * @return \Illuminate\Database\Eloquent\Model
+     * @return EloquentModel
      */
     public function associate(Model $model)
     {
@@ -130,7 +146,7 @@ class EmbedsOne extends EmbedsOneOrMany
     /**
      * Detach the model from its parent.
      *
-     * @return \Illuminate\Database\Eloquent\Model|null
+     * @return EloquentModel|null
      */
     public function dissociate()
     {
@@ -152,16 +168,5 @@ class EmbedsOne extends EmbedsOneOrMany
         }
 
         return $this->performDelete($model);
-    }
-
-    /**
-     * Get the name of the "where in" method for eager loading.
-     *
-     * @param  string  $key
-     * @return string
-     */
-    protected function whereInMethod(EloquentModel $model, $key)
-    {
-        return 'whereIn';
     }
 }
