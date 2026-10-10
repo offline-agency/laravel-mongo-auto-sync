@@ -39,17 +39,13 @@ trait PlainMongoTrait
 
             if ($is_fillable) {
                 if ($is_ML) {
-                    if (is_null($this->$key)) {
-                        $old_value = [];
-                    } else {
-                        $old_value = $this->$key;
-                    }
+                    $old_value = is_array($this->$key) ? $this->$key : [];
                     $this->$key = SyncHelper::ml($old_value, $request->input($key));
                 } elseif ($is_MD) {
                     if ($request->input($key) == '' || $request->input($key) == null) {
                         $this->$key = null;
                     } else {
-                        $this->$key = new UTCDateTime(new \DateTime($request->input($key)));
+                        $this->$key = new UTCDateTime(new \DateTime(SyncHelper::toString($request->input($key))));
                     }
                 } else {
                     $this->$key = $request->input($key);

@@ -92,7 +92,7 @@ trait MainMongoTrait
      */
     public function updateWithSync(Request $request, array $additionalData = [], array $options = [], array $target_additional_data = [])
     {
-        $this->logSyncDebug('updateWithSync started for model: '.get_class($this).' with ID: '.$this->getKey());
+        $this->logSyncDebug('updateWithSync started for model: '.get_class($this).' with ID: '.SyncHelper::toString($this->getKey()));
 
         $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
         $this->validateRelationshipRequest($request);
@@ -156,8 +156,8 @@ trait MainMongoTrait
             $type = $relation['type'];
             $hasTarget = SyncHelper::hasTarget($relation);
             if ($hasTarget && $syncTargets) {
-                $modelTarget = $relation['modelTarget'];
-                $methodOnTarget = $relation['methodOnTarget'];
+                $modelTarget = SyncHelper::toString($relation['modelTarget']);
+                $methodOnTarget = SyncHelper::toString($relation['methodOnTarget']);
                 $modelOnTarget = $relation['modelOnTarget'];
                 $typeOnTarget = Arr::has($relation, 'typeOnTarget') ? Arr::get($relation, 'typeOnTarget') : 'EmbedsMany';
 

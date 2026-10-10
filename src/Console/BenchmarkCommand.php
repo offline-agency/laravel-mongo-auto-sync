@@ -3,6 +3,7 @@
 namespace OfflineAgency\MongoAutoSync\Console;
 
 use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Benchmark;
 
 use function Termwind\render;
@@ -15,13 +16,18 @@ class BenchmarkCommand extends Command
 
     public function handle(): int
     {
-        /** @var string */
         $modelClass = $this->argument('model');
-        /** @var int */
+        $modelClass = is_string($modelClass) ? $modelClass : '';
         $count = $this->argument('count');
+        $count = is_numeric($count) ? (int) $count : 0;
 
         if (! class_exists($modelClass)) {
             $this->error("Class $modelClass does not exist.");
+
+            return self::FAILURE;
+        }
+        if (! is_subclass_of($modelClass, Model::class)) {
+            $this->error("Class $modelClass is not an Eloquent model.");
 
             return self::FAILURE;
         }
@@ -38,7 +44,6 @@ class BenchmarkCommand extends Command
                 // We need some data?
                 // This is hard to genericize without factories.
                 // Just doing simple save() if storeWithSync is too complex
-                // @phpstan-ignore-next-line
                 $model->save();
             }
         });
