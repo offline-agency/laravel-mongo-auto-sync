@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
+use LogicException;
 use MongoDB\BSON\ObjectId;
 use MongoDB\Laravel\Query\Builder;
 
@@ -207,10 +208,13 @@ class EmbedsMany extends EmbedsOneOrMany
     /**
      * Delete all embedded models.
      *
+     * @param  null  $id  not supported: always null (an id throws LogicException, as in laravel-mongodb)
      * @return int
      */
-    public function delete()
+    public function delete($id = null)
     {
+        throw_if($id !== null, new LogicException('The id parameter should not be used.'));
+
         // Overwrite the local key with an empty array.
         $result = $this->query->update([$this->localKey => []]);
 

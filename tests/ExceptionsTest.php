@@ -26,7 +26,7 @@ test('a missing request key for a relationship throws InvalidRequestException', 
         'is_deleted' => false,
         'is_active' => true,
     ]);
-})->throws(InvalidRequestException::class, 'primarycategory attribute not found in Request');
+})->throws(InvalidRequestException::class, "'primarycategory' attribute not found in the request.");
 
 test('every custom exception extends MongoAutoSyncException', function (string $exception) {
     expect(is_subclass_of($exception, MongoAutoSyncException::class))->toBeTrue();

@@ -125,8 +125,8 @@ trait MainMongoTrait
     private function assertRelationshipRefIdsAreSafe(Request $request): void
     {
         foreach ($this->getMongoRelation() as $method => $relation) {
-            if ((SyncHelper::is_EO($relation['type'] ?? null) || SyncHelper::is_EM($relation['type'] ?? null)) && $request->has($method)) {
-                SyncHelper::assertSafeRefIds((string) $method, $request->input($method));
+            if ($request->has($method)) {
+                SyncHelper::assertSafeRefIds((string) $method, $request->input($method), SyncHelper::idKeysFor($relation['type'] ?? null));
             }
         }
     }
@@ -200,7 +200,8 @@ trait MainMongoTrait
     public function checkPropertyExistence($obj, string $EOkey, $method = '', $model = '')
     {
         if (! property_exists($obj, $EOkey)) {
-            $msg = 'Error - '.$EOkey.' attribute not found on obj '.json_encode($obj).' during save of model: '.$model.' and attribute: '.$method;
+            // the object is not part of the message: it is request payload and may hold personal data
+            $msg = 'Error - '.$EOkey.' attribute not found in relationship '.($method === '' ? '(unknown)' : "'{$method}'").($model === '' ? '' : ' of '.$model).'.';
             throw new InvalidConfigurationException($msg);
         }
     }
@@ -214,7 +215,7 @@ trait MainMongoTrait
     public function checkArrayExistence($arr, string $key)
     {
         if (! Arr::has($arr, $key)) {
-            $msg = ('Error - '.$key.' attribute not found on obj '.json_encode($arr));
+            $msg = 'Error - '.$key.' attribute not found in the given array.';
             throw new InvalidConfigurationException($msg);
         }
     }
@@ -227,7 +228,7 @@ trait MainMongoTrait
     private function checkRequestExistence(Request $request, string $key)
     {
         if (! $request->has($key)) {
-            $msg = ('Error - '.$key.' attribute not found in Request '.json_encode($request->all()));
+            $msg = "Error - '{$key}' attribute not found in the request.";
             throw new InvalidRequestException($msg);
         }
     }

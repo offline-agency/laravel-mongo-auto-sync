@@ -42,7 +42,10 @@ class Builder extends MongoDbEloquentBuilder
             /** @var array<string, mixed> $updateData */
             $updateData = [$column => $value];
 
-            return (int) $this->model->update($updateData);
+            // forceFill: the incremented value is not subject to mass assignment protection
+            $this->model->forceFill($updateData);
+
+            return (int) $this->model->save();
         }
 
         return parent::increment($column, $amount, $extra);
@@ -78,7 +81,10 @@ class Builder extends MongoDbEloquentBuilder
             /** @var array<string, mixed> $updateData */
             $updateData = [$column => $value];
 
-            return (int) $this->model->update($updateData);
+            // forceFill: the incremented value is not subject to mass assignment protection
+            $this->model->forceFill($updateData);
+
+            return (int) $this->model->save();
         }
 
         return parent::decrement($column, $amount, $extra);

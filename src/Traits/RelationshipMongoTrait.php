@@ -69,7 +69,7 @@ trait RelationshipMongoTrait
             $is_embeds_has_to_be_updated = $request->has($key);
 
             if (! is_null($value) && ! ($value == '') && ! ($value == '[]')) {
-                SyncHelper::assertSafeRefIds($key, $value);
+                SyncHelper::assertSafeRefIds($key, $value, SyncHelper::idKeysFor($type));
                 $objs = json_decode($value);
             } else {
                 $objs = SyncHelper::getArrayWithEmptyObj($model, $is_EO, $is_EM);
@@ -197,7 +197,9 @@ trait RelationshipMongoTrait
             throw new LogicException('Target sync requires a MongoDB connection, got '.get_class($connection));
         }
 
-        return $query->whereIn('_id', SyncHelper::idVariants((string) $this->getKey()));
+        // raw filter: whereIn('_id') would convert a 24-hex string id to an ObjectId and miss documents stored with a string _id
+        // @phpstan-ignore argument.type (laravel-mongodb's whereRaw() accepts a filter array; the phpdoc is inherited from Illuminate)
+        return $query->whereRaw(['_id' => ['$in' => SyncHelper::idVariants((string) $this->getKey())]]);
     }
 
     /**

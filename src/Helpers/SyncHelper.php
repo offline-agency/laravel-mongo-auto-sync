@@ -193,36 +193,62 @@ class SyncHelper
     }
 
     /**
-     * A relationship payload (JSON list of mini models) may only reference documents by a plain id:
-     * a string, an integer or null. Objects and lists (MongoDB operators, composite keys) are rejected
-     * before they reach a query or the database. Values that are not a JSON list are left to the parser.
+     * A relationship payload must be a JSON string; the documents it references may only be identified by a
+     * plain id: a string or null. Operators, composite keys, lists and numbers are rejected before they reach
+     * a query or the database. The documents of a JSON list or object (both are iterated by the parser) are
+     * checked; other strings (empty, "null", not JSON) are left to the parser.
+     *
+     * @param  list<string>  $idKeys  ref_id for embedded relationships, id and _id for referenced ones
      *
      * @throws InvalidRequestException
      */
-    public static function assertSafeRefIds(string $key, mixed $value): void
+    public static function assertSafeRefIds(string $key, mixed $value, array $idKeys = ['ref_id']): void
     {
-        if (! is_string($value)) {
+        if ($value === null) {
             return;
+        }
+        if (! is_string($value)) {
+            throw new InvalidRequestException(sprintf(
+                "Invalid payload for relationship '%s': expected a JSON string, got %s.",
+                $key,
+                get_debug_type($value),
+            ));
         }
 
         $objs = json_decode($value);
+        if ($objs instanceof stdClass) {
+            $objs = get_object_vars($objs);
+        }
         if (! is_array($objs)) {
             return;
         }
 
         foreach ($objs as $obj) {
-            if (! $obj instanceof stdClass || ! property_exists($obj, 'ref_id')) {
+            if (! $obj instanceof stdClass) {
                 continue;
             }
-            $refId = $obj->ref_id;
-            if ($refId !== null && ! is_string($refId) && ! is_int($refId)) {
-                throw new InvalidRequestException(sprintf(
-                    "Invalid ref_id in relationship '%s': expected a string or integer id, got %s.",
-                    $key,
-                    get_debug_type($refId),
-                ));
+            foreach ($idKeys as $idKey) {
+                $id = property_exists($obj, $idKey) ? $obj->{$idKey} : null;
+                if ($id !== null && ! is_string($id)) {
+                    throw new InvalidRequestException(sprintf(
+                        "Invalid %s in relationship '%s': expected a string id, got %s.",
+                        $idKey,
+                        $key,
+                        get_debug_type($id),
+                    ));
+                }
             }
         }
+    }
+
+    /**
+     * Id keys checked by assertSafeRefIds() for a relationship type.
+     *
+     * @return list<string>
+     */
+    public static function idKeysFor(mixed $type): array
+    {
+        return self::is_HM($type) || self::is_HO($type) ? ['id', '_id'] : ['ref_id'];
     }
 
     /**
