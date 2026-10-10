@@ -132,3 +132,30 @@ test('a missing plain field is reported by name without the request content', fu
             expect($e->getMessage())->toContain("'name'")->not->toContain(VALIDATION_SECRET);
         });
 });
+
+test('updateWithSync rejects a missing key for EmbedsMany with target and for a relation without target', function (string $missing, bool $background) {
+    $article = (new Article)->storeWithSync(new Request, articleFields() + ['primarycategory' => '[]', 'categories' => '[]']);
+    $navigation = (new Navigation)->storeWithSync(new Request, navigationFields() + ['sub_items' => '[]']);
+    config()->set('laravel-mongo-auto-sync.use_background_sync', $background);
+    $before = [rawDocuments('articles'), rawDocuments('navigation')];
+    Queue::fake();
+
+    $call = match ($missing) {
+        'sub_items' => fn () => $navigation->updateWithSync(new Request(['password' => VALIDATION_SECRET]), ['text' => 'changed'] + navigationFields()),
+        'primarycategory' => fn () => $article->updateWithSync(new Request(['password' => VALIDATION_SECRET]), ['title' => 'changed', 'categories' => '[]'] + articleFields()),
+    };
+
+    expect($call)->toThrow(InvalidRequestException::class, "Missing relationship '{$missing}' in the request.");
+    expect([rawDocuments('articles'), rawDocuments('navigation')])->toBe($before);
+    Queue::assertNothingPushed();
+})->with(['EmbedsMany with target' => ['sub_items'], 'EmbedsOne without target' => ['primarycategory']])
+    ->with(['sync path' => false, 'background' => true]);
+
+test('explicit empty values on update empty the relationship', function (mixed $empty) {
+    $navigation = $this->createNavigation();
+    $subItem = $this->createSubItems(['navigation' => $this->getMiniNavigation($navigation->id)]);
+
+    $updated = $subItem->updateWithSync(new Request, ['text' => 'x', 'code' => 'c', 'href' => 'h', 'navigation' => $empty]);
+
+    expect($updated->navigation?->ref_id)->toBeNull();
+})->with(['null' => [null], 'empty string' => [''], 'JSON empty list' => ['[]']]);

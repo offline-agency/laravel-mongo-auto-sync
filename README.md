@@ -120,7 +120,7 @@ Available options:
 | `queue_name` | `MONGO_AUTO_SYNC_QUEUE_NAME` | `null` | Queue name used by `SyncTargetJob` (`null` = the connection default). |
 | `logging` | `MONGO_AUTO_SYNC_LOGGING` | `false` | Log `storeWithSync` / `updateWithSync` calls at `debug` level. |
 
-Partial requests are an option of the sync methods, not a config key: `$model->updateWithSync($request, $data, ['request_type' => 'partial'])`.
+A full request must contain every relationship declared in `$mongoRelation` (send `null`, `""` or `"[]"` for an empty one), otherwise `InvalidRequestException` is thrown before anything is written: see [UPGRADE-4.0.md](UPGRADE-4.0.md#4-full-requests-must-contain-every-relationship-55). Partial requests are an option of the sync methods, not a config key: `$model->updateWithSync($request, $data, ['request_type' => 'partial'])`.
 
 ### Background sync
 
