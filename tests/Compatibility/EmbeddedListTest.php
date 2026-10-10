@@ -42,3 +42,15 @@ test('removing an embedded item keeps the stored list an array, like native mode
     expect($native)->toBe(['stored as BSON array' => true, 'create after removal' => 'd', 'items' => ['a', 'c', 'd'], 'query on embedded field' => 1]);
     expect($package)->toBe($native);
 })->with(['delete' => ['delete'], 'dissociate' => ['dissociate']]);
+
+test('lists stored as objects by the 4.0 pre-releases are still read', function () {
+    DB::table('cmp_parents')->truncate();
+    $id = DB::connection('mongodb')->getCollection('cmp_parents')->insertOne([
+        'name' => 'legacy',
+        'items' => ['0' => ['_id' => 'a1', 'k' => 'a'], '2' => ['_id' => 'c1', 'k' => 'c']],
+    ])->getInsertedId();
+
+    $parent = CmpPackageParent::find($id);
+
+    expect($parent->items->pluck('k')->all())->toBe(['a', 'c']);
+});

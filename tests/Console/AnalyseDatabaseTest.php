@@ -55,3 +55,16 @@ test('the fix option dispatches a sync job for the inconsistent source', functio
         && $job->sourceId === (string) $navigation->id
         && in_array((string) $subItem->id, $job->currentTargetIds, true));
 });
+
+test('references written through the sync are found on both sides', function () {
+    $navigation = $this->createNavigation();
+    $subItem = $this->createSubItems(['navigation' => $this->getMiniNavigation($navigation->id)]);
+
+    Artisan::call('mongo-sync:analyse');
+
+    expect($this->rendered->fetch())
+        ->toContain('Analysing Tests\Models\Navigation...')
+        ->toContain('Analysing Tests\Models\SubItem...')
+        ->not->toContain((string) $subItem->id)
+        ->not->toContain((string) $navigation->id);
+});
