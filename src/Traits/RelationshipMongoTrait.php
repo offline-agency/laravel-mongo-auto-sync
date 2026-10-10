@@ -3,6 +3,7 @@
 namespace OfflineAgency\MongoAutoSync\Traits;
 
 use DateTime;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -12,6 +13,7 @@ use MongoDB\Laravel\Connection as MongoConnection;
 use MongoDB\Laravel\Query\Builder as MongoQueryBuilder;
 use OfflineAgency\MongoAutoSync\Context\SyncContext;
 use OfflineAgency\MongoAutoSync\Exceptions\MongoAutoSyncException;
+use OfflineAgency\MongoAutoSync\Exceptions\ReferencedConflictException;
 use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
 use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 use OfflineAgency\MongoAutoSync\Relationships\ReferencedWritePlan;
@@ -338,14 +340,19 @@ trait RelationshipMongoTrait
      */
     public function processReferencedRelationship(ReferencedWritePlan $plan, bool $applyDeletes): void
     {
-        foreach ($applyDeletes ? $plan->deletes : [] as $child) {
-            $child->delete();
-        }
-
         $parentKey = $this->getAttribute($plan->localKey);
-        foreach ($plan->updates as $update) {
-            $update['child']->setAttribute($plan->foreignKey, $parentKey);
-            $update['child']->updateWithSync(new Request($update['attributes']));
+        $owner = $plan->owner;
+        if ($owner !== null) {
+            foreach ($applyDeletes ? $plan->deletes : [] as $child) {
+                // a child that left the parent meanwhile is no longer this parent's to delete
+                self::writeOwnedChild($plan->method, $owner, $child, fn (MDModel $child) => $child->delete(), skipWhenGone: true);
+            }
+            foreach ($plan->updates as $update) {
+                self::writeOwnedChild($plan->method, $owner, $update['child'], function (MDModel $child) use ($plan, $parentKey, $update) {
+                    $child->setAttribute($plan->foreignKey, $parentKey);
+                    $child->updateWithSync(new Request($update['attributes']));
+                }, skipWhenGone: false);
+            }
         }
         foreach ($plan->creates as $attributes) {
             $child = (new ($plan->childClass))->setConnection($plan->childConnection);
@@ -355,36 +362,44 @@ trait RelationshipMongoTrait
     }
 
     /**
-     * @param  string  $method
-     * @param  bool  $is_HO
-     * @return void
+     * Delete the children a referenced relationship holds when the parent is destroyed (onParentDelete = delete):
+     * the children owned at that moment, read again through the declared relation (never a cached relation).
+     *
+     * @param  array<string, mixed>  $relation
+     *
+     * @throws MongoAutoSyncException
      */
-    public function deleteReferencedObj($method, $is_HO)
+    public function deleteReferencedObj(string $method, array $relation): void
     {
-        foreach ($this->referencedModels($method, $is_HO) as $item) {
-            $item->delete();
+        $plan = ReferencedWritePlanner::owned($this, $method, $relation);
+        if ($plan->owner === null) {
+            return;
+        }
+        foreach ($plan->deletes as $child) {
+            self::writeOwnedChild($method, $plan->owner, $child, fn (MDModel $child) => $child->delete(), skipWhenGone: true);
         }
     }
 
     /**
-     * The models currently held by a referenced relationship: the related model (HasOne) or the related
-     * collection (HasMany); anything else holds none.
+     * Run $write on a referenced child only while it still belongs to the relation $owner: checked atomically right
+     * before the write (a child that changed owner is skipped or reported), and enforced again in the filter of the
+     * write itself (withWriteConstraint()), so a change of owner in between makes the write match nothing.
      *
-     * @return list<Model>
+     * @param  EloquentBuilder<MDModel>  $owner
+     * @param  callable(MDModel): mixed  $write
+     *
+     * @throws ReferencedConflictException
      */
-    private function referencedModels(string $method, bool $is_HO): array
+    private static function writeOwnedChild(string $method, EloquentBuilder $owner, MDModel $child, callable $write, bool $skipWhenGone): void
     {
-        $relationData = $this->$method;
-        $items = $is_HO ? [$relationData] : (is_iterable($relationData) ? $relationData : []);
-
-        $models = [];
-        foreach ($items as $item) {
-            if ($item instanceof Model) {
-                $models[] = $item;
+        if (! (clone $owner)->whereKey($child->getKey())->exists()) {
+            if ($skipWhenGone) {
+                return;
             }
+            throw new ReferencedConflictException("A referenced document of relationship '{$method}' changed owner while it was being written.");
         }
 
-        return $models;
+        $child->withWriteConstraint($owner, $write);
     }
 
     /**
