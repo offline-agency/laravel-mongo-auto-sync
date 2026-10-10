@@ -228,11 +228,10 @@ trait ModelAdditionalMethod
                 return new UTCDateTime(new DateTime($value));
             }
 
-            if (is_numeric($value)) {
-                return new UTCDateTime((int) $value);
-            }
-            if ($value !== null && ! $value instanceof Int64) {
-                throw new InvalidRequestException(sprintf("Invalid date for '%s': got %s.", $key, get_debug_type($value)));
+            // a timestamp must be an integer number of milliseconds: numeric strings and floats are rejected, as
+            // the driver did, instead of being read as milliseconds (Unix seconds would become a 1970 date)
+            if ($value !== null && ! is_int($value) && ! $value instanceof Int64) {
+                throw new InvalidRequestException(sprintf("Invalid date for '%s': expected a date string or an integer timestamp in milliseconds, got %s.", $key, is_string($value) ? 'a numeric string' : get_debug_type($value)));
             }
 
             return new UTCDateTime($value);

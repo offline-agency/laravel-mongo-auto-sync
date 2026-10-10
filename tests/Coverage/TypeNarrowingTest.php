@@ -1,11 +1,13 @@
 <?php
 
+use Illuminate\Http\Request;
 use MongoDB\BSON\Int64;
 use MongoDB\BSON\UTCDateTime;
 use OfflineAgency\MongoAutoSync\Exceptions\InvalidConfigurationException;
 use OfflineAgency\MongoAutoSync\Exceptions\InvalidRequestException;
 use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
 use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
+use Tests\Models\Article;
 
 /**
  * A plain model whose stored value of $key is $value (no request: the stored value is the one cast).
@@ -56,21 +58,25 @@ it('returns the configured items and relationships as declared', function () {
         ->and($model->getMongoRelation())->toBe(['category' => ['type' => 'EmbedsOne', 'model' => 'X']]);
 });
 
-it('casts numeric and Int64 carbon dates to UTCDateTime', function (mixed $stored) {
+it('casts integer and Int64 carbon dates to UTCDateTime', function (mixed $stored) {
     $value = narrowingModel('published_at', $stored)->castValueToBeSaved('published_at', ['is-carbon-date' => true], '');
 
     expect($value)->toBeInstanceOf(UTCDateTime::class)
         ->and((string) $value)->toBe('1700000000000');
 })->with([
     'int' => [1700000000000],
-    'numeric string' => ['1700000000000'],
     'Int64' => [new Int64(1700000000000)],
 ]);
 
-it('rejects a carbon date that is neither a date nor a number', function () {
-    expect(fn () => narrowingModel('published_at', ['2024-01-01'])->castValueToBeSaved('published_at', ['is-carbon-date' => true], ''))
-        ->toThrow(InvalidRequestException::class, "Invalid date for 'published_at': got array.");
-});
+it('rejects a carbon date that is not a date string, a date or an integer timestamp', function (mixed $stored, string $got) {
+    expect(fn () => narrowingModel('published_at', $stored)->castValueToBeSaved('published_at', ['is-carbon-date' => true], ''))
+        ->toThrow(InvalidRequestException::class, "Invalid date for 'published_at': expected a date string or an integer timestamp in milliseconds, got {$got}.");
+})->with([
+    'array' => [['2024-01-01'], 'array'],
+    'numeric string (Unix seconds)' => ['1760000000', 'a numeric string'],
+    'float' => [1.7e12, 'float'],
+    'bool' => [true, 'bool'],
+]);
 
 it('rejects an array field that holds a scalar', function () {
     expect(fn () => narrowingModel('tags', 'php')->castValueToBeSaved('tags', ['is-array' => true], ''))
@@ -91,7 +97,34 @@ it('rejects relationship payloads that hold no documents', function (string $pay
 })->with([
     'scalar' => ['5', "Invalid payload for relationship 'category': expected a JSON list or object, got int."],
     'list of scalars' => ['["a"]', "Invalid payload for relationship 'category': expected a JSON object or null for each document, got string."],
+    'zero' => ['0', "Invalid payload for relationship 'category': expected a JSON list or object, got int."],
+    'false' => ['false', "Invalid payload for relationship 'category': expected a JSON list or object, got bool."],
 ]);
+
+/**
+ * A complete Article request with $categories as the categories payload.
+ *
+ * @return array<string, mixed>
+ */
+function narrowingArticleRequest(string $categories): array
+{
+    return ['autoincrement_id' => 1, 'title' => 'narrowing', 'content' => 'c', 'slug' => 's', 'visibility' => 'v', 'status' => 's',
+        'is_deleted' => false, 'is_active' => true, 'primarycategory' => '', 'categories' => $categories];
+}
+
+it('rejects a relationship payload that holds no documents before the source is stored', function (string $payload) {
+    expect(fn () => (new Article)->storeWithSync(new Request(narrowingArticleRequest($payload))))
+        ->toThrow(InvalidRequestException::class, "Invalid payload for relationship 'categories'")
+        ->and(Article::count())->toBe(0);
+})->with(['scalar' => ['5'], 'list of scalars' => ['["a"]']]);
+
+it('rejects a relationship payload that holds no documents before the source is updated', function () {
+    $article = (new Article)->storeWithSync(new Request(narrowingArticleRequest('[]')));
+
+    expect(fn () => $article->updateWithSync(new Request(['title' => 'changed'] + narrowingArticleRequest('false'))))
+        ->toThrow(InvalidRequestException::class, "Invalid payload for relationship 'categories'")
+        ->and(SyncHelper::getTranslatedContent(Article::find($article->id)?->title))->toBe('narrowing');
+});
 
 it('casts like (string) but names the type of arrays and plain objects', function (mixed $value, string $expected) {
     expect(SyncHelper::toString($value))->toBe($expected);
