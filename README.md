@@ -132,6 +132,17 @@ php artisan queue:work --queue=mongo_auto_sync
 
 Nested targets (level > 1) are not synchronised, on either path.
 
+One `storeWithSync()` / `updateWithSync()` dispatches at most one job per relationship, even though it saves the model more than once; an operation that changes nothing dispatches none. Group your own saves the same way with `withCoalescedTargetSync()`:
+
+```php
+$subItem->withCoalescedTargetSync(function (SubItem $subItem) {
+    $subItem->navigation = $first;  $subItem->save();
+    $subItem->navigation = $second; $subItem->save();
+});   // one job: the final navigation, and both previous ones to clean
+```
+
+The grouping is kept in memory for the operation only: if the operation throws, the work already saved is still dispatched before the exception is rethrown, but a crash of the process loses it (durable delivery is a separate design, [docs/architecture/durable-sync-delivery.md](docs/architecture/durable-sync-delivery.md)).
+
 ### Disabling target sync for one operation
 
 Write a source (and its own embedded / referenced relationships) without touching or scheduling the targets of that operation ([#45](https://github.com/offline-agency/laravel-mongo-auto-sync/issues/45), [#47](https://github.com/offline-agency/laravel-mongo-auto-sync/issues/47)):
