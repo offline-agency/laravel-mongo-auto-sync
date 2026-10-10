@@ -133,7 +133,7 @@ The 4.0 pre-releases could store an `EmbedsMany` list as a BSON object after an 
 - `withCount()`, `withSum()` and the other relation aggregates of laravel-mongodb do not support the package's embedded relations (they throw `LogicException`); they work on referenced relations.
 - `increment()` / `decrement()` on an embedded model persist the amount and the extra columns like laravel-mongodb, but fire `saving`/`saved` events as well (laravel-mongodb fires `updating`/`updated` only).
 
-With background sync enabled, deleting a model removes its mini model from both `EmbedsMany` and `EmbedsOne` targets; the synchronous `destroyWithSync()` keeps the 3.x behaviour and only cleans `EmbedsMany` targets. `destroyWithSync(false)` leaves the targets untouched on both paths.
+With background sync enabled, deleting a model removes its mini model from both `EmbedsMany` and `EmbedsOne` targets; the synchronous `destroyWithSync()` keeps the 3.x behaviour and only cleans `EmbedsMany` targets. `destroyWithSync(false)` leaves the targets untouched on both paths; `storeWithSync()` / `updateWithSync()` accept `['sync_targets' => false]` in `$options`, and `$model->withoutTargetSync(fn () => ...)` covers plain saves (see the README, "Disabling target sync for one operation"). The switch is per model instance: it no longer suspends the dispatch of other models saved during the delete.
 
 ## 6. Logging
 

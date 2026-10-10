@@ -34,7 +34,7 @@ class MongoAutoSyncObserver
 
     public function saved(MDModel $model): void
     {
-        if (! $this->isEnabled()) {
+        if (! $this->isEnabled() || ! $model->targetSyncEnabled()) {
             return;
         }
 
@@ -44,10 +44,17 @@ class MongoAutoSyncObserver
             $removed = array_values(array_diff($original, $current));
             $added = array_values(array_diff($current, $original));
 
-            $mustSync = $removed !== [] || $added !== []
-                || ($current !== [] && ($model->wasRecentlyCreated || $model->wasChanged()));
+            $changed = $added !== [] || $model->wasRecentlyCreated || $model->wasChanged();
+            if ($model->isCoalescingTargetSync()) {
+                // one job per relation when the operation ends (MainMongoTrait::withCoalescedTargetSync())
+                if ($removed !== [] || $changed) {
+                    $model->recordTargetSync($method, $relation, $removed, $changed);
+                }
 
-            if ($mustSync) {
+                continue;
+            }
+
+            if ($removed !== [] || ($current !== [] && $changed)) {
                 SyncTargetJob::dispatchFor($model, $method, $relation, $current, $removed);
             }
         }
@@ -55,7 +62,7 @@ class MongoAutoSyncObserver
 
     public function deleted(MDModel $model): void
     {
-        if (! $this->isEnabled()) {
+        if (! $this->isEnabled() || ! $model->targetSyncEnabled()) {
             return;
         }
 

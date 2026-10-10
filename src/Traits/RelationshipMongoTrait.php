@@ -281,7 +281,7 @@ trait RelationshipMongoTrait
      */
     public function deleteTargetObj(string $method, string $modelTarget, string $methodOnTarget, bool $is_EO, bool $is_EO_target, bool $is_EM_target)
     {
-        if (config('laravel-mongo-auto-sync.use_background_sync')) {
+        if (! $this->targetSyncEnabled() || config('laravel-mongo-auto-sync.use_background_sync')) {
             return;
         }
 
@@ -470,7 +470,7 @@ trait RelationshipMongoTrait
      */
     private function processEmbedOnTargetCollection($modelTarget, $obj, $methodOnTarget, $modelOnTarget, $is_EO_target, $is_EM_target, $request = null, $event = null, array $options = [])
     {
-        if (config('laravel-mongo-auto-sync.use_background_sync')) {
+        if (! $this->targetSyncEnabled() || config('laravel-mongo-auto-sync.use_background_sync')) {
             return;
         }
 
