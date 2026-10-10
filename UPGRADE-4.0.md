@@ -114,9 +114,15 @@ Targets are updated with atomic MongoDB operations (`$pull` / `$push` / `$set`) 
 
 Limits: two workers syncing the same source at the same moment can leave the older mini model on a target; with a queue outside the MongoDB transaction (for example Redis), jobs dispatched inside `DB::transaction()` wait for the commit only if the queue connection sets `after_commit => true`, and laravel-mongodb 5.11 keeps the deferred callbacks of a `transaction()` that was rolled back and runs them at the next commit (the job then only finds the stored state); (see `docs/compatibility/roadmap.md`, item B). Sources stored on another connection or in a tenant database are synced in that database on both paths; queued jobs carry a `SyncContext` (payload version 2): drain jobs queued by the pre-releases before deploying, see [docs/tenancy.md](docs/tenancy.md).
 
-### Referenced relationships (`HasOne` / `HasMany`): known issue
+### Referenced relationships (`HasOne` / `HasMany`)
 
-The sync of referenced relationships does not check that a child belongs to the parent being saved: a payload with the id of another parent's child takes that child over and every key of the payload is written on it (issue #46, `docs/compatibility/roadmap.md` item A). Do not expose `storeWithSync()` / `updateWithSync()` on models with referenced relationships to untrusted input until this is fixed.
+Referenced children are identified only among the children the parent holds through its declared relation, and the whole payload is validated before the parent or any child is written ([#46](https://github.com/offline-agency/laravel-mongo-auto-sync/issues/46)). Compared with the 4.0 pre-releases:
+- `foreignKey` is required and must match the relation method (`hasOne` / `hasMany` of the configured `model`); the child model must extend `MDModel`;
+- an `id` of another parent's child, an unknown `id`, or any `id` while the parent is created throws `InvalidRequestException` instead of re-parenting the child or creating a new one;
+- only the child's items and relationships can be written; the foreign key and any other field are rejected;
+- the same child twice, and more than one document in a `HasOne`, are rejected.
+
+`destroyWithSync()` deletes referenced children according to the new `onParentDelete` option (`'delete'` / `'retain'`); without it the pre-release behaviour is kept (deleted only for relationships with a target). See [docs/referenced-relationships.md](docs/referenced-relationships.md).
 
 ### Embedded lists stored as objects
 

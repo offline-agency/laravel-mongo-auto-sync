@@ -12,6 +12,7 @@ use OfflineAgency\MongoAutoSync\Exceptions\MongoAutoSyncException;
 use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
 use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 use OfflineAgency\MongoAutoSync\Observers\MongoAutoSyncObserver;
+use OfflineAgency\MongoAutoSync\Relationships\ReferencedWritePlanner;
 use stdClass;
 
 trait MainMongoTrait
@@ -141,8 +142,11 @@ trait MainMongoTrait
             }
             $value = $request->input($method);
             SyncHelper::assertSafeRefIds($method, $value, SyncHelper::idKeysFor($relation['type'] ?? null));
-            if ($value !== null) {
-                SyncHelper::payloadDocuments($method, $value);
+            $documents = $value === null ? [] : SyncHelper::payloadDocuments($method, $value);
+            $type = SyncHelper::toString($relation['type'] ?? null);
+            if (SyncHelper::is_HM($type) || SyncHelper::is_HO($type)) {
+                // reads only: ownership, writable fields, ids and cardinality are checked before anything is written
+                ReferencedWritePlanner::plan($this, $method, $relation, $documents);
             }
         }
     }
@@ -155,12 +159,22 @@ trait MainMongoTrait
     {
         // Get the relation info
         $relations = $this->getMongoRelation();
+        // validated for every relationship before anything is deleted
+        $deletesChildren = array_map(fn (array $relation) => SyncHelper::deletesReferencedChildren($relation), $relations);
 
         // Process all relationships
         foreach ($relations as $method => $relation) {
             // Get Relation Save Mode
             $type = $relation['type'];
             $hasTarget = SyncHelper::hasTarget($relation);
+            if (SyncHelper::is_HM($type) || SyncHelper::is_HO($type)) {
+                // referenced children follow their onParentDelete policy; destroyWithSync(false) never deletes them
+                if ($syncTargets && $deletesChildren[$method]) {
+                    $this->deleteReferencedObj($method, SyncHelper::is_HO($type));
+                }
+
+                continue;
+            }
             if ($hasTarget && $syncTargets) {
                 $modelTarget = SyncHelper::toString($relation['modelTarget']);
                 $methodOnTarget = SyncHelper::toString($relation['methodOnTarget']);
@@ -169,8 +183,6 @@ trait MainMongoTrait
 
                 $is_EO = SyncHelper::is_EO($type);
                 $is_EM = SyncHelper::is_EM($type);
-                $is_HO = SyncHelper::is_HO($type);
-                $is_HM = SyncHelper::is_HM($type);
 
                 $is_EO_target = SyncHelper::is_EO($typeOnTarget);
                 $is_EM_target = SyncHelper::is_EM($typeOnTarget);
@@ -178,8 +190,6 @@ trait MainMongoTrait
                 if ($is_EO || $is_EM) {// EmbedsOne Create - EmbedsMany Create
                     // Delete EmbedsMany or EmbedsOne on Target
                     $this->deleteTargetObj($method, $modelTarget, $methodOnTarget, $is_EO, $is_EO_target, $is_EM_target);
-                } elseif ($is_HM || $is_HO) {
-                    $this->deleteReferencedObj($method, $is_HO);
                 }
             }
         }

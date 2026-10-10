@@ -17,7 +17,7 @@ See [UPGRADE-4.0.md](UPGRADE-4.0.md) for the migration guide.
 - `removeRelationWithSync()` on synced models (target-side removal of a mini model).
 - Console commands `mongo-sync:check-config`, `mongo-sync:analyse [--fix]`, `mongo-sync:sync-collection {model}` and `mongo-sync:benchmark {model} {count=100}`.
 - Dedicated exceptions extending `MongoAutoSyncException`: `InvalidConfigurationException`, `InvalidRelationshipException`, `InvalidRequestException`, `ModelNotFoundException`.
-- Sync of `HasOne` / `HasMany` referenced relationships (not covered by tests yet).
+- Sync of `HasOne` / `HasMany` referenced relationships through `storeWithSync()` / `updateWithSync()`, with ownership-scoped child lookups, writable-field and id validation before anything is written, and an `onParentDelete` lifecycle option (`delete` / `retain`) for `destroyWithSync()` ([#46](https://github.com/offline-agency/laravel-mongo-auto-sync/issues/46), [docs/referenced-relationships.md](docs/referenced-relationships.md)).
 - The configuration can be published with `vendor:publish --tag=config`.
 - GitHub Actions matrix (PHP 8.4/8.5 x Laravel 12/13 x MongoDB 7.0/8.0), Pint, PHPStan at the maximum level (no baseline), Codecov, and an automatic release workflow based on conventional commits.
 
@@ -86,7 +86,6 @@ See [UPGRADE-4.0.md](UPGRADE-4.0.md) for the migration guide.
 - `getRandomRow()` returned models without id or attributes.
 
 ### Known issues
-- Referenced relationships (`HasOne` / `HasMany`) do not check that a child belongs to the parent being saved (#46): see UPGRADE-4.0.md.
 - laravel-mongodb 5.11 runs the deferred callbacks of a rolled-back `transaction()` at the next commit.
 
 ## [3.1.1] and earlier

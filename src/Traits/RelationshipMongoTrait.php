@@ -11,10 +11,11 @@ use MongoDB\BSON\UTCDateTime;
 use MongoDB\Laravel\Connection as MongoConnection;
 use MongoDB\Laravel\Query\Builder as MongoQueryBuilder;
 use OfflineAgency\MongoAutoSync\Context\SyncContext;
-use OfflineAgency\MongoAutoSync\Exceptions\InvalidConfigurationException;
 use OfflineAgency\MongoAutoSync\Exceptions\MongoAutoSyncException;
 use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
 use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
+use OfflineAgency\MongoAutoSync\Relationships\ReferencedWritePlan;
+use OfflineAgency\MongoAutoSync\Relationships\ReferencedWritePlanner;
 use stdClass;
 
 trait RelationshipMongoTrait
@@ -128,13 +129,8 @@ trait RelationshipMongoTrait
                 }
                 $this->save();
             } elseif ($is_HM || $is_HO) {
-                if ($event == 'update' && $is_embeds_has_to_be_updated) {
-                    $this->syncReferencedDelete($objs, $method, $relation, $is_HO);
-                }
-
-                if (! empty($objs)) {
-                    $this->processReferencedRelationship($request, $objs, $method, $relation, $event, $options);
-                }
+                // children left out are deleted only when the request carries the relationship
+                $this->processReferencedRelationship(ReferencedWritePlanner::plan($this, $method, $relation, $objs), $is_embeds_has_to_be_updated);
             }
         }
     }
@@ -334,88 +330,27 @@ trait RelationshipMongoTrait
     }
 
     /**
-     * @param  array<int, object|null>  $objs
-     * @param  string  $method
-     * @param  array<string, mixed>  $relation
-     * @param  bool  $is_HO
-     * @return void
+     * Apply a validated referenced write plan: delete the children left out (when $applyDeletes), then update the
+     * kept children and create the new ones through their own storeWithSync / updateWithSync, with the foreign key
+     * taken from the relationship configuration.
+     *
+     * @throws MongoAutoSyncException
      */
-    public function syncReferencedDelete($objs, $method, $relation, $is_HO)
+    public function processReferencedRelationship(ReferencedWritePlan $plan, bool $applyDeletes): void
     {
-        $currentIds = [];
-        foreach ($this->referencedModels($method, $is_HO) as $item) {
-            $currentIds[] = SyncHelper::toString($item->getAttribute('id'));
+        foreach ($applyDeletes ? $plan->deletes : [] as $child) {
+            $child->delete();
         }
 
-        $incomingIds = [];
-        foreach ($objs as $obj) {
-            if (isset($obj->id)) {
-                $incomingIds[] = SyncHelper::toString($obj->id);
-            } elseif (isset($obj->_id)) {
-                $incomingIds[] = SyncHelper::toString($obj->_id);
-            }
+        $parentKey = $this->getAttribute($plan->localKey);
+        foreach ($plan->updates as $update) {
+            $update['child']->setAttribute($plan->foreignKey, $parentKey);
+            $update['child']->updateWithSync(new Request($update['attributes']));
         }
-
-        $toDelete = array_diff($currentIds, $incomingIds);
-        $modelClass = $relation['model'];
-        throw_unless(is_string($modelClass) && is_subclass_of($modelClass, Model::class), new InvalidConfigurationException("The model of relationship '{$method}' must be an Eloquent model class."));
-
-        if (! empty($toDelete)) {
-            // For Mongo, we might need to check how destroy works
-            // It usually takes IDs.
-            $modelClass::destroy($toDelete);
-        }
-    }
-
-    /**
-     * @param  array<int, object|null>  $objs
-     * @param  string  $method
-     * @param  array<string, mixed>  $relation
-     * @param  string  $event
-     * @param  array<string, mixed>  $options
-     * @return void
-     */
-    public function processReferencedRelationship(Request $request, $objs, $method, $relation, $event, array $options)
-    {
-        $modelClass = $relation['model'];
-        $foreignKey = $relation['foreignKey'] ?? null;
-        $localKey = $relation['localKey'] ?? 'id';
-
-        foreach ($objs as $obj) {
-            $attributes = (array) $obj;
-            $id = $attributes['id'] ?? ($attributes['_id'] ?? null);
-
-            /** @var MDModel $child */
-            $child = new $modelClass;
-            if ($id) {
-                $found = $child->find($id);
-                if ($found !== null) {
-                    /** @var MDModel $child */
-                    $child = $found;
-                }
-            }
-
-            if ($child instanceof MDModel) {
-                foreach ($attributes as $k => $v) {
-                    if ($k !== 'id' && $k !== '_id') {
-                        $child->$k = $v;
-                    }
-                }
-
-                if ($foreignKey) {
-                    // Assuming HasMany/HasOne where FK is on child
-                    $child->$foreignKey = $this->$localKey;
-                }
-
-                $childRequest = new Request;
-                $childRequest->merge($attributes);
-
-                if ($id) {
-                    $child->updateWithSync($childRequest);
-                } else {
-                    $child->storeWithSync($childRequest);
-                }
-            }
+        foreach ($plan->creates as $attributes) {
+            $child = new ($plan->childClass);
+            $child->setAttribute($plan->foreignKey, $parentKey);
+            $child->storeWithSync(new Request($attributes));
         }
     }
 

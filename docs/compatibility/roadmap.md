@@ -7,7 +7,7 @@ Evidence: **REPRODUCED** (observed with a test or probe; probes kept outside the
 | --- | --- | --- | --- | --- |
 | B | P1 | Concurrent workers can write old values | REPRODUCED | `fix/sync-concurrency` |
 | C | P0 (F02) | Jobs ignore the data connection (tenants) | FIXED on `feat/f02-sync-context`, pending integration | `feat/f02-sync-context` |
-| A | **P0 – blocker for releasing 4.0** | Referenced relationships ownership (#46) | REPRODUCED (also by the security review) | `fix/46-referenced-ownership` |
+| A | **P0 – blocker for releasing 4.0** | Referenced relationships ownership (#46) | FIXED and included in develop (#93) | `feat/46-safe-referenced-writes` |
 | D-adapter | P2 | Package embedded relations vs laravel-mongodb relations | REPRODUCED | `refactor/embedded-relations-upstream` |
 | G | P2 | Growth limits (payload, fan-out, document size) | STATIC | `feat/sync-limits` |
 | R3 | P2 | Embedded increment events | REPRODUCED | part of D-adapter |
@@ -34,6 +34,8 @@ Evidence: **REPRODUCED** (observed with a test or probe; probes kept outside the
 - Compatibility: new optional constructor argument (pending jobs keep working with the default connection).
 
 ## A. Referenced relationships ownership (#46, P0 – blocker for releasing 4.0)
+
+- **Status:** implemented on `feat/46-safe-referenced-writes` (`ReferencedWritePlanner`, `tests/Referenced/*`, `docs/referenced-relationships.md`); the release blocker stays until it is included in the PR #40 head. The text below is the original analysis.
 
 - The security review reproduced the take-over end to end: `storeWithSync()` of an attacker's author with `books=[{"id": "<victim book id>", "title": "stolen", "is_admin": true}]` renamed the victim's book, set `is_admin` and moved it to the attacker. This is 4.0 code (not in 3.x); it must be fixed, or referenced relationship sync disabled, before 4.0 is released.
 
