@@ -216,3 +216,81 @@ test('a model directory that cannot be read is an error', function () {
     expect($code)->toBe(1);
     expect($output)->toContain('Invalid configuration: model_path "'.UnreadableDirectoryStream::PROTOCOL.'://models" cannot be read.');
 });
+
+test('the same class written with a leading backslash or another case is analysed once', function (string $namespace) {
+    config()->set('laravel-mongo-auto-sync.other_models', ['navigation' => ['model_namespace' => $namespace]]);
+    $subItem = $this->createSubItems();
+    navigationWithoutBackReferences($subItem);
+    Queue::fake();
+
+    [$code, $output] = analyse(['--fix' => true]);
+
+    expect($code)->toBe(1);
+    expect(substr_count(strtolower($output), strtolower('Analysing Tests\AnalyseFixtures\Healthy\Navigation...')))->toBe(1);
+    Queue::assertPushed(SyncTargetJob::class, 1);
+})->with(['leading backslash' => ['\Tests\AnalyseFixtures\Healthy'], 'lower case' => ['tests\analysefixtures\healthy']]);
+
+test('a model that cannot be loaded is reported as an error', function () {
+    useFixtures('BadAutoload');
+
+    [$code, $output] = analyse();
+
+    expect($code)->toBe(1);
+    expect($output)->toContain('Invalid configuration: Tests\AnalyseFixtures\BadAutoload\Broken cannot be loaded:')
+        ->toContain('Analysis finished');
+});
+
+test('a model namespace that matches no class in model_path is an error', function () {
+    config()->set('laravel-mongo-auto-sync.model_namespace', 'App\Models');
+
+    [$code, $output] = analyse();
+
+    expect($code)->toBe(1);
+    expect($output)->toContain('Invalid configuration: no class of namespace App\Models was found in model_path');
+});
+
+test('other_models that is not an array is an error', function () {
+    config()->set('laravel-mongo-auto-sync.other_models', 'not-an-array');
+
+    [$code, $output] = analyse();
+
+    expect($code)->toBe(1);
+    expect($output)->toContain('Invalid configuration: other_models must be an array.');
+});
+
+test('a target whose EmbedsOne inverse points to another source is a conflict that --fix does not repair', function () {
+    $owner = $this->createNavigation();
+    $subItem = $this->createSubItems(['navigation' => $this->getMiniNavigation($owner->id)]);
+    $other = navigationWithoutBackReferences($subItem);
+    Queue::fake();
+
+    [$code, $output] = analyse(['--fix' => true]);
+
+    expect($code)->toBe(1);
+    expect($output)->toContain("Conflict: Tests\\AnalyseFixtures\\Healthy\\Navigation {$other->id} links to Tests\\Models\\SubItem {$subItem->id}, which embeds Tests\\AnalyseFixtures\\Healthy\\Navigation {$owner->id} instead; not repaired.");
+    Queue::assertNothingPushed();
+});
+
+test('--fix with the sync queue driver repairs immediately but still fails, and a new scan is clean', function () {
+    config()->set('queue.default', 'sync');
+    $subItem = $this->createSubItems();
+    navigationWithoutBackReferences($subItem);
+
+    expect(analyse(['--fix' => true])[0])->toBe(1);
+    expect(analyse()[0])->toBe(0);
+});
+
+test('targets stored with a hexadecimal string _id are found', function () {
+    $id = (string) new ObjectId;
+    DB::connection('mongodb')->getCollection('sub_items')->insertOne(['_id' => $id, 'code' => 'c']);
+    $navigation = new Navigation;
+    $navigation->text = 'string target';
+    $navigation->sub_items = [['ref_id' => $id, 'code' => 'c']];
+    $navigation->save();
+    DB::connection('mongodb')->getCollection('sub_items')->updateOne(['_id' => $id], ['$set' => ['navigation' => ['ref_id' => (string) $navigation->id]]]);
+
+    [$code, $output] = analyse();
+
+    expect($output)->not->toContain('Target not found');
+    expect($code)->toBe(0);
+});

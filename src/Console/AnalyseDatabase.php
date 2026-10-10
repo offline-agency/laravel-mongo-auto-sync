@@ -67,18 +67,26 @@ class AnalyseDatabase extends Command
         if (! is_string($path) || ! is_string($namespace) || ! is_dir($path)) {
             $this->reportError(sprintf('Invalid configuration: model_path "%s" is not a readable directory.', is_string($path) ? $path : get_debug_type($path)));
         } else {
-            $candidates = $this->classesInDirectory($path, rtrim($namespace, '\\'));
+            $phpFiles = 0;
+            $candidates = $this->classesInDirectory($path, rtrim($namespace, '\\'), $phpFiles);
+            if ($phpFiles > 0 && $candidates === []) {
+                $this->reportError(sprintf('Invalid configuration: no class of namespace %s was found in model_path "%s".', $namespace, $path));
+            }
         }
 
         $otherModels = config('laravel-mongo-auto-sync.other_models', []);
-        foreach (is_array($otherModels) ? $otherModels : [] as $key => $values) {
+        if (! is_array($otherModels)) {
+            $this->reportError('Invalid configuration: other_models must be an array.');
+            $otherModels = [];
+        }
+        foreach ($otherModels as $key => $values) {
             if (! is_array($values) || ! isset($values['model_namespace']) || ! is_string($values['model_namespace'])) {
                 $this->reportError(sprintf('Invalid configuration: other_models.%s must be an array with a model_namespace.', $key));
 
                 continue;
             }
             $class = rtrim($values['model_namespace'], '\\').'\\'.Str::ucfirst((string) $key);
-            if (! class_exists($class)) {
+            if (! $this->classExists($class)) {
                 $this->line(sprintf('Skipped other_models.%s: class %s does not exist.', $key, $class));
 
                 continue;
@@ -87,20 +95,22 @@ class AnalyseDatabase extends Command
         }
 
         $models = [];
-        foreach (array_unique($candidates) as $class) {
+        foreach ($candidates as $class) {
             // only concrete MDModel classes: abstract classes and foreign classes are skipped
-            if (is_subclass_of($class, MDModel::class) && (new ReflectionClass($class))->isInstantiable()) {
-                $models[] = $class;
+            if (! is_subclass_of($class, MDModel::class) || ! ($reflection = new ReflectionClass($class))->isInstantiable()) {
+                continue;
             }
+            // the declared name (case and leading backslash normalised) identifies a class once
+            $models[$reflection->getName()] ??= $class;
         }
 
-        return $models;
+        return array_values($models);
     }
 
     /**
      * @return list<string>
      */
-    private function classesInDirectory(string $path, string $namespace): array
+    private function classesInDirectory(string $path, string $namespace, int &$phpFiles): array
     {
         $entries = @scandir($path);
         if ($entries === false) {
@@ -116,13 +126,30 @@ class AnalyseDatabase extends Command
             }
             $file = $path.DIRECTORY_SEPARATOR.$entry;
             if (is_dir($file)) {
-                $classes = [...$classes, ...$this->classesInDirectory($file, $namespace.'\\'.$entry)];
-            } elseif (str_ends_with($entry, '.php') && class_exists($class = $namespace.'\\'.substr($entry, 0, -4))) {
-                $classes[] = $class;
+                $classes = [...$classes, ...$this->classesInDirectory($file, $namespace.'\\'.$entry, $phpFiles)];
+            } elseif (str_ends_with($entry, '.php')) {
+                $phpFiles++;
+                if ($this->classExists($class = $namespace.'\\'.substr($entry, 0, -4))) {
+                    $classes[] = $class;
+                }
             }
         }
 
         return $classes;
+    }
+
+    /**
+     * class_exists() that reports a class whose file cannot be loaded (for example a missing parent class).
+     */
+    private function classExists(string $class): bool
+    {
+        try {
+            return class_exists($class);
+        } catch (Throwable $e) {
+            $this->reportError(sprintf('Invalid configuration: %s cannot be loaded: %s', ltrim($class, '\\'), $e->getMessage()));
+
+            return false;
+        }
     }
 
     /**
@@ -179,41 +206,48 @@ class AnalyseDatabase extends Command
      */
     private function analyseRelation(string $modelClass, string $method, array $relation, string $modelTarget, string $methodOnTarget): void
     {
+        $typeOnTarget = Arr::get($relation, 'typeOnTarget', 'EmbedsMany');
         foreach ($modelClass::query()->cursor() as $source) {
             $sourceId = (string) $source->getKey();
-            $existingTargets = [];
-            $needsRepair = false;
+            $repairTargets = [];
 
             foreach (SyncHelper::refIds(Arr::get($source->getAttributes(), $method)) as $refId) {
-                $target = $modelTarget::query()->whereIn('_id', SyncHelper::idVariants($refId))->first();
+                // @phpstan-ignore argument.type (laravel-mongodb's whereRaw() accepts a filter array; the phpdoc is inherited from Illuminate)
+                $target = $modelTarget::query()->whereRaw(['_id' => ['$in' => SyncHelper::idVariants($refId)]])->first();
                 if (! $target instanceof MDModel) {
                     $this->reportAnomaly("Target not found: {$modelTarget} ID {$refId} referenced by {$modelClass} ID {$sourceId}");
 
                     continue;
                 }
-                $existingTargets[] = $refId;
 
                 $backReferences = SyncHelper::refIds(Arr::get($target->getAttributes(), $methodOnTarget));
-                if (! in_array($sourceId, $backReferences, true)) {
-                    $this->reportAnomaly("Inconsistency: {$modelClass} {$sourceId} links to {$modelTarget} {$refId}, but target missing back reference.");
-                    $needsRepair = true;
+                if (in_array($sourceId, $backReferences, true)) {
+                    continue;
                 }
+                // an EmbedsOne inverse that holds another source: --fix would only move the conflict elsewhere
+                if (SyncHelper::is_EO($typeOnTarget) && $backReferences !== []) {
+                    $this->reportAnomaly("Conflict: {$modelClass} {$sourceId} links to {$modelTarget} {$refId}, which embeds {$modelClass} {$backReferences[0]} instead; not repaired.");
+
+                    continue;
+                }
+                $this->reportAnomaly("Inconsistency: {$modelClass} {$sourceId} links to {$modelTarget} {$refId}, but target missing back reference.");
+                $repairTargets[] = $refId;
             }
 
-            if ($needsRepair && $this->option('fix')) {
-                $this->dispatchRepair($source, $method, $relation, $existingTargets);
+            if ($repairTargets !== [] && $this->option('fix')) {
+                $this->dispatchRepair($source, $method, $relation, $repairTargets);
             }
         }
     }
 
     /**
      * @param  array<string, mixed>  $relation
-     * @param  list<string>  $existingTargets  only targets that still exist: deleted targets are never recreated
+     * @param  list<string>  $repairTargets  existing targets missing the back reference: deleted targets are never recreated
      */
-    private function dispatchRepair(MDModel $source, string $method, array $relation, array $existingTargets): void
+    private function dispatchRepair(MDModel $source, string $method, array $relation, array $repairTargets): void
     {
         try {
-            SyncTargetJob::dispatchFor($source, $method, $relation, $existingTargets, []);
+            SyncTargetJob::dispatchFor($source, $method, $relation, $repairTargets, []);
             $this->dispatched++;
             $this->line(sprintf('Repair job dispatched for %s %s (%s).', $source::class, $source->getKey(), $method));
         } catch (Throwable $e) {
