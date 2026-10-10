@@ -17,7 +17,7 @@ class Builder extends MongoDbEloquentBuilder
      *
      * @param  string|Expression  $column
      * @param  float|int  $amount
-     * @param  array<mixed>  $extra
+     * @param  array<string, mixed>  $extra
      * @return int
      */
     public function increment($column, $amount = 1, array $extra = [])
@@ -56,7 +56,7 @@ class Builder extends MongoDbEloquentBuilder
      *
      * @param  string|Expression  $column
      * @param  float|int  $amount
-     * @param  array<mixed>  $extra
+     * @param  array<string, mixed>  $extra
      * @return int
      */
     public function decrement($column, $amount = 1, array $extra = [])

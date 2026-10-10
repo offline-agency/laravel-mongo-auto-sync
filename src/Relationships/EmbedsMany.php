@@ -345,18 +345,13 @@ class EmbedsMany extends EmbedsOneOrMany
      * Get embedded models as indexed array for EmbedsMany.
      * This is a helper method that returns the indexed array format.
      *
-     * @return array<int, array<string, mixed>>
+     * @return list<array<mixed>>
      */
     protected function getEmbeddedAsIndexed()
     {
         $embedded = $this->getEmbedded();
         if ($embedded === null) {
             return [];
-        }
-        // Convert associative array to indexed array if needed
-        if (array_is_list($embedded)) {
-            /** @var array<int, array<string, mixed>> $embedded */
-            return $embedded;
         }
         // Convert to indexed array
         $result = [];

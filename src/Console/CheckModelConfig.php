@@ -82,16 +82,16 @@ class CheckModelConfig extends Command
         }
 
         $type = $relation['type'];
-        if (! in_array($type, ['EmbedsOne', 'EmbedsMany', 'HasOne', 'HasMany'])) {
-            throw new InvalidConfigurationException("Relation $method in $modelClass has invalid type '$type'");
+        if (! is_string($type) || ! in_array($type, ['EmbedsOne', 'EmbedsMany', 'HasOne', 'HasMany'], true)) {
+            throw new InvalidConfigurationException(sprintf("Relation %s in %s has invalid type '%s'", $method, $modelClass, is_string($type) ? $type : get_debug_type($type)));
         }
 
         if (! isset($relation['model'])) {
             throw new InvalidConfigurationException("Relation $method in $modelClass missing 'model'");
         }
 
-        if (! class_exists($relation['model'])) {
-            throw new InvalidConfigurationException("Relation $method in $modelClass refers to non-existent model '{$relation['model']}'");
+        if (! is_string($relation['model']) || ! class_exists($relation['model'])) {
+            throw new InvalidConfigurationException(sprintf("Relation %s in %s refers to non-existent model '%s'", $method, $modelClass, is_string($relation['model']) ? $relation['model'] : get_debug_type($relation['model'])));
         }
 
         if (SyncHelper::hasTarget($relation)) {
@@ -102,8 +102,8 @@ class CheckModelConfig extends Command
                 }
             }
 
-            if (! class_exists($relation['modelTarget'])) {
-                throw new InvalidConfigurationException("Relation $method in $modelClass refers to non-existent target model '{$relation['modelTarget']}'");
+            if (! is_string($relation['modelTarget']) || ! class_exists($relation['modelTarget'])) {
+                throw new InvalidConfigurationException(sprintf("Relation %s in %s refers to non-existent target model '%s'", $method, $modelClass, is_string($relation['modelTarget']) ? $relation['modelTarget'] : get_debug_type($relation['modelTarget'])));
             }
 
             // Check if methodOnTarget exists as a property or method?
@@ -154,7 +154,7 @@ class CheckModelConfig extends Command
         $otherModels = config('laravel-mongo-auto-sync.other_models', []);
         if (is_array($otherModels)) {
             foreach ($otherModels as $key => $values) {
-                if (is_array($values) && isset($values['model_namespace'])) {
+                if (is_array($values) && isset($values['model_namespace']) && is_string($values['model_namespace'])) {
                     $className = $values['model_namespace'].'\\'.Str::ucfirst((string) $key);
                     if (class_exists($className)) {
                         $out[] = $className;

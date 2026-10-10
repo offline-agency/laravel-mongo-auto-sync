@@ -7,6 +7,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 use OfflineAgency\MongoAutoSync\Exceptions\InvalidConfigurationException;
 use OfflineAgency\MongoAutoSync\Exceptions\ModelNotFoundException;
+use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
 use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 
 class DropCollection extends Command
@@ -57,7 +58,7 @@ class DropCollection extends Command
             foreach ($model->cursor() as $item) {
                 $bar->advance();
                 $item->destroyWithSync();
-                $this->line(($i + 1).') Destroy item document with id #'.$item->getId());
+                $this->line(($i + 1).') Destroy item document with id #'.SyncHelper::toString($item->getId()));
                 $i++;
             }
         } else {
@@ -97,9 +98,10 @@ class DropCollection extends Command
             return $found;
         }
 
-        foreach (config('laravel-mongo-auto-sync.other_models') as $key => $values) {
-            if (strtolower($collection_name) == $key) {
-                return $values['model_namespace'].'\\'.Str::ucfirst($key);
+        $otherModels = config('laravel-mongo-auto-sync.other_models', []);
+        foreach (is_array($otherModels) ? $otherModels : [] as $key => $values) {
+            if (strtolower($collection_name) == $key && is_array($values) && is_string($values['model_namespace'] ?? null)) {
+                return $values['model_namespace'].'\\'.Str::ucfirst((string) $key);
             }
         }
 
@@ -115,7 +117,7 @@ class DropCollection extends Command
     {
         $results = @scandir($path);
         if ($results === false) {
-            throw new InvalidConfigurationException('Error directory '.config('laravel-mongo-auto-sync.model_path').' not found');
+            throw new InvalidConfigurationException('Error directory '.$path.' not found');
         }
 
         foreach ($results as $result) {

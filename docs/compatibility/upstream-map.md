@@ -220,7 +220,7 @@ Tests: tests/Console/*, Coverage/Console*, DropCollectionTest, GenerateModelDocu
 | .github/workflows/build-ci.yml `2b8b73a671c3` | job/step names only (grep) | tests matrix (8.4/8.5 x L12/13 x Mongo 7/8), `reference` (exact laravel-mongodb 5.11.0 + mongodb 2.5.0), `lowest` (ext 2.4.0, --prefer-lowest), `replica-set` (rs0 on 27018). Step bodies only partly read | partially NON_VERIFICATO |
 | .github/workflows/release.yml `e63ce6f12da7` | full | conventional-commit auto release | NON_APPLICABILE |
 | README.md `a47b56b72a96`, CHANGELOG.md `30270b6d9c8e`, UPGRADE-4.0.md `bee7d9dc8859` | grep only | **Doc drift**: CHANGELOG:23 and UPGRADE:9 say `laravel-mongodb ^5.2`, UPGRADE:8 says Laravel `^12.8 \| ^13.0`, but composer requires ^5.11 / ^12.69\|^13.30. UPGRADE:17 links the `/current/` upstream guide (not pinned to 5.11). No mention of after_commit, aggregates on embedded relations, or the increment event difference | DIVERGENZA_STATICA (docs); remainder NON_VERIFICATO |
-| phpunit.xml.dist, phpstan.neon (level 8, src/ only), tests/TestCase.php, tests/Pest.php, tests/config/database.php | full | Tests default to MONGO_HOST=localhost / DB unittest | NON_APPLICABILE |
+| phpunit.xml.dist, phpstan.neon (level max, src/ only), tests/TestCase.php, tests/Pest.php, tests/config/database.php | full | Tests default to MONGO_HOST=localhost / DB unittest | NON_APPLICABILE |
 | src/Exceptions/*, docs/plans, docs/pr, docs/upgrade/extracted_methods.php, BENCHMARK.md, CONTRIBUTING.md, composer.lock (except installed.json), most tests/*.php bodies | **not read** | | NON_VERIFICATO |
 | docs/compatibility/ | does not exist yet, although TransactionTest's skip message refers to `docs/compatibility/test-matrix.md` | | NON_VERIFICATO |
 

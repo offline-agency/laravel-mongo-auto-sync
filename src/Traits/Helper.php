@@ -4,11 +4,12 @@ namespace OfflineAgency\MongoAutoSync\Traits;
 
 use Illuminate\Support\Arr;
 use OfflineAgency\MongoAutoSync\Exceptions\InvalidConfigurationException;
+use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
 
 trait Helper
 {
     /**
-     * @param  array<string, mixed>  $options
+     * @param  mixed  $options
      * @return bool|mixed
      *
      * @throws InvalidConfigurationException
@@ -21,7 +22,7 @@ trait Helper
     }
 
     /**
-     * @param  array<string, mixed>  $options
+     * @param  mixed  $options
      * @return bool|mixed
      *
      * @throws InvalidConfigurationException
@@ -37,12 +38,14 @@ trait Helper
      * @param  mixed  $options
      * @return void
      *
+     * @phpstan-assert array<mixed> $options
+     *
      * @throws InvalidConfigurationException
      */
     private function validateOptions($options)
     {
         if (gettype($options) !== 'array') {
-            throw new InvalidConfigurationException($options.' is not a valid array!');
+            throw new InvalidConfigurationException(SyncHelper::toString($options).' is not a valid array!');
         }
     }
 
@@ -55,12 +58,12 @@ trait Helper
     private function validateOptionValue($value, string $expected)
     {
         if (gettype($value) !== $expected) {
-            throw new InvalidConfigurationException($value.' is not a valid '.$expected.' found '.gettype($value).'! Check on your model configurations.');
+            throw new InvalidConfigurationException(SyncHelper::toString($value).' is not a valid '.$expected.' found '.gettype($value).'! Check on your model configurations.');
         }
     }
 
     /**
-     * @param  array<string, mixed>  $options
+     * @param  array<mixed>  $options
      * @return bool|mixed
      *
      * @throws InvalidConfigurationException

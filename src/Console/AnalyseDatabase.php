@@ -51,15 +51,15 @@ class AnalyseDatabase extends Command
     /**
      * @param  object  $modelInstance
      * @param  string  $method
-     * @param  array<mixed>  $relation
+     * @param  array<string, mixed>  $relation
      * @param  string  $modelClass
      * @return void
      */
     private function analyseRelation($modelInstance, $method, $relation, $modelClass)
     {
         $type = $relation['type'];
-        $modelTarget = $relation['modelTarget'];
-        $methodOnTarget = $relation['methodOnTarget'];
+        $modelTarget = SyncHelper::toString($relation['modelTarget']);
+        $methodOnTarget = SyncHelper::toString($relation['methodOnTarget']);
 
         $is_EO = SyncHelper::is_EO($type);
 
@@ -80,8 +80,9 @@ class AnalyseDatabase extends Command
                     $targets = [$targets];
                 }
 
+                $sourceId = SyncHelper::toString($item->id);
                 foreach ($targets as $targetData) {
-                    $ref_id = is_array($targetData) ? ($targetData['ref_id'] ?? null) : ($targetData->ref_id ?? null);
+                    $ref_id = SyncHelper::refIds($targetData)[0] ?? null;
 
                     if ($ref_id) {
                         /** @var \OfflineAgency\MongoAutoSync\Eloquent\Model $targetModel */
@@ -89,7 +90,7 @@ class AnalyseDatabase extends Command
                         $target = $targetModel->find($ref_id);
 
                         if (! $target) {
-                            render("<div class='text-red-500'>Target not found: {$modelTarget} ID {$ref_id} referenced by {$modelClass} ID {$item->id}</div>");
+                            render("<div class='text-red-500'>Target not found: {$modelTarget} ID {$ref_id} referenced by {$modelClass} ID {$sourceId}</div>");
 
                             continue;
                         }
@@ -98,23 +99,15 @@ class AnalyseDatabase extends Command
                         $found = false;
                         $targetRelations = $target->$methodOnTarget;
 
-                        if (is_iterable($targetRelations)) {
-                            foreach ($targetRelations as $tr) {
-                                $trId = $tr->ref_id ?? ($tr['ref_id'] ?? null);
-                                if ($trId == $item->id) {
-                                    $found = true;
-                                    break;
-                                }
-                            }
-                        } else {
-                            $trId = $targetRelations->ref_id ?? ($targetRelations['ref_id'] ?? null);
-                            if ($trId == $item->id) {
+                        foreach (SyncHelper::refIds($targetRelations) as $trId) {
+                            if ($trId == $sourceId) {
                                 $found = true;
+                                break;
                             }
                         }
 
                         if (! $found) {
-                            render("<div class='text-yellow-500'>Inconsistency: {$modelClass} {$item->id} links to {$modelTarget} {$ref_id}, but target missing back reference.</div>");
+                            render("<div class='text-yellow-500'>Inconsistency: {$modelClass} {$sourceId} links to {$modelTarget} {$ref_id}, but target missing back reference.</div>");
 
                             if ($this->option('fix') && $item instanceof MDModel) {
                                 SyncTargetJob::dispatchFor($item, $method, $relation, SyncHelper::refIds(Arr::get($item->getAttributes(), $method)), []);
@@ -138,19 +131,13 @@ class AnalyseDatabase extends Command
         $path = config('laravel-mongo-auto-sync.model_path');
         $namespace = config('laravel-mongo-auto-sync.model_namespace');
         $models = [];
-        $files = File::allFiles($path);
+        $files = File::allFiles(SyncHelper::toString($path));
 
         foreach ($files as $file) {
-            $class = $namespace.'\\'.$file->getFilenameWithoutExtension();
+            $class = SyncHelper::toString($namespace).'\\'.$file->getFilenameWithoutExtension();
             if (class_exists($class)) {
                 $models[] = $class;
             }
-        }
-
-        // Also other_models from config
-        $otherModels = config('laravel-mongo-auto-sync.other_models', []);
-        foreach ($otherModels as $om) {
-            // Logic to construct class name
         }
 
         return $models;

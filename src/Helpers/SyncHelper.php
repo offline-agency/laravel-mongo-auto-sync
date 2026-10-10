@@ -19,13 +19,11 @@ class SyncHelper
      */
     public static function getTranslatedContent($mlCollection)
     {
-        $cl = Config::get('app.locale');
-
         if (! is_array($mlCollection)) {
             return '';
         }
 
-        $value = $mlCollection[$cl] ?? '';
+        $value = $mlCollection[self::cl()] ?? '';
 
         return is_string($value) ? $value : '';
     }
@@ -35,12 +33,14 @@ class SyncHelper
      */
     public static function cl()
     {
-        return (string) Config::get('app.locale');
+        $locale = Config::get('app.locale');
+
+        return is_string($locale) ? $locale : '';
     }
 
     /**
      * @param  array<mixed>|null  $destination
-     * @param  string  $input
+     * @param  mixed  $input  the value for the current locale
      * @return array<mixed> ready to be saved
      */
     public static function ml($destination, $input)
@@ -178,6 +178,32 @@ class SyncHelper
     }
 
     /**
+     * A (string) cast that does not fail on arrays and objects: scalars, null and Stringable values (ObjectId)
+     * are cast as usual, any other value is replaced by its type name.
+     */
+    public static function toString(mixed $value): string
+    {
+        return is_scalar($value) || $value === null || $value instanceof Stringable ? (string) $value : get_debug_type($value);
+    }
+
+    /**
+     * The attributes of a stored document keyed by name, as Eloquent expects them; PHP turns numeric names into
+     * integer keys, which Eloquent reads by their string value.
+     *
+     * @param  array<mixed>  $attributes
+     * @return array<string, mixed>
+     */
+    public static function attributes(array $attributes): array
+    {
+        $named = [];
+        foreach ($attributes as $key => $value) {
+            $named[(string) $key] = $value;
+        }
+
+        return $named;
+    }
+
+    /**
      * Compare two ids regardless of their representation (MongoDB\BSON\ObjectId or string).
      */
     public static function sameId(mixed $a, mixed $b): bool
@@ -199,6 +225,8 @@ class SyncHelper
      * checked; other strings (empty, "null", not JSON) are left to the parser.
      *
      * @param  list<string>  $idKeys  ref_id for embedded relationships, id and _id for referenced ones
+     *
+     * @phpstan-assert string|null $value
      *
      * @throws InvalidRequestException
      */
@@ -239,6 +267,35 @@ class SyncHelper
                 }
             }
         }
+    }
+
+    /**
+     * The documents of a relationship payload, iterated as the parser always did: the items of a JSON list or
+     * the property values of a JSON object. "null" and strings that are not JSON hold no document; any other
+     * JSON value, or an item that is neither a JSON object nor null (an empty EmbedsOne), is rejected instead
+     * of being skipped.
+     *
+     * @return list<object|null>
+     *
+     * @throws InvalidRequestException
+     */
+    public static function payloadDocuments(string $key, string $value): array
+    {
+        $decoded = json_decode($value);
+        $items = $decoded instanceof stdClass ? get_object_vars($decoded) : ($decoded ?? []);
+        if (! is_array($items)) {
+            throw new InvalidRequestException(sprintf("Invalid payload for relationship '%s': expected a JSON list or object, got %s.", $key, get_debug_type($decoded)));
+        }
+
+        $documents = [];
+        foreach ($items as $item) {
+            if (! is_object($item) && $item !== null) {
+                throw new InvalidRequestException(sprintf("Invalid payload for relationship '%s': expected a JSON object or null for each document, got %s.", $key, get_debug_type($item)));
+            }
+            $documents[] = $item;
+        }
+
+        return $documents;
     }
 
     /**
@@ -363,7 +420,7 @@ class SyncHelper
      * @param  string  $model
      * @param  bool  $is_EO
      * @param  bool  $is_EM
-     * @return array<mixed>
+     * @return list<stdClass>
      */
     public static function getArrayWithEmptyObj($model, $is_EO, $is_EM)
     {

@@ -3,12 +3,14 @@
 namespace OfflineAgency\MongoAutoSync\Traits;
 
 use DateTime;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use LogicException;
 use MongoDB\BSON\UTCDateTime;
 use MongoDB\Laravel\Connection as MongoConnection;
 use MongoDB\Laravel\Query\Builder as MongoQueryBuilder;
+use OfflineAgency\MongoAutoSync\Exceptions\InvalidConfigurationException;
 use OfflineAgency\MongoAutoSync\Exceptions\MongoAutoSyncException;
 use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
 use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
@@ -32,13 +34,13 @@ trait RelationshipMongoTrait
         // Process all relationships
         foreach ($relations as $method => $relation) {
             // Get Relation Save Mode
-            $type = $relation['type'];
-            $model = $relation['model'];
+            $type = SyncHelper::toString($relation['type']);
+            $model = SyncHelper::toString($relation['model']);
             $hasTarget = SyncHelper::hasTarget($relation);
             if ($hasTarget) {
-                $modelTarget = $relation['modelTarget'];
-                $methodOnTarget = $relation['methodOnTarget'];
-                $modelOnTarget = $relation['modelOnTarget'];
+                $modelTarget = SyncHelper::toString($relation['modelTarget']);
+                $methodOnTarget = SyncHelper::toString($relation['methodOnTarget']);
+                $modelOnTarget = SyncHelper::toString($relation['modelOnTarget']);
                 $typeOnTarget = Arr::has($relation, 'typeOnTarget') ? Arr::get($relation, 'typeOnTarget') : 'EmbedsMany';
             } else {
                 $modelTarget = '';
@@ -70,7 +72,7 @@ trait RelationshipMongoTrait
 
             if (! is_null($value) && ! ($value == '') && ! ($value == '[]')) {
                 SyncHelper::assertSafeRefIds($key, $value, SyncHelper::idKeysFor($type));
-                $objs = json_decode($value);
+                $objs = SyncHelper::payloadDocuments($key, $value);
             } else {
                 $objs = SyncHelper::getArrayWithEmptyObj($model, $is_EO, $is_EM);
             }
@@ -199,7 +201,7 @@ trait RelationshipMongoTrait
 
         // raw filter: whereIn('_id') would convert a 24-hex string id to an ObjectId and miss documents stored with a string _id
         // @phpstan-ignore argument.type (laravel-mongodb's whereRaw() accepts a filter array; the phpdoc is inherited from Illuminate)
-        return $query->whereRaw(['_id' => ['$in' => SyncHelper::idVariants((string) $this->getKey())]]);
+        return $query->whereRaw(['_id' => ['$in' => SyncHelper::idVariants(SyncHelper::toString($this->getKey()))]]);
     }
 
     /**
@@ -246,7 +248,7 @@ trait RelationshipMongoTrait
     }
 
     /**
-     * @param  object  $obj
+     * @param  object|null  $obj
      * @param  string  $type
      * @param  string  $model
      * @param  string  $method
@@ -286,20 +288,7 @@ trait RelationshipMongoTrait
             return;
         }
 
-        $targetIds = [];
-
-        if ($is_EO) {
-            $embedObj = $this->$method;
-            if (! is_null($embedObj)) {
-                $targetIds[] = $embedObj->ref_id;
-            }
-        } else {
-            if (is_iterable($this->$method)) {
-                foreach ($this->$method as $target) {
-                    $targetIds[] = $target->ref_id;
-                }
-            }
-        }
+        $targetIds = SyncHelper::refIds($this->$method);
 
         if (! empty($targetIds)) {
             $this->batchHandleSubTarget($targetIds, $modelTarget, $methodOnTarget, $is_EO_target, $is_EM_target);
@@ -343,7 +332,7 @@ trait RelationshipMongoTrait
     }
 
     /**
-     * @param  array<int, object>  $objs
+     * @param  array<int, object|null>  $objs
      * @param  string  $method
      * @param  array<string, mixed>  $relation
      * @param  bool  $is_HO
@@ -351,34 +340,23 @@ trait RelationshipMongoTrait
      */
     public function syncReferencedDelete($objs, $method, $relation, $is_HO)
     {
-        $current = $this->$method;
         $currentIds = [];
-
-        if ($is_HO) {
-            if ($current) {
-                $currentIds[] = $current->id;
-            }
-        } else {
-            if ($current) {
-                foreach ($current as $item) {
-                    $currentIds[] = $item->id;
-                }
-            }
+        foreach ($this->referencedModels($method, $is_HO) as $item) {
+            $currentIds[] = SyncHelper::toString($item->getAttribute('id'));
         }
 
         $incomingIds = [];
-        if (! empty($objs)) {
-            foreach ($objs as $obj) {
-                if (isset($obj->id)) {
-                    $incomingIds[] = $obj->id;
-                } elseif (isset($obj->_id)) {
-                    $incomingIds[] = $obj->_id;
-                }
+        foreach ($objs as $obj) {
+            if (isset($obj->id)) {
+                $incomingIds[] = SyncHelper::toString($obj->id);
+            } elseif (isset($obj->_id)) {
+                $incomingIds[] = SyncHelper::toString($obj->_id);
             }
         }
 
         $toDelete = array_diff($currentIds, $incomingIds);
         $modelClass = $relation['model'];
+        throw_unless(is_string($modelClass) && is_subclass_of($modelClass, Model::class), new InvalidConfigurationException("The model of relationship '{$method}' must be an Eloquent model class."));
 
         if (! empty($toDelete)) {
             // For Mongo, we might need to check how destroy works
@@ -388,7 +366,7 @@ trait RelationshipMongoTrait
     }
 
     /**
-     * @param  array<int, object>  $objs
+     * @param  array<int, object|null>  $objs
      * @param  string  $method
      * @param  array<string, mixed>  $relation
      * @param  string  $event
@@ -446,18 +424,30 @@ trait RelationshipMongoTrait
      */
     public function deleteReferencedObj($method, $is_HO)
     {
+        foreach ($this->referencedModels($method, $is_HO) as $item) {
+            $item->delete();
+        }
+    }
+
+    /**
+     * The models currently held by a referenced relationship: the related model (HasOne) or the related
+     * collection (HasMany); anything else holds none.
+     *
+     * @return list<Model>
+     */
+    private function referencedModels(string $method, bool $is_HO): array
+    {
         $relationData = $this->$method;
-        if ($is_HO) {
-            if ($relationData) {
-                $relationData->delete();
-            }
-        } else {
-            if ($relationData) {
-                foreach ($relationData as $item) {
-                    $item->delete();
-                }
+        $items = $is_HO ? [$relationData] : (is_iterable($relationData) ? $relationData : []);
+
+        $models = [];
+        foreach ($items as $item) {
+            if ($item instanceof Model) {
+                $models[] = $item;
             }
         }
+
+        return $models;
     }
 
     /**
@@ -497,7 +487,7 @@ trait RelationshipMongoTrait
                     if ($obj->$EOkey == '' || $obj->$EOkey == null) {
                         $embedObj->$EOkey = null;
                     } else {
-                        $embedObj->$EOkey = new UTCDateTime(new DateTime($obj->$EOkey));
+                        $embedObj->$EOkey = new UTCDateTime(new DateTime(SyncHelper::toString($obj->$EOkey)));
                     }
                 } else {
                     $embedObj->$EOkey = $obj->$EOkey;
@@ -528,7 +518,7 @@ trait RelationshipMongoTrait
 
     /**
      * @param  string  $modelTarget
-     * @param  object  $obj
+     * @param  object|null  $obj
      * @param  string  $methodOnTarget
      * @param  string  $modelOnTarget
      * @param  bool  $is_EO_target
