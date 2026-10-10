@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use MongoDB\BSON\ObjectId;
 use OfflineAgency\MongoAutoSync\Jobs\SyncTargetJob;
+use Tests\ConsoleFixtures\UnreadableDirectoryStream;
 use Tests\Models\Navigation;
 use Tests\Models\SubItem;
 
@@ -191,4 +192,27 @@ test('an invalid other_models entry is an error, unlike an optional model that d
     expect($output)->toContain('Invalid configuration: other_models.broken must be an array with a model_namespace.')
         ->toContain('Skipped other_models.user: class App\User does not exist.')
         ->toContain('0 anomalies, 1 errors');
+});
+
+test('an operational error while reading documents is reported and fails the analysis', function () {
+    useFixtures('Operational');
+
+    [$code, $output] = analyse();
+
+    expect($code)->toBe(1);
+    expect($output)->toContain('Analysis of Tests\AnalyseFixtures\Operational\BrokenConnection::links failed: Database connection [not-configured] not configured.');
+});
+
+test('a model directory that cannot be read is an error', function () {
+    UnreadableDirectoryStream::register();
+    config()->set('laravel-mongo-auto-sync.model_path', UnreadableDirectoryStream::PROTOCOL.'://models');
+
+    try {
+        [$code, $output] = analyse();
+    } finally {
+        UnreadableDirectoryStream::unregister();
+    }
+
+    expect($code)->toBe(1);
+    expect($output)->toContain('Invalid configuration: model_path "'.UnreadableDirectoryStream::PROTOCOL.'://models" cannot be read.');
 });

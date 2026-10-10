@@ -180,9 +180,6 @@ class AnalyseDatabase extends Command
     private function analyseRelation(string $modelClass, string $method, array $relation, string $modelTarget, string $methodOnTarget): void
     {
         foreach ($modelClass::query()->cursor() as $source) {
-            if (! $source instanceof MDModel) {
-                continue;
-            }
             $sourceId = (string) $source->getKey();
             $existingTargets = [];
             $needsRepair = false;
