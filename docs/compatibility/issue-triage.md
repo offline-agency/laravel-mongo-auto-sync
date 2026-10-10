@@ -12,7 +12,7 @@ Branches: **A** `fix/upstream-compatibility` (base `fix/pr-40-review`, PR #89), 
 | #43 | Command Analyse Database | RESOLVED_BY_CODE for the contract below, pending merge | C |
 | #44 | Add benchmark result on Readme | OPEN | roadmap H |
 | #45 | Enable/disable sync between collections on save | OPEN | roadmap E |
-| #46 | Support for referenced relationships | PARTIAL (risks reproduced) | roadmap A |
+| #46 | Support for referenced relationships | PARTIAL; ownership take-over reproduced: **blocker for releasing 4.0** | roadmap A |
 | #47 | Enable/disable sync between collections on delete | PARTIAL | #89 + A, roadmap E |
 | #55 | Throw Exception Missing Relationship in Request | RESOLVED_BY_CODE for the contract below, pending merge | B |
 | #82 | Upgrade PHP 8.3 | NOT_APPLICABLE as asked (project requires PHP ^8.4); maintainer decision | roadmap I |
@@ -56,7 +56,7 @@ Not claimed: consistent snapshot, comparison of the embedded values, orphan copi
 
 ## #46 Referenced relationships (HasOne/HasMany)
 
-VERIFIED risks (triage probes on `4cff251`, behaviour unchanged by A/B/C):
+VERIFIED risks (triage probes on `4cff251` and the security review on the integration branch; behaviour unchanged by A/B/C except that non plain `id`/`_id` values are now rejected):
 - updating parent A with the id of a child of parent B takes the child over: the lookup is not scoped to the relation and the foreign key is rewritten (`RelationshipMongoTrait::processReferencedRelationship`);
 - every key of the JSON payload is written on the child (no writable-field list);
 - an unknown id silently creates a new child;

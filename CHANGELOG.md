@@ -21,7 +21,7 @@ See [UPGRADE-4.0.md](UPGRADE-4.0.md) for the migration guide.
 - GitHub Actions matrix (PHP 8.4/8.5 x Laravel 12/13 x MongoDB 7.0/8.0), Pint, PHPStan level 8, Codecov, and an automatic release workflow based on conventional commits.
 
 ### Changed
-- Driver switched from `jenssegers/mongodb` to `mongodb/laravel-mongodb` ^5.11 (with `mongodb/mongodb` ^2.4.2 and `ext-mongodb` ^2.4 declared directly): namespaces moved from `Jenssegers\Mongodb` to `MongoDB\Laravel`.
+- Driver switched from `jenssegers/mongodb` to `mongodb/laravel-mongodb` ^5.11 (`laravel/framework` ^12.69 | ^13.30 and `ext-mongodb` ^2.4 required directly, `mongodb/mongodb` < 2.4.2 declared as a conflict): namespaces moved from `Jenssegers\Mongodb` to `MongoDB\Laravel`.
 - Background sync is **opt-in** (`use_background_sync` defaults to `false`): with it enabled, targets are eventually consistent and a queue worker is required.
 - `SyncTargetJob` keeps its class name and namespace but has a new constructor (ids only, no serialised models) and is `final`.
 - Each save dispatches at most one job per relationship with a target; the job carries ids only, performs removals before upserts and rebuilds the mini model from the stored source, so it is idempotent and the jobs of one source can run out of order (two workers syncing the same source at the same moment can still leave older values on a target).
@@ -44,6 +44,10 @@ See [UPGRADE-4.0.md](UPGRADE-4.0.md) for the migration guide.
 - Scrutinizer, StyleCI, Codacy, Coveralls and `phpcs.xml` configurations; `composer.lock` is no longer committed.
 
 ### Fixed
+- Relationship payloads that are not a JSON string, objects holding an operator `ref_id`, numeric ids and non plain referenced `id`/`_id` are rejected before anything is written; error messages no longer include the request or the payload.
+- `delete($id)` on an embedded relation removed every item (the id guard of laravel-mongodb was missing).
+- `increment()` / `decrement()` on an embedded model lost the value of columns that are not mass assignable.
+- Target documents whose `_id` is stored as a hexadecimal string were not synced.
 - An `id`/`_id` containing a MongoDB operator was not rejected by package models; a relationship `ref_id` that is an object or a list is now rejected before anything is written (it used to save the source and then crash).
 - Re-assigning an unset attribute, dot-notation reads and `decimal` casts on package models.
 - An explicit `updated_at` inside `$set` was overwritten by the builder.
@@ -71,6 +75,10 @@ See [UPGRADE-4.0.md](UPGRADE-4.0.md) for the migration guide.
 - `increment()` / `decrement()` on an embedded model crashed on an expression column.
 - Eager loading an `EmbedsOne` relation crashed.
 - `getRandomRow()` returned models without id or attributes.
+
+### Known issues
+- Referenced relationships (`HasOne` / `HasMany`) do not check that a child belongs to the parent being saved (#46): see UPGRADE-4.0.md.
+- laravel-mongodb 5.11 runs the deferred callbacks of a rolled-back `transaction()` at the next commit.
 
 ## [3.1.1] and earlier
 

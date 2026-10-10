@@ -7,7 +7,7 @@ Evidence: **REPRODUCED** (observed with a test or probe; probes kept outside the
 | --- | --- | --- | --- | --- |
 | B | P1 | Concurrent workers can write old values | REPRODUCED | `fix/sync-concurrency` |
 | C | P1 | Jobs ignore the data connection (tenants) | REPRODUCED | `fix/sync-connection` |
-| A | P1 | Referenced relationships ownership (#46) | REPRODUCED | `fix/46-referenced-ownership` |
+| A | **P0 – blocker for releasing 4.0** | Referenced relationships ownership (#46) | REPRODUCED (also by the security review) | `fix/46-referenced-ownership` |
 | D-adapter | P2 | Package embedded relations vs laravel-mongodb relations | REPRODUCED | `refactor/embedded-relations-upstream` |
 | G | P2 | Growth limits (payload, fan-out, document size) | STATIC | `feat/sync-limits` |
 | R3 | P2 | Embedded increment events | REPRODUCED | part of D-adapter |
@@ -17,6 +17,7 @@ Evidence: **REPRODUCED** (observed with a test or probe; probes kept outside the
 | H | P3 | Reproducible benchmark (#44) | STATIC | `docs/44-benchmark` |
 | I | P3 | PHP 8.3 (#82) | STATIC | maintainer decision |
 | D-coalescing | — | Coalescing A -> B -> C | REPRODUCED: no defect | none |
+| U | P2 | laravel-mongodb 5.11: deferred callbacks of a rolled-back `transaction()` run at the next commit | REPRODUCED | report upstream (mongodb/laravel-mongodb) |
 
 ## B. Concurrency (P1)
 
@@ -30,7 +31,9 @@ Evidence: **REPRODUCED** (observed with a test or probe; probes kept outside the
 - Proposal: carry the source connection name in the payload (`SyncTargetJob::$sourceConnection`, default null = model default), resolve source and targets on it, restore the previous default after exceptions; keep queue connection and data connection distinct. Tests: same id in two databases, worker with a different default connection, exception during the job.
 - Compatibility: new optional constructor argument (pending jobs keep working with the default connection).
 
-## A. Referenced relationships ownership (#46, P1)
+## A. Referenced relationships ownership (#46, P0 – blocker for releasing 4.0)
+
+- The security review reproduced the take-over end to end: `storeWithSync()` of an attacker's author with `books=[{"id": "<victim book id>", "title": "stolen", "is_admin": true}]` renamed the victim's book, set `is_admin` and moved it to the attacker. This is 4.0 code (not in 3.x); it must be fixed, or referenced relationship sync disabled, before 4.0 is released.
 
 - Reproduced (triage): updating parent A with a child id of parent B takes the child over (lookup not scoped, foreign key rewritten); any payload key is written on the child; an unknown id creates a new child; children saved with `has-target => false` are never deleted by `destroyWithSync()`.
 - Proposal: scope the lookup to the relation (`$parent->relation()->whereKey($id)`), allow only the related model's `$items`, reject unknown ids, preflight every id before deleting; no implicit cascade. Test with parents A/B: an id of B in an update of A changes no document.
@@ -46,6 +49,10 @@ Evidence: **REPRODUCED** (observed with a test or probe; probes kept outside the
 
 - STATIC: no limit on the size of a relationship payload, on the number of targets per source (fan-out) or on the size of a target's embedded list; a target near 16 MB fails with a driver error.
 - Proposal: configurable limits checked before writing, with an explicit `InvalidRequestException`/job failure instead of silent truncation.
+
+## U. Upstream transaction callbacks (P2)
+
+- Reproduced on a replica set: after `DB::connection('mongodb')->transaction()` throws, `transactionLevel()` stays 1 and an `afterCommit` callback registered inside it runs at the next committed transaction (`ManagesTransactions::transaction()` rethrows before resetting the state). With `after_commit` queues this dispatches jobs of rolled-back writes; `SyncTargetJob` reloads the stored state, so the effect is limited to extra work. Proposal: report upstream with the reproduction; no workaround in the package.
 
 ## R7. `$dates`
 

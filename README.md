@@ -95,7 +95,7 @@ composer require offline-agency/laravel-mongo-auto-sync
 | 12.69+ / 13.30+ | 8.4, 8.5 | 4.x     |
 | 5.x - 8.x   | ≥ 7.4  | 2.x / 3.x   |
 
-Package 4.x requires `mongodb/laravel-mongodb` ^5.11, `mongodb/mongodb` ^2.4.2 and `ext-mongodb` ^2.4, and is tested on MongoDB 7.0 and 8.0 (standalone and replica set). Details and the exact verified combinations: [docs/compatibility](docs/compatibility/test-matrix.md).
+Package 4.x requires `laravel/framework` ^12.69 | ^13.30, `mongodb/laravel-mongodb` ^5.11 and `ext-mongodb` ^2.4 (with `mongodb/mongodb` 2.4.2 or later), and is tested on MongoDB 7.0 and 8.0 standalone and on a MongoDB 8.0 replica set. Details and the exact verified combinations: [docs/compatibility](docs/compatibility/test-matrix.md).
 
 Upgrading from 3.x? Read [UPGRADE-4.0.md](UPGRADE-4.0.md).
 
@@ -124,7 +124,7 @@ Partial requests are an option of the sync methods, not a config key: `$model->u
 
 ### Background sync
 
-With `use_background_sync=true`, saving or deleting a model dispatches a `SyncTargetJob` for each relationship with a target whose references or data changed. The job carries ids only (no request data), rebuilds the mini model from the stored source when it runs, and writes the targets with atomic MongoDB updates: running a job twice, or the jobs of one source out of order, gives the same final state, and jobs of different sources on the same target do not overwrite each other. Two workers syncing **the same source at the same time** can still leave the older values on a target (see [roadmap B](docs/compatibility/roadmap.md)). Inside `DB::transaction()` the target writes join the transaction; jobs are dispatched after the commit only when the queue connection has `after_commit => true`. Run a worker on the configured connection and queue, for example:
+With `use_background_sync=true`, saving or deleting a model dispatches a `SyncTargetJob` for each relationship with a target whose references or data changed. The job carries ids only (no request data), rebuilds the mini model from the stored source when it runs, and writes the targets with atomic MongoDB updates: running a job twice, or the jobs of one source out of order, gives the same final state, and jobs of different sources on the same target do not overwrite each other. Two workers syncing **the same source at the same time** can still leave the older values on a target (see [roadmap B](docs/compatibility/roadmap.md)). Inside `DB::transaction()` the target writes join the transaction; with a queue that is not part of the transaction, jobs wait for the commit only when the queue connection has `after_commit => true`, and laravel-mongodb 5.11 can still run the deferred dispatches of a rolled-back `transaction()` at the next commit (see UPGRADE-4.0.md). Run a worker on the configured connection and queue, for example:
 
 ```bash
 php artisan queue:work --queue=mongo_auto_sync

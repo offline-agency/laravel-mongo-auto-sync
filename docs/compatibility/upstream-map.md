@@ -1,5 +1,7 @@
 # Upstream map: offline-agency/laravel-mongo-auto-sync vs mongodb/laravel-mongodb 5.11.0
 
+> Sections 0-5 are a snapshot of the analysis at commit `e7374dd` (written during the work, hence the first person). Section 6 lists what changed afterwards and supersedes them where they differ, including the version drift and documentation rows. Classification labels (NATIVO_EREDITATO, DIVERGENZA_STATICA, ADAPTER_NECESSARIO, VALORE_CUSTOM, NON_APPLICABILE, NON_VERIFICATO) mean: inherited from laravel-mongodb, static divergence, adapter still needed, package-specific value, not applicable, not verified.
+
 Target path in repo: `docs/compatibility/upstream-map.md`
 
 ## 0. Baseline, scope and evidence levels
@@ -404,3 +406,14 @@ Files marked NON_VERIFICATO above that were read afterwards (by the branch autho
 | `src/Exceptions/*` | none (package exceptions extend `MongoAutoSyncException` -> `Exception`) | VALORE_CUSTOM | keep |
 | `.github/workflows/build-ci.yml` | n/a | NON_APPLICABILE | jobs `lint`, `static-analysis`, `tests` (matrix), `reference`, `lowest`, `replica-set` written on this branch; actionlint clean |
 | `docs/*`, `BENCHMARK.md`, `CONTRIBUTING.md` | n/a | NON_APPLICABILE | `BENCHMARK.md` holds an empty table (roadmap H) |
+
+### Review findings fixed after `73dc688`
+
+| Item | Change | Evidence |
+| --- | --- | --- |
+| `EmbedsMany::delete()` / `EmbedsOne::delete()` | restored the laravel-mongodb `$id` guard (`delete($id)` used to remove every item) | `tests/Compatibility/ReviewFindingsTest.php` |
+| `Eloquent\Builder::increment()/decrement()` (embedded) | `forceFill` + `save` instead of `update` (non mass assignable columns were lost) | `ReviewFindingsTest` |
+| `RelationshipMongoTrait::targetQuery()` | raw `_id` filter: `whereIn('_id')` converts a 24-hex string to an ObjectId and missed string `_id` targets | `ReviewFindingsTest` |
+| `SyncHelper::assertSafeRefIds()` | rejects non-string payloads, checks JSON objects as well as lists, accepts only string/null ids, checks `id`/`_id` of referenced relationships | `SafeRefIdsTest`, `ReviewFindingsTest` |
+| composer.json | `laravel/framework` required (the package uses `Illuminate\Foundation`); `mongodb/mongodb` is not used directly: `conflict <2.4.2` | static (imports of `src/`) |
+| laravel-mongodb 5.11 `ManagesTransactions::transaction()` | upstream: after a rolled-back closure transaction `transactionLevel()` stays 1 and its `afterCommit` callbacks run at the next commit (reproduced on rs0) | documented in UPGRADE-4.0.md; to be reported upstream |

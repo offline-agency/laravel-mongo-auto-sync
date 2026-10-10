@@ -6,8 +6,9 @@
 | --- | --- | --- |
 | PHP | >= 7.4 | ^8.4 |
 | Laravel | 5.x - 8.x | ^12.69 \| ^13.30 |
-| MongoDB driver | `jenssegers/mongodb` ^3.6 | `mongodb/laravel-mongodb` ^5.11, `mongodb/mongodb` ^2.4.2, `ext-mongodb` ^2.4 |
-| MongoDB server | | 7.0, 8.0 (tested standalone and as replica set) |
+| Framework | | `laravel/framework` ^12.69 \| ^13.30 (the package uses `Illuminate\Foundation`) |
+| MongoDB driver | `jenssegers/mongodb` ^3.6 | `mongodb/laravel-mongodb` ^5.11, `ext-mongodb` ^2.4; `mongodb/mongodb` < 2.4.2 is declared as a conflict |
+| MongoDB server | | 7.0 and 8.0 standalone, 8.0 replica set (tested) |
 
 The Laravel floor is the first release of each line without the advisory CVE-2026-102279, and `mongodb/mongodb` 2.4.2 the first without CVE-2026-88023: Composer refuses the older versions.
 
@@ -102,7 +103,11 @@ Jobs serialised by a previous version cannot be unserialised by 4.0: drain the q
 
 Targets are updated with atomic MongoDB operations (`$pull` / `$push` / `$set`) through the laravel-mongodb query builder instead of loading and saving the target model, on both the synchronous and the background path. Writes of different sources on the same target no longer overwrite each other and they join the connection's transaction, but **no Eloquent events (`saving`, `saved`, observers) fire on the target models** for these writes; `updated_at` is still refreshed.
 
-Limits: two workers syncing the same source at the same moment can leave the older mini model on a target; jobs dispatched inside `DB::transaction()` wait for the commit only if the queue connection sets `after_commit => true`; a source stored on a non-default connection is looked up on the default one by the job (see `docs/compatibility/roadmap.md`, items B and C).
+Limits: two workers syncing the same source at the same moment can leave the older mini model on a target; with a queue outside the MongoDB transaction (for example Redis), jobs dispatched inside `DB::transaction()` wait for the commit only if the queue connection sets `after_commit => true`, and laravel-mongodb 5.11 keeps the deferred callbacks of a `transaction()` that was rolled back and runs them at the next commit (the job then only finds the stored state); a source stored on a non-default connection is looked up on the default one by the job (see `docs/compatibility/roadmap.md`, items B and C).
+
+### Referenced relationships (`HasOne` / `HasMany`): known issue
+
+The sync of referenced relationships does not check that a child belongs to the parent being saved: a payload with the id of another parent's child takes that child over and every key of the payload is written on it (issue #46, `docs/compatibility/roadmap.md` item A). Do not expose `storeWithSync()` / `updateWithSync()` on models with referenced relationships to untrusted input until this is fixed.
 
 ### Embedded lists stored as objects
 

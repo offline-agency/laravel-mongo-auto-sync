@@ -1,3 +1,5 @@
+> Historical document of PR #89. Current requirements and behaviour: README.md, UPGRADE-4.0.md and docs/compatibility/.
+
 ## Summary
 
 This PR performs a major upgrade of the package to version 4.0, modernizing the entire stack and improving stability and developer experience. It supports **PHP 8.4+** and **Laravel 12/13**, and migrates the underlying driver to the official **`mongodb/laravel-mongodb`** 5.x. Laravel 12 and 13 are both resolved and tested in CI (PHP 8.4/8.5 x MongoDB 7.0/8.0).

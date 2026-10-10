@@ -51,9 +51,8 @@ test('a committed transaction makes the source and the target write visible toge
     expect(Navigation::find($navigation->id)->sub_items)->toHaveCount(1);
 });
 
-test('background sync dispatched with after_commit runs only for committed transactions', function () {
+test('with the sync queue driver, background sync inside a transaction is rolled back or committed with it', function () {
     config()->set('laravel-mongo-auto-sync.use_background_sync', true);
-    config()->set('queue.connections.sync.after_commit', true);
     $navigation = $this->createNavigation();
 
     try {
