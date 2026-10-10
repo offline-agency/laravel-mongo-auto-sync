@@ -44,6 +44,19 @@ Run [38046934757](https://github.com/offline-agency/laravel-mongo-auto-sync/acti
 | PHP 8.5 x Laravel 12 (MongoDB 7.0 and 8.0), PHP 8.5 x Laravel 13 x MongoDB 7.0 | CI `tests`, pass |
 | Lowest-safe on Laravel 12/13 (ext 2.4.0), reference on Laravel 12 | CI, pass (also run locally) |
 
+## PHPStan at the maximum level (`f0d9d79`)
+
+`phpstan.neon` is at `level: max` with no baseline. Static analysis was re-run with `vendor/bin/phpstan analyse --memory-limit=1G` on each head below and exits 0; the suite ran with coverage (pcov, PHP 8.4, MongoDB 8.0 replica set rs0):
+
+| Head | PHPStan max | Pest | Line coverage |
+| --- | --- | --- | --- |
+| A `f0d9d79` | 0 errors | 356 passed | 100 % (1361/1361) |
+| B `9d40378` (A merged) | 0 errors | 382 passed | 100 % (1366/1366) |
+| C `b46c8dc` (A merged) | 0 errors | 379 passed | 100 % (1417/1417) |
+| local integration A+B+C | 0 errors | 405 passed | 100 % (1422/1422) |
+
+CI run [38049066147](https://github.com/offline-agency/laravel-mongo-auto-sync/actions/runs/38049066147) on `f0d9d79`: all 17 checks pass (the B and C heads too). The per-profile rows at the top of this file were run locally on `c5a67db` and were not re-run locally after this change; their CI cells were.
+
 ## Not executed anywhere (no support is claimed from these cells)
 
 | Cell | Reason |
