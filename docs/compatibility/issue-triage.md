@@ -12,7 +12,7 @@ Branches: **A** `fix/upstream-compatibility` (base `fix/pr-40-review`, PR #89), 
 | #43 | Command Analyse Database | RESOLVED_BY_CODE for the contract below, pending merge | C |
 | #44 | Add benchmark result on Readme | OPEN | roadmap H |
 | #45 | Enable/disable sync between collections on save | IMPLEMENTED on `feat/45-target-sync-opt-out` (pending integration into #40) | see below |
-| #46 | Support for referenced relationships | PARTIAL; ownership take-over reproduced: **blocker for releasing 4.0** | roadmap A |
+| #46 | Support for referenced relationships | FIXED and included in the PR #40 head (develop, #93) | see below |
 | #47 | Enable/disable sync between collections on delete | IMPLEMENTED; persisted-state evidence on `feat/45-target-sync-opt-out` (pending integration) | see below |
 | #55 | Throw Exception Missing Relationship in Request | RESOLVED_BY_CODE for the contract below, pending merge | B |
 | #82 | Upgrade PHP 8.3 | NOT_APPLICABLE as asked (project requires PHP ^8.4); maintainer decision | roadmap I |
@@ -56,13 +56,9 @@ Not claimed: consistent snapshot, comparison of the embedded values, orphan copi
 
 ## #46 Referenced relationships (HasOne/HasMany)
 
-VERIFIED risks (triage probes on `4cff251` and the security review on the integration branch; behaviour unchanged by A/B/C except that non plain `id`/`_id` values are now rejected):
-- updating parent A with the id of a child of parent B takes the child over: the lookup is not scoped to the relation and the foreign key is rewritten (`RelationshipMongoTrait::processReferencedRelationship`);
-- every key of the JSON payload is written on the child (no writable-field list);
-- an unknown id silently creates a new child;
-- children saved through `storeWithSync()` need `'has-target' => false`, while `destroyWithSync()` deletes children only for relations with a target: they are never both possible (no cascade is introduced by this work);
-- the child `id` in the payload is not validated (a `{"$ne": null}` object ends in an Error/500, not an injection — VERIFIED by the map, R8).
-To close: ownership-scoped lookup, writable fields, foreign key, unknown ids, preflight before deletions, A/B parent test (roadmap A).
+Reproduced again on `8aee971` before the fix (`tests/Referenced/OwnershipTest.php`, 11 of its first 15 tests failing): updating A with B's child id moved the child to A with the payload title, A's own children left out were deleted and B was left with none; an unknown id created a new document.
+
+Fixed on `feat/46-safe-referenced-writes` (`ReferencedWritePlanner` / `ReferencedWritePlan`): lookups among the parent's own children through the declared relation, the same error for unknown and foreign ids, no id on create, writable fields = the child's items and relationships (never the foreign key), duplicate and `id`/`_id` mismatch checks, `HasOne` cardinality, preflight of every top-level referenced relationship before the parent is written, re-planning from fresh reads at write time, `onParentDelete` lifecycle (`delete` / `retain`, default unchanged) with `destroyWithSync(false)` always retaining. Tests: `tests/Referenced/*`, `tests/Coverage/TraitsReferencedRelationshipsTest.php`. Not a transaction (documented).
 
 ## #55 Missing relationship key
 
