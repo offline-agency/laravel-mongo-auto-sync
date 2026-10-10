@@ -141,10 +141,14 @@ php artisan mongo-sync:check-config
 ```
 
 ### Analyse Database
-Find embedded references that are missing on the target side (`--fix` dispatches a `SyncTargetJob` for each inconsistency):
+Check that every embedded reference with a target (`EmbedsOne` / `EmbedsMany`) points to an existing target document that embeds the source back:
 ```bash
 php artisan mongo-sync:analyse [--fix]
 ```
+- Models are discovered under `model_path` (sub-directories keep their sub-namespace) and in `other_models`; abstract and non-model classes are skipped, an absent optional `other_models` class is only noted.
+- Exit code `0` only when the scan finds no anomaly and no error; `1` for a missing target, a missing back reference, an invalid configuration, an unreadable relation or a `HasOne`/`HasMany` relation with a target (not supported by the analyser).
+- Without `--fix` nothing is written and no job is dispatched. With `--fix` at most one `SyncTargetJob` per source document and relation is dispatched (on `queue_connection` / `queue_name`) for missing back references; deleted targets are never recreated. The exit code stays `1`: run the command again after the worker to confirm.
+- The scan reads documents one by one: it is not a consistent snapshot, it does not compare embedded values and it does not look for orphan copies on the target side.
 
 ### Sync Collection
 Dispatch a `SyncTargetJob` for every document of a model:
