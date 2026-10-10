@@ -29,9 +29,9 @@ if (! function_exists('cl')) {
 if (! function_exists('ml')) {
     // save a localized field
     /**
-     * @param  array<string, mixed>|null  $destination
-     * @param  string  $input
-     * @return array<string, mixed>
+     * @param  array<mixed>|null  $destination
+     * @param  mixed  $input  the value for the current locale
+     * @return array<mixed>
      */
     function ml($destination, $input)
     {
@@ -188,7 +188,7 @@ if (! function_exists('getArrayWithEmptyObj')) {
      * @param  string  $model
      * @param  bool  $is_EO
      * @param  bool  $is_EM
-     * @return array<int, object>
+     * @return list<stdClass>
      */
     function getArrayWithEmptyObj($model, $is_EO, $is_EM)
     {

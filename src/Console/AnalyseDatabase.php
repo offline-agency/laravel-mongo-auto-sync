@@ -208,7 +208,7 @@ class AnalyseDatabase extends Command
     {
         $typeOnTarget = Arr::get($relation, 'typeOnTarget', 'EmbedsMany');
         foreach ($modelClass::query()->cursor() as $source) {
-            $sourceId = (string) $source->getKey();
+            $sourceId = SyncHelper::toString($source->getKey());
             $repairTargets = [];
 
             foreach (SyncHelper::refIds(Arr::get($source->getAttributes(), $method)) as $refId) {
@@ -249,9 +249,9 @@ class AnalyseDatabase extends Command
         try {
             SyncTargetJob::dispatchFor($source, $method, $relation, $repairTargets, []);
             $this->dispatched++;
-            $this->line(sprintf('Repair job dispatched for %s %s (%s).', $source::class, $source->getKey(), $method));
+            $this->line(sprintf('Repair job dispatched for %s %s (%s).', $source::class, SyncHelper::toString($source->getKey()), $method));
         } catch (Throwable $e) {
-            $this->reportError(sprintf('Repair job for %s %s (%s) could not be dispatched: %s', $source::class, $source->getKey(), $method, $e->getMessage()));
+            $this->reportError(sprintf('Repair job for %s %s (%s) could not be dispatched: %s', $source::class, SyncHelper::toString($source->getKey()), $method, $e->getMessage()));
         }
     }
 

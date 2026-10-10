@@ -69,7 +69,7 @@ class GenerateModelDocumentation extends Command
         if (count($relations) > 0) {
             $output .= " Relationships\n*\n";
             foreach ($relations as $key => $relation) {
-                $modelTarget = str_replace("App\Models\\", '', $relation['model']);
+                $modelTarget = str_replace("App\Models\\", '', SyncHelper::toString($relation['model']));
 
                 $output .= '* @property '.$modelTarget.' $'.$key."\n";
             }
@@ -111,9 +111,10 @@ class GenerateModelDocumentation extends Command
             return $found;
         }
 
-        foreach (config('laravel-mongo-auto-sync.other_models') as $key => $values) {
-            if (strtolower($collection_name) == $key) {
-                return $values['model_namespace'].'\\'.Str::ucfirst($key);
+        $otherModels = config('laravel-mongo-auto-sync.other_models', []);
+        foreach (is_array($otherModels) ? $otherModels : [] as $key => $values) {
+            if (strtolower($collection_name) == $key && is_array($values) && is_string($values['model_namespace'] ?? null)) {
+                return $values['model_namespace'].'\\'.Str::ucfirst((string) $key);
             }
         }
 
@@ -129,7 +130,7 @@ class GenerateModelDocumentation extends Command
     {
         $results = @scandir($path);
         if ($results === false) {
-            throw new InvalidConfigurationException('Error directory '.config('laravel-mongo-auto-sync.model_path').' not found');
+            throw new InvalidConfigurationException('Error directory '.$path.' not found');
         }
 
         foreach ($results as $result) {

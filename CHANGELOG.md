@@ -18,7 +18,7 @@ See [UPGRADE-4.0.md](UPGRADE-4.0.md) for the migration guide.
 - Dedicated exceptions extending `MongoAutoSyncException`: `InvalidConfigurationException`, `InvalidRelationshipException`, `InvalidRequestException`, `ModelNotFoundException`.
 - Sync of `HasOne` / `HasMany` referenced relationships (not covered by tests yet).
 - The configuration can be published with `vendor:publish --tag=config`.
-- GitHub Actions matrix (PHP 8.4/8.5 x Laravel 12/13 x MongoDB 7.0/8.0), Pint, PHPStan level 8, Codecov, and an automatic release workflow based on conventional commits.
+- GitHub Actions matrix (PHP 8.4/8.5 x Laravel 12/13 x MongoDB 7.0/8.0), Pint, PHPStan at the maximum level (no baseline), Codecov, and an automatic release workflow based on conventional commits.
 
 ### Changed
 - Driver switched from `jenssegers/mongodb` to `mongodb/laravel-mongodb` ^5.11 (`laravel/framework` ^12.69 | ^13.30 and `ext-mongodb` ^2.4 required directly, `mongodb/mongodb` < 2.4.2 declared as a conflict): namespaces moved from `Jenssegers\Mongodb` to `MongoDB\Laravel`.
@@ -29,7 +29,12 @@ See [UPGRADE-4.0.md](UPGRADE-4.0.md) for the migration guide.
 - `Eloquent\Model` delegates attribute handling to laravel-mongodb (`DocumentModel`) and `Eloquent\Builder` delegates `raw()`, `update()`, `insert()`, `insertGetId()`, `delete()` and the `updated_at` handling: `raw()` returns `id` and Carbon dates, decimals are stored as `Decimal128`.
 - `updateRelationWithSync()` replaces an existing entry with the same `ref_id` instead of appending a duplicate.
 - `storeWithSync()` / `updateWithSync()` log at `debug` level, and only when `logging` is enabled.
-- Stricter parameter and return types across the helpers and traits.
+- Stricter parameter and return types across the helpers and traits (PHPStan `max`). Inputs that used to raise a PHP error or warning now raise a package exception:
+  - a relationship payload that decodes to a scalar (`"5"`), or whose items are not JSON objects or `null` (`["a"]`): `InvalidRequestException`;
+  - a carbon date field holding a value that is not a date, a number or `Int64`, and an `is-array` field holding a scalar: `InvalidRequestException`;
+  - a model whose `$items`, `$mongoRelation` or relationship configuration is not an array, a referenced relationship whose `model` is not an Eloquent class: `InvalidConfigurationException`;
+  - `mongo-sync:benchmark` with a class that is not an Eloquent model exits with code 1.
+  A multi-language field whose stored value is not an array is rewritten as a new multi-language value instead of failing.
 - `stdClass` values passed as additional data are stored as arrays (Symfony's `InputBag` rejects objects).
 - `mongo-sync:check-config` exits with code 1 when a configuration is invalid; `mongo-sync:sync-collection` exits with code 1 for an unknown model.
 - The test suite runs on Pest with Orchestra Testbench.
