@@ -1,0 +1,219 @@
+{
+  "schema": 1,
+  "retrieved": "2026-10-11",
+  "pr40_head": "8aee9711261a278f2c0eecd06bebac255ec63a2f",
+  "live_open_issues": [
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    55,
+    82
+  ],
+  "issues": [
+    {
+      "number": 42,
+      "title": "Refactor target synchronization to Observer pattern",
+      "intent": "Move target sync into an Observer so it can run through Laravel queues.",
+      "acceptance": "Opt-in observer/job path; no target writes in the request thread with an async queue; worker performs create/update/delete changes; queue_connection/queue_name honoured; ids-only payload; replay/out-of-order contract; job writes do not dispatch new jobs.",
+      "scope_limits": "Not: concurrent-worker ordering (F03), tenant context (F02), durable delivery (F09).",
+      "paths": [
+        "src/Observers/MongoAutoSyncObserver.php",
+        "src/Jobs/SyncTargetJob.php"
+      ],
+      "tests": [
+        "tests/BackgroundSyncTest.php"
+      ],
+      "included_in_head": true,
+      "evidence": "tested now (full suite on the PR head, real mongodb queue test)",
+      "functional": "ready",
+      "integration": "included",
+      "release": "blocked by F01-F03 P0 items (see feature matrix)",
+      "decision": "READY_FOR_MERGE_CLOSURE",
+      "missing": "Per-save vs per-operation dispatch is F08 (one updateWithSync dispatches 2 jobs per relation, observed on the head).",
+      "closing_keyword_justified": true,
+      "url": "https://github.com/offline-agency/laravel-mongo-auto-sync/issues/42",
+      "state": "open",
+      "retrieved": "2026-10-11",
+      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f"
+    },
+    {
+      "number": 43,
+      "title": "Command Analyse Database",
+      "intent": "Find out-of-sync relationships (a document referencing a target that lacks the reverse projection).",
+      "acceptance": "See PROMPT section 6: discovery, error classes, inverse checks, exit codes, read-only default, bounded repair jobs, no recreated targets, conflicts, repair -> worker -> clean rescan.",
+      "scope_limits": "Presence checks only; F05 (JSON, checkpoints, stale/duplicate findings) is separate.",
+      "paths": [
+        "src/Console/AnalyseDatabase.php"
+      ],
+      "tests": [
+        "tests/Console/AnalyseDatabaseContractTest.php"
+      ],
+      "included_in_head": true,
+      "evidence": "tested now (full suite on the PR head, incl. end-to-end repair with queue:work)",
+      "functional": "ready",
+      "integration": "included",
+      "release": "not a blocker",
+      "decision": "READY_FOR_MERGE_CLOSURE",
+      "missing": "",
+      "closing_keyword_justified": true,
+      "url": "https://github.com/offline-agency/laravel-mongo-auto-sync/issues/43",
+      "state": "open",
+      "retrieved": "2026-10-11",
+      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f"
+    },
+    {
+      "number": 44,
+      "title": "Add benchmark result on Readme",
+      "intent": "MongoDB vs MySQL read/write benchmark results in the README, on the laravel-mongodb-blog workload.",
+      "acceptance": "Safe benchmark command; real MongoDB and MySQL; comparable workload; raw samples, median/p95; measured table in README.",
+      "scope_limits": "No generated numbers; demo repository not modified remotely.",
+      "paths": [
+        "src/Console/BenchmarkCommand.php",
+        "BENCHMARK.md"
+      ],
+      "tests": [],
+      "included_in_head": false,
+      "evidence": "code inspected (BENCHMARK.md table empty; command selects first N documents, not its own)",
+      "functional": "open",
+      "integration": "n/a",
+      "release": "not a blocker",
+      "decision": "OPEN_DELIVERABLE",
+      "missing": "Safety contract of BenchmarkCommand, harness, real measurements.",
+      "closing_keyword_justified": false,
+      "url": "https://github.com/offline-agency/laravel-mongo-auto-sync/issues/44",
+      "state": "open",
+      "retrieved": "2026-10-11",
+      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f"
+    },
+    {
+      "number": 45,
+      "title": "Add option in order to enable/disable sync between collection on save",
+      "intent": "Relationship CRUD without synchronising other collections on save.",
+      "acceptance": "PROMPT section 8.",
+      "scope_limits": "Does not cancel jobs queued earlier (documented, tested).",
+      "paths": [
+        "src/Traits/MainMongoTrait.php (withoutTargetSync, sync_targets)",
+        "src/Observers/MongoAutoSyncObserver.php"
+      ],
+      "tests": [
+        "tests/TargetSyncOptOutTest.php"
+      ],
+      "included_in_head": false,
+      "evidence": "tested now on feat/45-target-sync-opt-out (PR #94) and on the local integration branch",
+      "functional": "ready",
+      "integration": "PR #94 pending",
+      "release": "not a blocker",
+      "decision": "READY_IN_FOLLOWUP_PENDING_INTEGRATION",
+      "missing": "Merge of #94 into develop.",
+      "closing_keyword_justified": false,
+      "url": "https://github.com/offline-agency/laravel-mongo-auto-sync/issues/45",
+      "state": "open",
+      "retrieved": "2026-10-11",
+      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f"
+    },
+    {
+      "number": 46,
+      "title": "Add Support for referenced relationships.",
+      "intent": "Support referenced (HasOne/HasMany) relationships.",
+      "acceptance": "PROMPT section 9 (ownership, writable fields, trusted keys, ids, cardinality, preflight, lifecycle).",
+      "scope_limits": "HasOne/HasMany with the FK on the child; preflight is not a transaction.",
+      "paths": [
+        "src/Relationships/ReferencedWritePlanner.php",
+        "src/Relationships/ReferencedWritePlan.php"
+      ],
+      "tests": [
+        "tests/Referenced/*",
+        "tests/Coverage/TraitsReferencedRelationshipsTest.php"
+      ],
+      "included_in_head": false,
+      "evidence": "reproduced on the PR head (takeover, unknown id creates a document); fixed and tested now on feat/46-safe-referenced-writes (PR #93)",
+      "functional": "ready in follow-up",
+      "integration": "PR #93 pending",
+      "release": "BLOCKER until #93 is in the head",
+      "decision": "READY_IN_FOLLOWUP_PENDING_INTEGRATION",
+      "missing": "Merge of #93; on the current head the takeover is a release blocker (BLOCKED_SECURITY).",
+      "closing_keyword_justified": false,
+      "url": "https://github.com/offline-agency/laravel-mongo-auto-sync/issues/46",
+      "state": "open",
+      "retrieved": "2026-10-11",
+      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f"
+    },
+    {
+      "number": 47,
+      "title": "Add option in order to enable/disable sync between collection on delete",
+      "intent": "destroyWithSync() without deleting sub documents in other collections.",
+      "acceptance": "PROMPT section 10.",
+      "scope_limits": "Pre-queued jobs are not cancelled (documented, tested).",
+      "paths": [
+        "src/Traits/MainMongoTrait.php::destroyWithSync"
+      ],
+      "tests": [
+        "tests/TargetSyncOptOutTest.php",
+        "tests/Referenced/LifecycleTest.php"
+      ],
+      "included_in_head": false,
+      "evidence": "behaviour present in the head (only a Queue::fake test); persisted-state evidence tested now on PR #94 (and children retention on #93)",
+      "functional": "ready",
+      "integration": "PRs #94/#93 pending",
+      "release": "not a blocker",
+      "decision": "READY_IN_FOLLOWUP_PENDING_INTEGRATION",
+      "missing": "Merge of #94 (evidence) and #93 (referenced children policy).",
+      "closing_keyword_justified": false,
+      "url": "https://github.com/offline-agency/laravel-mongo-auto-sync/issues/47",
+      "state": "open",
+      "retrieved": "2026-10-11",
+      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f"
+    },
+    {
+      "number": 55,
+      "title": "Throw Exception Missing Relationship in Request",
+      "intent": "Agreed: full requests require every top-level relationship key; partial requests allow omissions.",
+      "acceptance": "PROMPT section 11.",
+      "scope_limits": "No recursive validation, no transaction.",
+      "paths": [
+        "src/Traits/MainMongoTrait.php::validateRelationshipRequest"
+      ],
+      "tests": [
+        "tests/RelationshipRequestValidationTest.php"
+      ],
+      "included_in_head": true,
+      "evidence": "tested now (full suite on the PR head)",
+      "functional": "ready",
+      "integration": "included",
+      "release": "not a blocker",
+      "decision": "READY_FOR_MERGE_CLOSURE",
+      "missing": "",
+      "closing_keyword_justified": true,
+      "url": "https://github.com/offline-agency/laravel-mongo-auto-sync/issues/55",
+      "state": "open",
+      "retrieved": "2026-10-11",
+      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f"
+    },
+    {
+      "number": 82,
+      "title": "Upgrade PHP 8.3",
+      "intent": "Title only; no body or comments.",
+      "acceptance": "Maintainer decision required.",
+      "scope_limits": "PHP ^8.4 policy kept; PHP 8.3 is not claimed.",
+      "paths": [
+        "composer.json"
+      ],
+      "tests": [],
+      "included_in_head": false,
+      "evidence": "code inspected (composer.json requires ^8.4)",
+      "functional": "n/a",
+      "integration": "n/a",
+      "release": "not a blocker",
+      "decision": "POLICY_DECISION_REQUIRED",
+      "missing": "Maintainer disposition: superseded / not planned for the v4 support policy, or explicit approval to broaden support.",
+      "closing_keyword_justified": false,
+      "url": "https://github.com/offline-agency/laravel-mongo-auto-sync/issues/82",
+      "state": "open",
+      "retrieved": "2026-10-11",
+      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f"
+    }
+  ]
+}
