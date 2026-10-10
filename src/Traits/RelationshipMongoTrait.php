@@ -150,7 +150,7 @@ trait RelationshipMongoTrait
         $mini_attributes = $mini_model->getAttributes();
         $collection = $this->getMongoCollection();
         $filter = ['_id' => ['$in' => SyncHelper::idVariants((string) $this->getKey())]];
-        $touch = $this->usesTimestamps() ? [$this->getUpdatedAtColumn() => $this->fromDateTime($this->freshTimestamp())] : [];
+        $touch = $this->touchedTimestamp();
 
         if ($is_EM_target) {
             $ref_ids = SyncHelper::idVariants($mini_attributes['ref_id'] ?? null);
@@ -170,6 +170,21 @@ trait RelationshipMongoTrait
         }
 
         $this->reloadEmbedded($method_on_target);
+    }
+
+    /**
+     * The updated_at value to $set with an atomic target write (none without timestamps or updated_at column).
+     *
+     * @return array<string, mixed>
+     */
+    private function touchedTimestamp(): array
+    {
+        $column = $this->getUpdatedAtColumn();
+        if (! $this->usesTimestamps() || $column === null) {
+            return [];
+        }
+
+        return [$column => $this->fromDateTime($this->freshTimestamp())];
     }
 
     private function getMongoCollection(): Collection
@@ -212,7 +227,7 @@ trait RelationshipMongoTrait
             '_id' => ['$in' => SyncHelper::idVariants((string) $this->getKey())],
             $method_on_target.'.ref_id' => ['$in' => $ref_ids],
         ];
-        $touch = $this->usesTimestamps() ? [$this->getUpdatedAtColumn() => $this->fromDateTime($this->freshTimestamp())] : [];
+        $touch = $this->touchedTimestamp();
 
         if ($is_EM_target) {
             $update = ['$pull' => [$method_on_target => ['ref_id' => ['$in' => $ref_ids]]]];
