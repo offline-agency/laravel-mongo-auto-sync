@@ -34,7 +34,7 @@ class MongoAutoSyncObserver
 
     public function saved(MDModel $model): void
     {
-        if (! $this->isEnabled()) {
+        if (! $this->isEnabled() || ! $model->targetSyncEnabled()) {
             return;
         }
 
@@ -55,7 +55,7 @@ class MongoAutoSyncObserver
 
     public function deleted(MDModel $model): void
     {
-        if (! $this->isEnabled()) {
+        if (! $this->isEnabled() || ! $model->targetSyncEnabled()) {
             return;
         }
 

@@ -12,7 +12,7 @@ Evidence: **REPRODUCED** (observed with a test or probe; probes kept outside the
 | G | P2 | Growth limits (payload, fan-out, document size) | STATIC | `feat/sync-limits` |
 | R3 | P2 | Embedded increment events | REPRODUCED | part of D-adapter |
 | R7 | P3 | Dead `$dates` configuration | STATIC | `chore/dates-casts` |
-| E | P3 | Disable target sync per operation (#45/#47) | STATIC | `feat/45-47-sync-switch` |
+| E | P3 | Disable target sync per operation (#45/#47) | IMPLEMENTED, pending integration | `feat/45-target-sync-opt-out` |
 | F | P3 | Advanced analyser | STATIC | `feat/analyse-advanced` |
 | H | P3 | Reproducible benchmark (#44) | STATIC | `docs/44-benchmark` |
 | I | P3 | PHP 8.3 (#82) | STATIC | maintainer decision |
@@ -59,6 +59,8 @@ Evidence: **REPRODUCED** (observed with a test or probe; probes kept outside the
 - STATIC: Laravel 12/13 `getDates()` ignores the `$dates` property; `MDModel::$dates` and test models still declare it. Proposal: remove it and document date casts.
 
 ## E. Disable target sync per operation (#45/#47, P3)
+
+- **Status:** implemented on `feat/45-target-sync-opt-out` (`withoutTargetSync()`, `sync_targets`); the proposal below is the original analysis.
 
 - Proposal: a scoped switch (`MDModel::withoutTargetSync(fn () => ...)`) that disables only the target sync (sync path and observer dispatch), not other model events; nesting-safe and restored after exceptions; tested with persistent workers.
 

@@ -30,6 +30,11 @@ trait MainMongoTrait
     protected $has_partial_request;
 
     /**
+     * Number of withoutTargetSync() scopes open on this instance.
+     */
+    private int $targetSyncDisabledDepth = 0;
+
+    /**
      * @var Request|null
      */
     protected $request;
@@ -68,8 +73,10 @@ trait MainMongoTrait
 
         $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
         $this->validateRelationshipRequest($request);
-        $this->storeEditAllItems($request, 'add', $options);
-        $this->processAllRelationships($request, 'add', '', '', $options);
+        $this->withTargetSyncOption($options, function () use ($request, $options) {
+            $this->storeEditAllItems($request, 'add', $options);
+            $this->processAllRelationships($request, 'add', '', '', $options);
+        });
 
         // Dispatch the creation event
         $this->fireModelEvent('storeWithSync');
@@ -96,8 +103,10 @@ trait MainMongoTrait
 
         $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
         $this->validateRelationshipRequest($request);
-        $this->storeEditAllItems($request, 'update', $options);
-        $this->processAllRelationships($request, 'update', '', '', $options);
+        $this->withTargetSyncOption($options, function () use ($request, $options) {
+            $this->storeEditAllItems($request, 'update', $options);
+            $this->processAllRelationships($request, 'update', '', '', $options);
+        });
 
         // Dispatch the update event
         $this->fireModelEvent('updateWithSync');
@@ -108,6 +117,51 @@ trait MainMongoTrait
         }
 
         return $fresh;
+    }
+
+    /**
+     * Run $operation with the target sync of THIS model instance disabled: the source and its own (embedded and
+     * referenced) relationships are written and every Eloquent / package event fires, but no target document is
+     * written and no SyncTargetJob is dispatched for this instance (plain save() included). Other models saved
+     * inside the operation keep syncing; scopes nest and are restored after exceptions. Jobs queued by earlier
+     * operations are not cancelled.
+     *
+     * @template TReturn
+     *
+     * @param  callable(static): TReturn  $operation
+     * @return TReturn
+     */
+    public function withoutTargetSync(callable $operation): mixed
+    {
+        $this->targetSyncDisabledDepth++;
+
+        try {
+            return $operation($this);
+        } finally {
+            $this->targetSyncDisabledDepth--;
+        }
+    }
+
+    public function targetSyncEnabled(): bool
+    {
+        return $this->targetSyncDisabledDepth === 0;
+    }
+
+    /**
+     * Run $operation honouring the 'sync_targets' option of storeWithSync() / updateWithSync() (default true).
+     *
+     * @param  array<string, mixed>  $options
+     *
+     * @throws InvalidConfigurationException
+     */
+    private function withTargetSyncOption(array $options, callable $operation): void
+    {
+        $syncTargets = $options['sync_targets'] ?? true;
+        if (! is_bool($syncTargets)) {
+            throw new InvalidConfigurationException('The sync_targets option must be a boolean.');
+        }
+
+        $syncTargets ? $operation() : $this->withoutTargetSync($operation);
     }
 
     private function logSyncDebug(string $message): void
@@ -186,7 +240,7 @@ trait MainMongoTrait
         if ($syncTargets) {
             $this->delete();
         } else {
-            MongoAutoSyncObserver::withoutDispatching(fn () => $this->delete());
+            $this->withoutTargetSync(fn () => $this->delete());
         }
 
         // Dispatch the destroy event

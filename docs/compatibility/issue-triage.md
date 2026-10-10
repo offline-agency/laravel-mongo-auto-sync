@@ -11,9 +11,9 @@ Branches: **A** `fix/upstream-compatibility` (base `fix/pr-40-review`, PR #89), 
 | #42 | Refactor target synchronization to Observer pattern | RESOLVED_BY_CODE (opt-in), pending merge | #89 (+ A) |
 | #43 | Command Analyse Database | RESOLVED_BY_CODE for the contract below, pending merge | C |
 | #44 | Add benchmark result on Readme | OPEN | roadmap H |
-| #45 | Enable/disable sync between collections on save | OPEN | roadmap E |
+| #45 | Enable/disable sync between collections on save | IMPLEMENTED on `feat/45-target-sync-opt-out` (pending integration into #40) | see below |
 | #46 | Support for referenced relationships | PARTIAL; ownership take-over reproduced: **blocker for releasing 4.0** | roadmap A |
-| #47 | Enable/disable sync between collections on delete | PARTIAL | #89 + A, roadmap E |
+| #47 | Enable/disable sync between collections on delete | IMPLEMENTED; persisted-state evidence on `feat/45-target-sync-opt-out` (pending integration) | see below |
 | #55 | Throw Exception Missing Relationship in Request | RESOLVED_BY_CODE for the contract below, pending merge | B |
 | #82 | Upgrade PHP 8.3 | NOT_APPLICABLE as asked (project requires PHP ^8.4); maintainer decision | roadmap I |
 
@@ -52,7 +52,7 @@ Not claimed: consistent snapshot, comparison of the embedded values, orphan copi
 
 - #47: `destroyWithSync(false)` skips target cleanup on both paths (the background path was fixed in #89, commit bf13709, VERIFIED by `tests/BackgroundSyncTest.php`). It also skips deleting referenced children. No equivalent for save.
 - #45: no per-operation switch for `storeWithSync()`/`updateWithSync()`/`save()`.
-- To close: an option that disables only the target sync of one operation (not all model events), with nesting, exceptions and persistent workers tested (roadmap E).
+- Implemented on `feat/45-target-sync-opt-out`: `['sync_targets' => false]` for `storeWithSync()` / `updateWithSync()`, `withoutTargetSync()` for plain saves, and `destroyWithSync(false)` moved from the process-wide observer suspension to the same per-instance scope. `tests/TargetSyncOptOutTest.php` (synchronous and real MongoDB queue): raw target documents unchanged (timestamps included), no new jobs, #55 validation kept, Eloquent and package events fire, nested scope, another model inside the scope keeps syncing, exception restores the scope, the next enabled save/delete syncs, and the boundary: a job queued by an earlier operation is not cancelled.
 
 ## #46 Referenced relationships (HasOne/HasMany)
 

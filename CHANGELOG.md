@@ -14,6 +14,7 @@ See [UPGRADE-4.0.md](UPGRADE-4.0.md) for the migration guide.
 - `queue_connection`, `queue_name` and `logging` configuration keys (`MONGO_AUTO_SYNC_QUEUE_CONNECTION`, `MONGO_AUTO_SYNC_QUEUE_NAME`, `MONGO_AUTO_SYNC_LOGGING`).
 - `SyncTargetJob::dispatchFor()`, `SyncHelper::refIds()`, `SyncHelper::sameId()` and `SyncHelper::idVariants()`.
 - `removeRelationWithSync()` on synced models (target-side removal of a mini model).
+- Per-operation target-sync opt-out: the `sync_targets` option of `storeWithSync()` / `updateWithSync()` and `withoutTargetSync()` for plain saves, scoped to the model instance ([#45](https://github.com/offline-agency/laravel-mongo-auto-sync/issues/45)); `destroyWithSync(false)` uses the same scope ([#47](https://github.com/offline-agency/laravel-mongo-auto-sync/issues/47)).
 - Console commands `mongo-sync:check-config`, `mongo-sync:analyse [--fix]`, `mongo-sync:sync-collection {model}` and `mongo-sync:benchmark {model} {count=100}`.
 - Dedicated exceptions extending `MongoAutoSyncException`: `InvalidConfigurationException`, `InvalidRelationshipException`, `InvalidRequestException`, `ModelNotFoundException`.
 - Sync of `HasOne` / `HasMany` referenced relationships (not covered by tests yet).
