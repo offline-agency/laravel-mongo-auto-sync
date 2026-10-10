@@ -116,10 +116,11 @@ trait RelationshipMongoTrait
                         $i++;
                     }
 
-                    if ($is_EM) {
+                    // a relationship absent from the request is only propagated to its targets: keep the stored copy
+                    if ($is_EM && $is_embeds_has_to_be_updated) {
                         $this->$method = $this->tempEM;
                     }
-                } else {
+                } elseif ($is_embeds_has_to_be_updated) {
                     $this->$method = [];
                 }
                 $this->save();

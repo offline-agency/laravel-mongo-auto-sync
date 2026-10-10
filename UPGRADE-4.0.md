@@ -55,7 +55,16 @@ Generic `Exception`s are replaced by classes extending `OfflineAgency\MongoAutoS
 
 `catch (\Exception $e)` keeps working; catch `MongoAutoSyncException` to handle only package errors.
 
-## 4. Stricter types
+## 4. Full requests must contain every relationship ([#55](https://github.com/offline-agency/laravel-mongo-auto-sync/issues/55))
+
+`storeWithSync()` and `updateWithSync()` check the request after merging `additionalData`: in a full request every top-level relationship declared in `$mongoRelation` must be present, otherwise `InvalidRequestException("Missing relationship '<key>' in the request.")` is thrown before the source is written, targets are touched or jobs are dispatched.
+
+- Send an explicit empty value (`null`, `""` or `"[]"`) to store an empty relationship.
+- Use `['request_type' => 'partial']` to update only some fields: omitted relationships stay unchanged and their targets receive the updated fields of the source.
+- In 3.x a full request without a relationship that has a target was silently filled from the stored document (and an `EmbedsMany` one was emptied). Code that relied on that must send the key or use a partial request.
+- The check covers the top-level keys only; it is not a transaction nor a recursive validation of nested relationships.
+
+## 4b. Stricter types
 
 Helpers and traits have native parameter and return types. Code that passed loosely typed values (for example `null` where a string is expected, or an `int` id to a method expecting a string) may now get a `TypeError`.
 

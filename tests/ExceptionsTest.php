@@ -15,7 +15,7 @@ test('storeWithSync without ref_id on an embedded object throws InvalidConfigura
 })->throws(InvalidConfigurationException::class, 'ref_id attribute not found');
 
 test('a missing request key for a relationship throws InvalidRequestException', function () {
-    // primarycategory has no target, so no request key is generated for it
+    // full request without the primarycategory key (with or without target the key is required)
     (new Article)->storeWithSync(new Request, [
         'autoincrement_id' => 1,
         'title' => 'title',
@@ -26,7 +26,7 @@ test('a missing request key for a relationship throws InvalidRequestException', 
         'is_deleted' => false,
         'is_active' => true,
     ]);
-})->throws(InvalidRequestException::class, "'primarycategory' attribute not found in the request.");
+})->throws(InvalidRequestException::class, "Missing relationship 'primarycategory' in the request.");
 
 test('every custom exception extends MongoAutoSyncException', function (string $exception) {
     expect(is_subclass_of($exception, MongoAutoSyncException::class))->toBeTrue();
