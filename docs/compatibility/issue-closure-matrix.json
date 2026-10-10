@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "retrieved": "2026-10-11",
-  "pr40_head": "03f6200007b46b3983d9847d88ecc04c97fd939d",
+  "pr40_head": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e",
   "live_open_issues": [
     42,
     43,
@@ -27,7 +27,7 @@
         "tests/BackgroundSyncTest.php"
       ],
       "included_in_head": true,
-      "evidence": "tested now (full suite on the head 03f6200, real mongodb queue test)",
+      "evidence": "tested now (full suite on the head 35e881b, real mongodb queue test)",
       "functional": "ready",
       "integration": "included",
       "release": "blocked by F01-F03 P0 items (see feature matrix)",
@@ -37,7 +37,7 @@
       "url": "https://github.com/offline-agency/laravel-mongo-auto-sync/issues/42",
       "state": "open",
       "retrieved": "2026-10-11",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d"
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e"
     },
     {
       "number": 43,
@@ -52,7 +52,7 @@
         "tests/Console/AnalyseDatabaseContractTest.php"
       ],
       "included_in_head": true,
-      "evidence": "tested now (full suite on the head 03f6200, incl. end-to-end repair with queue:work)",
+      "evidence": "tested now (full suite on the head 35e881b, incl. end-to-end repair with queue:work)",
       "functional": "ready",
       "integration": "included",
       "release": "not a blocker",
@@ -62,7 +62,7 @@
       "url": "https://github.com/offline-agency/laravel-mongo-auto-sync/issues/43",
       "state": "open",
       "retrieved": "2026-10-11",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d"
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e"
     },
     {
       "number": 44,
@@ -86,7 +86,7 @@
       "url": "https://github.com/offline-agency/laravel-mongo-auto-sync/issues/44",
       "state": "open",
       "retrieved": "2026-10-11",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d"
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e"
     },
     {
       "number": 45,
@@ -101,18 +101,18 @@
       "tests": [
         "tests/TargetSyncOptOutTest.php"
       ],
-      "included_in_head": false,
-      "evidence": "tested now on feat/45-target-sync-opt-out 121064e (PR #94, includes F08 and develop with #93): 455 passed, 100 %",
+      "included_in_head": true,
+      "evidence": "#94 merged; tested now on the head 35e881b (471 passed, 100 %, tests/TargetSyncOptOutTest.php with the real mongodb queue)",
       "functional": "ready",
-      "integration": "PR #94 pending",
+      "integration": "included (#94)",
       "release": "not a blocker",
-      "decision": "READY_IN_FOLLOWUP_PENDING_INTEGRATION",
-      "missing": "Merge of #94 into develop.",
-      "closing_keyword_justified": false,
+      "decision": "READY_FOR_MERGE_CLOSURE",
+      "missing": "",
+      "closing_keyword_justified": true,
       "url": "https://github.com/offline-agency/laravel-mongo-auto-sync/issues/45",
       "state": "open",
       "retrieved": "2026-10-11",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d"
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e"
     },
     {
       "number": 46,
@@ -129,7 +129,7 @@
         "tests/Coverage/TraitsReferencedRelationshipsTest.php"
       ],
       "included_in_head": true,
-      "evidence": "reproduced on 8aee971 (takeover, unknown id creates a document); fixed by #93, merged; tested now on the head 03f6200 (442 passed, 100 %)",
+      "evidence": "reproduced on 8aee971 (takeover, unknown id creates a document); fixed by #93, merged; tested now on the head 35e881b (471 passed, 100 %)",
       "functional": "ready",
       "integration": "included (#93)",
       "release": "not a blocker for #46 itself; F02/F03 remain P0 blockers",
@@ -139,7 +139,7 @@
       "url": "https://github.com/offline-agency/laravel-mongo-auto-sync/issues/46",
       "state": "open",
       "retrieved": "2026-10-11",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d"
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e"
     },
     {
       "number": 47,
@@ -154,18 +154,18 @@
         "tests/TargetSyncOptOutTest.php",
         "tests/Referenced/LifecycleTest.php"
       ],
-      "included_in_head": false,
-      "evidence": "behaviour present in the head (only a Queue::fake test); persisted-state evidence tested now on PR #94 (and children retention on #93)",
+      "included_in_head": true,
+      "evidence": "#94 and #93 merged; persisted-state evidence (both modes, raw targets, events, boundary) and children retention tested now on the head 35e881b",
       "functional": "ready",
-      "integration": "PRs #94/#93 pending",
+      "integration": "included (#94, #93)",
       "release": "not a blocker",
-      "decision": "READY_IN_FOLLOWUP_PENDING_INTEGRATION",
-      "missing": "Merge of #94 (evidence) and #93 (referenced children policy).",
-      "closing_keyword_justified": false,
+      "decision": "READY_FOR_MERGE_CLOSURE",
+      "missing": "",
+      "closing_keyword_justified": true,
       "url": "https://github.com/offline-agency/laravel-mongo-auto-sync/issues/47",
       "state": "open",
       "retrieved": "2026-10-11",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d"
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e"
     },
     {
       "number": 55,
@@ -180,7 +180,7 @@
         "tests/RelationshipRequestValidationTest.php"
       ],
       "included_in_head": true,
-      "evidence": "tested now (full suite on the head 03f6200)",
+      "evidence": "tested now (full suite on the head 35e881b)",
       "functional": "ready",
       "integration": "included",
       "release": "not a blocker",
@@ -190,7 +190,7 @@
       "url": "https://github.com/offline-agency/laravel-mongo-auto-sync/issues/55",
       "state": "open",
       "retrieved": "2026-10-11",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d"
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e"
     },
     {
       "number": 82,
@@ -213,7 +213,7 @@
       "url": "https://github.com/offline-agency/laravel-mongo-auto-sync/issues/82",
       "state": "open",
       "retrieved": "2026-10-11",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d"
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e"
     }
   ]
 }

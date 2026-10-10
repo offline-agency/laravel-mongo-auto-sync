@@ -1,14 +1,14 @@
 {
   "schema": 1,
   "updated": "2026-10-11",
-  "pr40_head": "03f6200007b46b3983d9847d88ecc04c97fd939d",
+  "pr40_head": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e",
   "features": [
     {
       "id": "F01",
       "name": "Safe referenced writes",
       "kind": "REQUIRED_IMPLEMENTATION",
       "status": "VERIFIED_AND_INCLUDED",
-      "pr": "#93 merged (d3037cb); head 03f6200 tested: 442 passed, 100 %",
+      "pr": "#93 merged (d3037cb); head 35e881b tested: 442 passed, 100 %",
       "paths": [
         "src/Relationships/ReferencedWritePlanner.php",
         "src/Relationships/ReferencedWritePlan.php",
@@ -20,15 +20,15 @@
       "in_head": true,
       "blocker": "resolved in the head",
       "limits": "Preflight is not a transaction; nested referenced relations validated at write time only. Tenant-connection children fixed on #95 (F01 x F02).",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e",
       "updated": "2026-10-11"
     },
     {
       "id": "F02",
       "name": "Queued database/tenant context",
       "kind": "REQUIRED_IMPLEMENTATION",
-      "status": "READY_IN_FOLLOWUP_PENDING_INTEGRATION",
-      "pr": "#95 feat/f02-sync-context 861bf77",
+      "status": "VERIFIED_AND_INCLUDED",
+      "pr": "#95 feat/f02-sync-context 861bf77 (merged; head 35e881b: 471 passed, 100 %)",
       "paths": [
         "src/Context/*",
         "src/Jobs/SyncTargetJob.php",
@@ -36,10 +36,10 @@
       ],
       "tests": "tests/Context/* (same ids in 5 databases, serialized jobs + queue:work, retry, tenants, legacy payloads, referenced children on the parent connection); 454 passed, 100 %",
       "docs": "docs/tenancy.md",
-      "in_head": false,
-      "blocker": "P0 release blocker until included",
+      "in_head": true,
+      "blocker": "resolved in the head",
       "limits": "No distributed transaction; analyser scans declared connections.",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e",
       "updated": "2026-10-11"
     },
     {
@@ -56,7 +56,7 @@
       "in_head": false,
       "blocker": "P0 release blocker",
       "limits": "Needs a storage contract (revision/watermark): design and approval gate first.",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e",
       "updated": "2026-10-11"
     },
     {
@@ -71,7 +71,7 @@
       "in_head": false,
       "blocker": "",
       "limits": "",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e",
       "updated": "2026-10-11"
     },
     {
@@ -86,7 +86,7 @@
       "in_head": false,
       "blocker": "",
       "limits": "",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e",
       "updated": "2026-10-11"
     },
     {
@@ -101,15 +101,15 @@
       "in_head": false,
       "blocker": "",
       "limits": "",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e",
       "updated": "2026-10-11"
     },
     {
       "id": "F07",
       "name": "Per-operation target-sync opt-out",
       "kind": "REQUIRED_IMPLEMENTATION",
-      "status": "READY_IN_FOLLOWUP_PENDING_INTEGRATION",
-      "pr": "#94 feat/45-target-sync-opt-out 121064e",
+      "status": "VERIFIED_AND_INCLUDED",
+      "pr": "#94 feat/45-target-sync-opt-out 121064e (merged; head 35e881b: 471 passed, 100 %)",
       "paths": [
         "src/Traits/MainMongoTrait.php",
         "src/Observers/MongoAutoSyncObserver.php",
@@ -117,28 +117,28 @@
       ],
       "tests": "tests/TargetSyncOptOutTest.php, tests/Referenced/OptOutInteractionTest.php (both modes, real queue, events, nesting, exceptions, boundary, F01 x F07); 455 passed, 100 %",
       "docs": "README 'Disabling target sync for one operation'",
-      "in_head": false,
+      "in_head": true,
       "blocker": "",
       "limits": "Does not cancel jobs queued earlier. Interactions with F04/F06/F08 pending those features.",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e",
       "updated": "2026-10-11"
     },
     {
       "id": "F08",
       "name": "Bounded dispatch coalescence",
       "kind": "REQUIRED_IMPLEMENTATION",
-      "status": "READY_IN_FOLLOWUP_PENDING_INTEGRATION",
-      "pr": "#96 merged into feat/45 (e4933e4), part of #94",
+      "status": "VERIFIED_AND_INCLUDED",
+      "pr": "#96 merged into feat/45 (e4933e4), part of #94 (merged; head 35e881b: 471 passed, 100 %)",
       "paths": [
         "src/Traits/MainMongoTrait.php (withCoalescedTargetSync)",
         "src/Observers/MongoAutoSyncObserver.php"
       ],
       "tests": "tests/DispatchCoalescingTest.php (update 2 -> 1 job, no-op 0, A->B->C, exception, opt-out, sources apart); 455 passed on #94",
       "docs": "README background sync",
-      "in_head": false,
+      "in_head": true,
       "blocker": "",
       "limits": "In memory per operation; crash loses it (F09). Query counts not measured.",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e",
       "updated": "2026-10-11"
     },
     {
@@ -155,7 +155,7 @@
       "in_head": false,
       "blocker": "",
       "limits": "Design only until approved.",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e",
       "updated": "2026-10-11"
     },
     {
@@ -172,7 +172,7 @@
       "in_head": false,
       "blocker": "",
       "limits": "Design only until approved.",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e",
       "updated": "2026-10-11"
     },
     {
@@ -189,7 +189,7 @@
       "in_head": false,
       "blocker": "",
       "limits": "Interfaces frozen for review before implementation; F12-F20 build on them.",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e",
       "updated": "2026-10-11"
     },
     {
@@ -204,7 +204,7 @@
       "in_head": false,
       "blocker": "",
       "limits": "",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e",
       "updated": "2026-10-11"
     },
     {
@@ -219,7 +219,7 @@
       "in_head": false,
       "blocker": "",
       "limits": "",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e",
       "updated": "2026-10-11"
     },
     {
@@ -234,7 +234,7 @@
       "in_head": false,
       "blocker": "",
       "limits": "",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e",
       "updated": "2026-10-11"
     },
     {
@@ -249,7 +249,7 @@
       "in_head": false,
       "blocker": "",
       "limits": "",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e",
       "updated": "2026-10-11"
     },
     {
@@ -264,7 +264,7 @@
       "in_head": false,
       "blocker": "",
       "limits": "",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e",
       "updated": "2026-10-11"
     },
     {
@@ -279,7 +279,7 @@
       "in_head": false,
       "blocker": "",
       "limits": "",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e",
       "updated": "2026-10-11"
     },
     {
@@ -294,7 +294,7 @@
       "in_head": false,
       "blocker": "",
       "limits": "",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e",
       "updated": "2026-10-11"
     },
     {
@@ -309,7 +309,7 @@
       "in_head": false,
       "blocker": "",
       "limits": "",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e",
       "updated": "2026-10-11"
     },
     {
@@ -324,7 +324,7 @@
       "in_head": false,
       "blocker": "",
       "limits": "laravel/mcp v1.0.1 (tag 92987a9) verified compatible (Illuminate 12/13); first read-only stdio slice planned after the F11 review.",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e",
       "updated": "2026-10-11"
     },
     {
@@ -339,7 +339,7 @@
       "in_head": false,
       "blocker": "",
       "limits": "",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e",
       "updated": "2026-10-11"
     },
     {
@@ -356,7 +356,67 @@
       "in_head": false,
       "blocker": "",
       "limits": "Design only until approved.",
-      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e",
+      "updated": "2026-10-11"
+    },
+    {
+      "id": "F23",
+      "name": "Registered search profiles",
+      "kind": "REQUIRED_IMPLEMENTATION",
+      "status": "NOT_STARTED",
+      "pr": "",
+      "paths": [],
+      "tests": "",
+      "docs": "",
+      "in_head": false,
+      "blocker": "",
+      "limits": "Upstream 5.11.0 provides search()/vectorSearch()/autocomplete() and searchIndex()/vectorSearchIndex()/dropSearchIndex(); a mongot-capable backend is needed for integration tests.",
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e",
+      "updated": "2026-10-11"
+    },
+    {
+      "id": "F24",
+      "name": "Application-managed embedding lifecycle",
+      "kind": "REQUIRED_IMPLEMENTATION",
+      "status": "NOT_STARTED",
+      "pr": "",
+      "paths": [],
+      "tests": "",
+      "docs": "",
+      "in_head": false,
+      "blocker": "",
+      "limits": "Upstream 5.11.0 provides search()/vectorSearch()/autocomplete() and searchIndex()/vectorSearchIndex()/dropSearchIndex(); a mongot-capable backend is needed for integration tests.",
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e",
+      "updated": "2026-10-11"
+    },
+    {
+      "id": "F25",
+      "name": "Search/Vector index lifecycle and commands",
+      "kind": "REQUIRED_IMPLEMENTATION",
+      "status": "NOT_STARTED",
+      "pr": "",
+      "paths": [],
+      "tests": "",
+      "docs": "",
+      "in_head": false,
+      "blocker": "",
+      "limits": "Upstream 5.11.0 provides search()/vectorSearch()/autocomplete() and searchIndex()/vectorSearchIndex()/dropSearchIndex(); a mongot-capable backend is needed for integration tests.",
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e",
+      "updated": "2026-10-11"
+    },
+    {
+      "id": "F26",
+      "name": "Hybrid retrieval and relevance evaluation",
+      "kind": "REQUIRED_IMPLEMENTATION",
+      "status": "NOT_STARTED",
+      "pr": "",
+      "paths": [],
+      "tests": "",
+      "docs": "",
+      "in_head": false,
+      "blocker": "",
+      "limits": "Upstream 5.11.0 provides search()/vectorSearch()/autocomplete() and searchIndex()/vectorSearchIndex()/dropSearchIndex(); a mongot-capable backend is needed for integration tests.",
+      "head_assessed": "35e881bbe3f9ef87de8b3ab4f290b5a449b2c58e",
       "updated": "2026-10-11"
     }
   ]
