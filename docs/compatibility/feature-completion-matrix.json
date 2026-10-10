@@ -1,14 +1,14 @@
 {
   "schema": 1,
   "updated": "2026-10-11",
-  "pr40_head": "8aee9711261a278f2c0eecd06bebac255ec63a2f",
+  "pr40_head": "03f6200007b46b3983d9847d88ecc04c97fd939d",
   "features": [
     {
       "id": "F01",
       "name": "Safe referenced writes",
       "kind": "REQUIRED_IMPLEMENTATION",
-      "status": "READY_IN_FOLLOWUP_PENDING_INTEGRATION",
-      "pr": "#93 feat/46-safe-referenced-writes d3037cb",
+      "status": "VERIFIED_AND_INCLUDED",
+      "pr": "#93 merged (d3037cb); head 03f6200 tested: 442 passed, 100 %",
       "paths": [
         "src/Relationships/ReferencedWritePlanner.php",
         "src/Relationships/ReferencedWritePlan.php",
@@ -17,10 +17,10 @@
       ],
       "tests": "tests/Referenced/* (A/B takeover, mixed lists, ids, fields, cardinality, lifecycle, events, example); 440 passed, 100 %",
       "docs": "docs/referenced-relationships.md",
-      "in_head": false,
-      "blocker": "P0 release blocker until included",
-      "limits": "Preflight is not a transaction; nested referenced relations validated at write time only.",
-      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f",
+      "in_head": true,
+      "blocker": "resolved in the head",
+      "limits": "Preflight is not a transaction; nested referenced relations validated at write time only. Tenant-connection children fixed on #95 (F01 x F02).",
+      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
       "updated": "2026-10-11"
     },
     {
@@ -28,32 +28,35 @@
       "name": "Queued database/tenant context",
       "kind": "REQUIRED_IMPLEMENTATION",
       "status": "READY_IN_FOLLOWUP_PENDING_INTEGRATION",
-      "pr": "#95 feat/f02-sync-context c68fa3a",
+      "pr": "#95 feat/f02-sync-context 861bf77",
       "paths": [
         "src/Context/*",
-        "src/Jobs/SyncTargetJob.php"
+        "src/Jobs/SyncTargetJob.php",
+        "src/Relationships/ReferencedWritePlanner.php"
       ],
-      "tests": "tests/Context/SyncContextTest.php (same ids in 5 databases, serialized jobs + queue:work, retry, tenants, legacy payloads); 425 passed, 100 %",
+      "tests": "tests/Context/* (same ids in 5 databases, serialized jobs + queue:work, retry, tenants, legacy payloads, referenced children on the parent connection); 454 passed, 100 %",
       "docs": "docs/tenancy.md",
       "in_head": false,
       "blocker": "P0 release blocker until included",
       "limits": "No distributed transaction; analyser scans declared connections.",
-      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f",
+      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
       "updated": "2026-10-11"
     },
     {
       "id": "F03",
       "name": "Stale concurrent write protection",
       "kind": "REQUIRED_IMPLEMENTATION",
-      "status": "NOT_STARTED",
-      "pr": "",
-      "paths": [],
+      "status": "BLOCKED_DESIGN_APPROVAL",
+      "pr": "design #98",
+      "paths": [
+        "docs/architecture/stale-write-protection.md"
+      ],
       "tests": "",
-      "docs": "",
+      "docs": "docs/architecture/stale-write-protection.md",
       "in_head": false,
       "blocker": "P0 release blocker",
       "limits": "Needs a storage contract (revision/watermark): design and approval gate first.",
-      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f",
+      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
       "updated": "2026-10-11"
     },
     {
@@ -68,7 +71,7 @@
       "in_head": false,
       "blocker": "",
       "limits": "",
-      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f",
+      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
       "updated": "2026-10-11"
     },
     {
@@ -83,7 +86,7 @@
       "in_head": false,
       "blocker": "",
       "limits": "",
-      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f",
+      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
       "updated": "2026-10-11"
     },
     {
@@ -98,7 +101,7 @@
       "in_head": false,
       "blocker": "",
       "limits": "",
-      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f",
+      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
       "updated": "2026-10-11"
     },
     {
@@ -106,41 +109,44 @@
       "name": "Per-operation target-sync opt-out",
       "kind": "REQUIRED_IMPLEMENTATION",
       "status": "READY_IN_FOLLOWUP_PENDING_INTEGRATION",
-      "pr": "#94 feat/45-target-sync-opt-out fdc3fcb",
+      "pr": "#94 feat/45-target-sync-opt-out 121064e",
       "paths": [
         "src/Traits/MainMongoTrait.php",
         "src/Observers/MongoAutoSyncObserver.php",
         "src/Traits/RelationshipMongoTrait.php"
       ],
-      "tests": "tests/TargetSyncOptOutTest.php (both modes, real queue, events, nesting, exceptions, boundary); 421 passed, 100 %",
+      "tests": "tests/TargetSyncOptOutTest.php, tests/Referenced/OptOutInteractionTest.php (both modes, real queue, events, nesting, exceptions, boundary, F01 x F07); 455 passed, 100 %",
       "docs": "README 'Disabling target sync for one operation'",
       "in_head": false,
       "blocker": "",
       "limits": "Does not cancel jobs queued earlier. Interactions with F04/F06/F08 pending those features.",
-      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f",
+      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
       "updated": "2026-10-11"
     },
     {
       "id": "F08",
       "name": "Bounded dispatch coalescence",
       "kind": "REQUIRED_IMPLEMENTATION",
-      "status": "NOT_STARTED",
-      "pr": "",
-      "paths": [],
-      "tests": "",
-      "docs": "",
+      "status": "READY_IN_FOLLOWUP_PENDING_INTEGRATION",
+      "pr": "#96 merged into feat/45 (e4933e4), part of #94",
+      "paths": [
+        "src/Traits/MainMongoTrait.php (withCoalescedTargetSync)",
+        "src/Observers/MongoAutoSyncObserver.php"
+      ],
+      "tests": "tests/DispatchCoalescingTest.php (update 2 -> 1 job, no-op 0, A->B->C, exception, opt-out, sources apart); 455 passed on #94",
+      "docs": "README background sync",
       "in_head": false,
       "blocker": "",
-      "limits": "Observed on the head: one updateWithSync dispatches 2 jobs per relation (one per save).",
-      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f",
+      "limits": "In memory per operation; crash loses it (F09). Query counts not measured.",
+      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
       "updated": "2026-10-11"
     },
     {
       "id": "F09",
       "name": "Durable delivery / outbox",
       "kind": "REQUIRED_SEPARATE_DESIGN",
-      "status": "NOT_STARTED",
-      "pr": "",
+      "status": "DESIGN_DELIVERED_PENDING_APPROVAL",
+      "pr": "#98",
       "paths": [
         "docs/architecture/durable-sync-delivery.md"
       ],
@@ -149,15 +155,15 @@
       "in_head": false,
       "blocker": "",
       "limits": "Design only until approved.",
-      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f",
+      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
       "updated": "2026-10-11"
     },
     {
       "id": "F10",
       "name": "Recursive target sync and cycles",
       "kind": "REQUIRED_SEPARATE_DESIGN",
-      "status": "NOT_STARTED",
-      "pr": "",
+      "status": "DESIGN_DELIVERED_PENDING_APPROVAL",
+      "pr": "#98",
       "paths": [
         "docs/architecture/recursive-target-sync.md"
       ],
@@ -166,22 +172,24 @@
       "in_head": false,
       "blocker": "",
       "limits": "Design only until approved.",
-      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f",
+      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
       "updated": "2026-10-11"
     },
     {
       "id": "F11",
       "name": "Projection registry and non-HTTP services",
       "kind": "REQUIRED_IMPLEMENTATION",
-      "status": "NOT_STARTED",
-      "pr": "",
-      "paths": [],
+      "status": "BLOCKED_DESIGN_APPROVAL",
+      "pr": "interface map #98",
+      "paths": [
+        "docs/architecture/projection-services.md"
+      ],
       "tests": "",
       "docs": "",
       "in_head": false,
       "blocker": "",
-      "limits": "",
-      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f",
+      "limits": "Interfaces frozen for review before implementation; F12-F20 build on them.",
+      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
       "updated": "2026-10-11"
     },
     {
@@ -196,7 +204,7 @@
       "in_head": false,
       "blocker": "",
       "limits": "",
-      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f",
+      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
       "updated": "2026-10-11"
     },
     {
@@ -211,7 +219,7 @@
       "in_head": false,
       "blocker": "",
       "limits": "",
-      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f",
+      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
       "updated": "2026-10-11"
     },
     {
@@ -226,7 +234,7 @@
       "in_head": false,
       "blocker": "",
       "limits": "",
-      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f",
+      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
       "updated": "2026-10-11"
     },
     {
@@ -241,7 +249,7 @@
       "in_head": false,
       "blocker": "",
       "limits": "",
-      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f",
+      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
       "updated": "2026-10-11"
     },
     {
@@ -256,7 +264,7 @@
       "in_head": false,
       "blocker": "",
       "limits": "",
-      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f",
+      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
       "updated": "2026-10-11"
     },
     {
@@ -271,7 +279,7 @@
       "in_head": false,
       "blocker": "",
       "limits": "",
-      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f",
+      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
       "updated": "2026-10-11"
     },
     {
@@ -286,7 +294,7 @@
       "in_head": false,
       "blocker": "",
       "limits": "",
-      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f",
+      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
       "updated": "2026-10-11"
     },
     {
@@ -301,7 +309,7 @@
       "in_head": false,
       "blocker": "",
       "limits": "",
-      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f",
+      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
       "updated": "2026-10-11"
     },
     {
@@ -315,8 +323,8 @@
       "docs": "",
       "in_head": false,
       "blocker": "",
-      "limits": "",
-      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f",
+      "limits": "laravel/mcp v1.0.1 (tag 92987a9) verified compatible (Illuminate 12/13); first read-only stdio slice planned after the F11 review.",
+      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
       "updated": "2026-10-11"
     },
     {
@@ -331,22 +339,24 @@
       "in_head": false,
       "blocker": "",
       "limits": "",
-      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f",
+      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
       "updated": "2026-10-11"
     },
     {
       "id": "F22",
       "name": "External-write change-stream adapter",
       "kind": "REQUIRED_SEPARATE_DESIGN",
-      "status": "NOT_STARTED",
-      "pr": "",
-      "paths": [],
+      "status": "DESIGN_DELIVERED_PENDING_APPROVAL",
+      "pr": "#98",
+      "paths": [
+        "docs/architecture/change-stream-adapter.md"
+      ],
       "tests": "",
       "docs": "",
       "in_head": false,
       "blocker": "",
       "limits": "Design only until approved.",
-      "head_assessed": "8aee9711261a278f2c0eecd06bebac255ec63a2f",
+      "head_assessed": "03f6200007b46b3983d9847d88ecc04c97fd939d",
       "updated": "2026-10-11"
     }
   ]
