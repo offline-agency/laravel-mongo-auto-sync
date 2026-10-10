@@ -40,8 +40,9 @@ class Model extends MongoDbModel
 
     /**
      * Delegates to laravel-mongodb (operator check on id/_id, ObjectId conversion, decimal casts,
-     * dot notation, unset cancellation). Only addition: dotted keys listed in $dates (for example
-     * "meta.created_at") are stored as UTCDateTime, as in 3.x.
+     * dot notation, unset cancellation). Only addition: a dotted timestamp column (getDates(), for
+     * example CREATED_AT = 'meta.created_at') is stored as UTCDateTime. The $dates property is not
+     * used by Laravel 12/13: declare date casts for other fields.
      *
      * {@inheritdoc}
      */

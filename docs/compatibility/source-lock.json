@@ -1,0 +1,67 @@
+{
+  "verified_at": "2026-10-09T01:50:28Z (re-checked for advisories on 2026-10-10)",
+  "upstream": {
+    "package": "mongodb/laravel-mongodb",
+    "selected_release": "5.11.0",
+    "reason": "latest stable release (GitHub releases/latest); not a prerelease; branch 5.x is 33 commits ahead of the tag and is not used",
+    "published_at": "2026-09-10T12:33:03Z",
+    "tag_object": "9c40f85f253c9a7a170662d22e3d0a74cc87449c",
+    "tag_type": "annotated",
+    "tagger_date": "2026-09-10T12:27:40Z",
+    "commit": "0634653039468ceb0268a69192bdac64469ed043",
+    "manifest_require": {
+      "php": "^8.2",
+      "ext-mongodb": "^1.21|^2",
+      "mongodb/mongodb": "^1.21|^2",
+      "illuminate/database": "^12.51|^13.0",
+      "illuminate/cache": "^12|^13.0",
+      "illuminate/container": "^12|^13.0",
+      "illuminate/events": "^12|^13.0",
+      "illuminate/support": "^12|^13.0",
+      "symfony/polyfill-php86": "^1.38",
+      "composer-runtime-api": "^2.0.0"
+    },
+    "manifest_minimum_stability": "dev (not copied)",
+    "vendor_identity": "vendor/mongodb/laravel-mongodb 5.11.0 (dist reference 0634653) byte-compared with the tag for DocumentModel, Eloquent\\Builder, Relations\\* and Query\\Builder",
+    "sources": [
+      "gh api repos/mongodb/laravel-mongodb/releases",
+      "gh api repos/mongodb/laravel-mongodb/git/ref/tags/5.11.0",
+      "gh api repos/mongodb/laravel-mongodb/git/tags/9c40f85f253c9a7a170662d22e3d0a74cc87449c",
+      "gh api repos/mongodb/laravel-mongodb/contents/composer.json?ref=5.11.0",
+      "gh api repos/mongodb/laravel-mongodb/compare/5.11.0...5.x"
+    ]
+  },
+  "library": {
+    "package": "mongodb/mongodb",
+    "latest": {"version": "2.5.0", "time": "2026-09-29T12:27:47+00:00", "reference": "d70875dbb897", "requires": {"php": "^8.1", "ext-mongodb": "^2.5"}},
+    "lowest_safe": {"version": "2.4.2", "requires": {"ext-mongodb": "^2.4"}},
+    "advisories": [
+      {"id": "PKSA-y93m-jgy6-r9ns", "cve": "CVE-2026-88023", "affected": ">=2.0.0,<2.4.2|>=1.1.0,<1.21.5", "reported": "2026-10-05"},
+      {"id": "PKSA-61k5-cqr9-b8b4", "cve": "CVE-2026-81525", "affected": ">=2.0.0,<2.4.1|<1.21.4", "reported": "2026-09-08"}
+    ],
+    "legacy_line": "1.21.x (ext ^1.21) allowed by laravel-mongodb, NOT promised by this package (not tested)",
+    "sources": ["https://repo.packagist.org/p2/mongodb/mongodb.json", "https://packagist.org/api/security-advisories/?packages[]=mongodb/mongodb"]
+  },
+  "extension": {
+    "name": "ext-mongodb (PECL mongodb)",
+    "latest": {"version": "2.5.4", "released": "2026-10-08"},
+    "lowest_tested": "2.4.0",
+    "local": {"php84": "2.5.2", "php85": "2.5.2"},
+    "sources": ["https://pecl.php.net/rest/r/mongodb/allreleases.xml"]
+  },
+  "framework": {
+    "package": "laravel/framework (illuminate/*)",
+    "declared": "^12.69|^13.30",
+    "upstream_requirement": "illuminate/database ^12.51|^13.0",
+    "reason": "laravel/framework < 12.69.0 and 13.0.0-13.29.x are affected by CVE-2026-102279 (PKSA-d5tc-s1qs-h781); Composer blocks them, so the declared floor is the lowest safe, tested release. The same floor for all illuminate components is a project policy.",
+    "latest_tested": {"12": "12.69.3", "13": "13.35.0"},
+    "lowest_tested": {"12": "12.69.0", "13": "13.30.0"},
+    "sources": ["https://packagist.org/api/security-advisories/?packages[]=laravel/framework"]
+  },
+  "php": {"declared": "^8.4", "tested": ["8.4.25", "8.4.26", "8.5.10"], "note": "the upstream php ^8.2 does not prove support for PHP < 8.4 (issue #82)"},
+  "mongodb_server": {"tested": ["8.0.32 standalone", "8.0.32 replica set rs0 (single node)", "7.0.43 standalone"]},
+  "pull_requests": {
+    "#89": {"head": "fix/pr-40-review", "head_sha": "4cff25130df5e7940be85d06ac04609c3eeb10d0", "base": "develop"},
+    "#40": {"head": "develop", "head_sha": "c3faafb50b2b75b9064b9cfcd7830b7eadccc58f", "base": "master"}
+  }
+}

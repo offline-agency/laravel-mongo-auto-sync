@@ -5,8 +5,11 @@
 | | 3.x | 4.0 |
 | --- | --- | --- |
 | PHP | >= 7.4 | ^8.4 |
-| Laravel | 5.x - 8.x | ^12.8 \| ^13.0 |
-| MongoDB driver | `jenssegers/mongodb` ^3.6 | `mongodb/laravel-mongodb` ^5.2 (`ext-mongodb` required) |
+| Laravel | 5.x - 8.x | ^12.69 \| ^13.30 |
+| MongoDB driver | `jenssegers/mongodb` ^3.6 | `mongodb/laravel-mongodb` ^5.11, `mongodb/mongodb` ^2.4.2, `ext-mongodb` ^2.4 |
+| MongoDB server | | 7.0, 8.0 (tested standalone and as replica set) |
+
+The Laravel floor is the first release of each line without the advisory CVE-2026-102279, and `mongodb/mongodb` 2.4.2 the first without CVE-2026-88023: Composer refuses the older versions.
 
 ```bash
 composer require offline-agency/laravel-mongo-auto-sync:^4.0
@@ -21,6 +24,8 @@ composer require offline-agency/laravel-mongo-auto-sync:^4.0
 - The primary key attribute is `id` (stored as `_id` in MongoDB). Use `$model->id` and `'id'` in queries and when creating embedded documents; `getAttributes()` exposes `id`, not `_id`.
 - `DB::collection('name')` is removed: use `DB::table('name')`. Query builder results are `stdClass` objects, not arrays.
 - String ids assigned to `id` / `_id` are converted to `ObjectId` (as laravel-mongodb does), including on embedded models.
+- Model attributes go through laravel-mongodb: an `id`/`_id` containing a MongoDB operator (also nested) is rejected with `InvalidArgumentException`, and `decimal` casts are stored as `Decimal128` (they were stored as strings by the 4.0 pre-releases; such values are still read correctly and are not converted).
+- `Model::raw()` returns models hydrated like laravel-mongodb does: the key attribute is `id` (not `_id`) and date fields are Carbon instances.
 - Embedded documents are read back as arrays. `stdClass` values passed as additional data to `storeWithSync()` / `updateWithSync()` are stored as arrays (Symfony's `InputBag` no longer accepts objects).
 
 ## 2. Removed application-specific methods
@@ -95,7 +100,18 @@ Jobs serialised by a previous version cannot be unserialised by 4.0: drain the q
 
 ### Target writes
 
-Targets are updated with atomic MongoDB operations (`$pull` / `$push` / `$set`) instead of loading and saving the target model, on both the synchronous and the background path. Concurrent writers no longer overwrite each other, but **no Eloquent events (`saving`, `saved`, observers) fire on the target models** for these writes; `updated_at` is still refreshed.
+Targets are updated with atomic MongoDB operations (`$pull` / `$push` / `$set`) through the laravel-mongodb query builder instead of loading and saving the target model, on both the synchronous and the background path. Writes of different sources on the same target no longer overwrite each other and they join the connection's transaction, but **no Eloquent events (`saving`, `saved`, observers) fire on the target models** for these writes; `updated_at` is still refreshed.
+
+Limits: two workers syncing the same source at the same moment can leave the older mini model on a target; jobs dispatched inside `DB::transaction()` wait for the commit only if the queue connection sets `after_commit => true`; a source stored on a non-default connection is looked up on the default one by the job (see `docs/compatibility/roadmap.md`, items B and C).
+
+### Embedded lists stored as objects
+
+The 4.0 pre-releases could store an `EmbedsMany` list as a BSON object after an item was deleted or dissociated (a later `create()` then failed with `Cannot apply $addToSet to non-array field`). 4.0 always writes arrays but does not convert existing documents. To find affected documents: `db.<collection>.find({ <relation>: { $type: "object" } })`.
+
+### Relation aggregates and embedded increments
+
+- `withCount()`, `withSum()` and the other relation aggregates of laravel-mongodb do not support the package's embedded relations (they throw `LogicException`); they work on referenced relations.
+- `increment()` / `decrement()` on an embedded model persist the amount and the extra columns like laravel-mongodb, but fire `saving`/`saved` events as well (laravel-mongodb fires `updating`/`updated` only).
 
 With background sync enabled, deleting a model removes its mini model from both `EmbedsMany` and `EmbedsOne` targets; the synchronous `destroyWithSync()` keeps the 3.x behaviour and only cleans `EmbedsMany` targets. `destroyWithSync(false)` leaves the targets untouched on both paths.
 

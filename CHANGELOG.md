@@ -9,6 +9,7 @@ See [UPGRADE-4.0.md](UPGRADE-4.0.md) for the migration guide.
 
 ### Added
 - Support for Laravel 12 and 13 on PHP 8.4+ with `mongodb/laravel-mongodb` 5.x.
+- `docs/compatibility/`: map of the package against laravel-mongodb 5.11.0, source lock, test matrix, issue triage and roadmap; `tests/Compatibility/` compares package models with native laravel-mongodb models; CI jobs for the exact reference versions, the lowest safe versions and a replica set (transactions).
 - Background synchronisation of target collections through `MongoAutoSyncObserver` and the queued `SyncTargetJob` (opt-in, `use_background_sync`).
 - `queue_connection`, `queue_name` and `logging` configuration keys (`MONGO_AUTO_SYNC_QUEUE_CONNECTION`, `MONGO_AUTO_SYNC_QUEUE_NAME`, `MONGO_AUTO_SYNC_LOGGING`).
 - `SyncTargetJob::dispatchFor()`, `SyncHelper::refIds()`, `SyncHelper::sameId()` and `SyncHelper::idVariants()`.
@@ -20,11 +21,12 @@ See [UPGRADE-4.0.md](UPGRADE-4.0.md) for the migration guide.
 - GitHub Actions matrix (PHP 8.4/8.5 x Laravel 12/13 x MongoDB 7.0/8.0), Pint, PHPStan level 8, Codecov, and an automatic release workflow based on conventional commits.
 
 ### Changed
-- Driver switched from `jenssegers/mongodb` to `mongodb/laravel-mongodb` ^5.2: namespaces moved from `Jenssegers\Mongodb` to `MongoDB\Laravel`.
+- Driver switched from `jenssegers/mongodb` to `mongodb/laravel-mongodb` ^5.11 (with `mongodb/mongodb` ^2.4.2 and `ext-mongodb` ^2.4 declared directly): namespaces moved from `Jenssegers\Mongodb` to `MongoDB\Laravel`.
 - Background sync is **opt-in** (`use_background_sync` defaults to `false`): with it enabled, targets are eventually consistent and a queue worker is required.
 - `SyncTargetJob` keeps its class name and namespace but has a new constructor (ids only, no serialised models) and is `final`.
-- Each save dispatches at most one job per relationship with a target; the job carries ids only, performs removals before upserts and rebuilds the mini model from the stored source, so it is idempotent and safe to run out of order.
-- Target collections are written with atomic MongoDB updates (`$pull` / `$push` / `$set`): concurrent writers no longer lose entries, and no Eloquent events fire on the target models for these writes.
+- Each save dispatches at most one job per relationship with a target; the job carries ids only, performs removals before upserts and rebuilds the mini model from the stored source, so it is idempotent and the jobs of one source can run out of order (two workers syncing the same source at the same moment can still leave older values on a target).
+- Target collections are written with atomic MongoDB updates (`$pull` / `$push` / `$set`) through the laravel-mongodb query builder: writes of different sources no longer lose entries, they join the connection's transaction, and no Eloquent events fire on the target models for these writes.
+- `Eloquent\Model` delegates attribute handling to laravel-mongodb (`DocumentModel`) and `Eloquent\Builder` delegates `raw()`, `update()`, `insert()`, `insertGetId()`, `delete()` and the `updated_at` handling: `raw()` returns `id` and Carbon dates, decimals are stored as `Decimal128`.
 - `updateRelationWithSync()` replaces an existing entry with the same `ref_id` instead of appending a duplicate.
 - `storeWithSync()` / `updateWithSync()` log at `debug` level, and only when `logging` is enabled.
 - Stricter parameter and return types across the helpers and traits.
@@ -36,12 +38,18 @@ See [UPGRADE-4.0.md](UPGRADE-4.0.md) for the migration guide.
 - `RelationshipMongoTrait::handleSubTarget()`: use `batchHandleSubTarget()`.
 
 ### Removed
-- Support for PHP < 8.4 and Laravel < 12.8.
+- Support for PHP < 8.4 and for Laravel releases with known advisories (< 12.69 and 13.0 - 13.29).
 - Application-specific methods, now in [`docs/upgrade/extracted_methods.php`](docs/upgrade/extracted_methods.php) for copy into your project: `MongoCollection::getBySlugAndStatus()`, `getBySlug()`, `getNotDeleted()`, `getPublished()`, `getPublic()`, `getActive()`, `findByAID()`, `hasPermission()`, `hasRole()`, `checkPermission()`; `ModelAdditionalMethod::getPageMetaTag()`; the global helpers `getAID()`, `getPrimaryRequest()` and `processList()`.
 - The global helper `getTypeOnTarget()` (use `Arr::get($relation, 'typeOnTarget', 'EmbedsMany')`).
 - Scrutinizer, StyleCI, Codacy, Coveralls and `phpcs.xml` configurations; `composer.lock` is no longer committed.
 
 ### Fixed
+- An `id`/`_id` containing a MongoDB operator was not rejected by package models; a relationship `ref_id` that is an object or a list is now rejected before anything is written (it used to save the source and then crash).
+- Re-assigning an unset attribute, dot-notation reads and `decimal` casts on package models.
+- An explicit `updated_at` inside `$set` was overwritten by the builder.
+- Target writes inside `DB::transaction()` survived a rollback.
+- Target sync failed on models without an `updated_at` column (`UPDATED_AT = null`).
+- `EmbedsMany` lists were stored as objects after deleting or dissociating an item.
 - Global helpers (`ml()`, `cl()`, `isML()`, `getTranslatedContent()`, ...) are autoloaded again for consumers (they were only in `autoload-dev`).
 - Fatal error with recent laravel-mongodb 5.x releases: `embedsMany()` / `embedsOne()` are declared public.
 - `LogicException` on Laravel 13 when the observer was registered while the model was booting.
