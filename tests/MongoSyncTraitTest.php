@@ -40,6 +40,7 @@ test('store with sync', function () {
             'name' => $faker->text(20),
             'code' => $faker->slug(2),
         ],
+        'sub_items' => '[]',
     ];
 
     $navigation->storeWithSync($request, $arr);
@@ -61,6 +62,7 @@ test('store different input type', function () {
         'title' => $faker->text(30),
         'date' => new UTCDateTime(new DateTime),
         'target' => (object) [],
+        'sub_items' => '[]',
     ];
 
     $navigation->storeWithSync($request, $arr);

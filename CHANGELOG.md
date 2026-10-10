@@ -21,6 +21,7 @@ See [UPGRADE-4.0.md](UPGRADE-4.0.md) for the migration guide.
 - GitHub Actions matrix (PHP 8.4/8.5 x Laravel 12/13 x MongoDB 7.0/8.0), Pint, PHPStan at the maximum level (no baseline), Codecov, and an automatic release workflow based on conventional commits.
 
 ### Changed
+- `storeWithSync()` / `updateWithSync()` with a full request require every top-level relationship key (after merging `additionalData`): a missing key throws `InvalidRequestException` before the top-level model, its targets or any job are written or dispatched (referenced children are still validated when they are saved), with or without target ([#55](https://github.com/offline-agency/laravel-mongo-auto-sync/issues/55)). An explicit `null`, `""` or `"[]"` counts as present (empty relationship). Partial requests (`request_type => partial`) are unchanged.
 - Driver switched from `jenssegers/mongodb` to `mongodb/laravel-mongodb` ^5.11 (`laravel/framework` ^12.69 | ^13.30 and `ext-mongodb` ^2.4 required directly, `mongodb/mongodb` < 2.4.2 declared as a conflict): namespaces moved from `Jenssegers\Mongodb` to `MongoDB\Laravel`.
 - Background sync is **opt-in** (`use_background_sync` defaults to `false`): with it enabled, targets are eventually consistent and a queue worker is required.
 - `SyncTargetJob` keeps its class name and namespace but has a new constructor (ids only, no serialised models) and is `final`.
@@ -49,6 +50,7 @@ See [UPGRADE-4.0.md](UPGRADE-4.0.md) for the migration guide.
 - Scrutinizer, StyleCI, Codacy, Coveralls and `phpcs.xml` configurations; `composer.lock` is no longer committed.
 
 ### Fixed
+- A request without an `EmbedsMany` relationship that has a target (partial requests, and full requests before #55) emptied the stored relationship; in background mode the loss reached the targets too. Omitted relationships are now kept and only their targets receive the updated fields.
 - `mongo-sync:analyse` ([#43](https://github.com/offline-agency/laravel-mongo-auto-sync/issues/43)): exits with `1` when it finds anomalies or errors (also with `--fix`), discovers models in sub-directories and `other_models`, skips abstract and non-model classes, reports invalid configurations, unreadable relations and unsupported `HasOne`/`HasMany` targets, dispatches at most one repair job per source and relation, never repairs a missing target nor an `EmbedsOne` inverse that embeds another document (reported as a conflict), and reports models that cannot be loaded or a namespace that matches no class. Its messages are written to the command output instead of Termwind.
 - Relationship payloads that are not a JSON string, objects holding an operator `ref_id`, numeric ids and non plain referenced `id`/`_id` are rejected before anything is written; error messages no longer include the request or the payload.
 - `delete($id)` on an embedded relation removed every item (the id guard of laravel-mongodb was missing).

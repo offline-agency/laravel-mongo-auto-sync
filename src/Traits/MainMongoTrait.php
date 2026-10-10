@@ -67,7 +67,7 @@ trait MainMongoTrait
         $this->logSyncDebug('storeWithSync started for model: '.get_class($this));
 
         $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
-        $this->assertRelationshipPayloadsAreValid($request);
+        $this->validateRelationshipRequest($request);
         $this->storeEditAllItems($request, 'add', $options);
         $this->processAllRelationships($request, 'add', '', '', $options);
 
@@ -95,7 +95,7 @@ trait MainMongoTrait
         $this->logSyncDebug('updateWithSync started for model: '.get_class($this).' with ID: '.SyncHelper::toString($this->getKey()));
 
         $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
-        $this->assertRelationshipPayloadsAreValid($request);
+        $this->validateRelationshipRequest($request);
         $this->storeEditAllItems($request, 'update', $options);
         $this->processAllRelationships($request, 'update', '', '', $options);
 
@@ -118,20 +118,30 @@ trait MainMongoTrait
     }
 
     /**
-     * Reject, before anything is written, top-level relationship payloads whose ref_id is not a plain id or
-     * that do not hold a list of documents.
+     * Checks the merged request (body + additionalData) before anything is written or dispatched:
+     * a full request must contain every top-level relationship key (an explicit null, "" or "[]" counts
+     * as present), and relationship payloads must hold a list of documents that reference documents only
+     * by a plain id.
+     * Partial requests leave omitted relationships unchanged. This is not a recursive validation of
+     * nested relationships.
      *
      * @throws InvalidRequestException
      */
-    private function assertRelationshipPayloadsAreValid(Request $request): void
+    private function validateRelationshipRequest(Request $request): void
     {
         foreach ($this->getMongoRelation() as $method => $relation) {
-            if ($request->has($method)) {
-                $value = $request->input($method);
-                SyncHelper::assertSafeRefIds((string) $method, $value, SyncHelper::idKeysFor($relation['type'] ?? null));
-                if ($value !== null) {
-                    SyncHelper::payloadDocuments((string) $method, $value);
+            $method = (string) $method;
+            if (! $request->has($method)) {
+                if (! $this->getHasPartialRequest()) {
+                    throw new InvalidRequestException("Missing relationship '{$method}' in the request.");
                 }
+
+                continue;
+            }
+            $value = $request->input($method);
+            SyncHelper::assertSafeRefIds($method, $value, SyncHelper::idKeysFor($relation['type'] ?? null));
+            if ($value !== null) {
+                SyncHelper::payloadDocuments($method, $value);
             }
         }
     }
