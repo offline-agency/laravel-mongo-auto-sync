@@ -3,21 +3,8 @@
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Queue;
 use OfflineAgency\MongoAutoSync\Jobs\SyncTargetJob;
-use Symfony\Component\Console\Output\BufferedOutput;
 use Tests\Models\Navigation;
 use Tests\Models\SubItem;
-
-use function Termwind\renderUsing;
-
-beforeEach(function () {
-    // the command renders through Termwind: capture it instead of writing to stdout
-    $this->rendered = new BufferedOutput;
-    renderUsing($this->rendered);
-});
-
-afterEach(function () {
-    renderUsing(null);
-});
 
 /**
  * A Navigation that embeds a SubItem which does not embed the Navigation back.
@@ -39,8 +26,9 @@ function inconsistentNavigation(): array
 test('reports a target without back reference', function () {
     [$navigation, $subItem] = inconsistentNavigation();
 
-    expect(Artisan::call('mongo-sync:analyse'))->toBe(0);
-    expect($this->rendered->fetch())->toContain(
+    // an inconsistency fails the analysis (#43)
+    expect(Artisan::call('mongo-sync:analyse'))->toBe(1);
+    expect(Artisan::output())->toContain(
         "Inconsistency: Tests\\Models\\Navigation {$navigation->id} links to Tests\\Models\\SubItem {$subItem->id}, but target missing back reference."
     );
 });
@@ -62,7 +50,7 @@ test('references written through the sync are found on both sides', function () 
 
     Artisan::call('mongo-sync:analyse');
 
-    expect($this->rendered->fetch())
+    expect(Artisan::output())
         ->toContain('Analysing Tests\Models\Navigation...')
         ->toContain('Analysing Tests\Models\SubItem...')
         ->not->toContain((string) $subItem->id)

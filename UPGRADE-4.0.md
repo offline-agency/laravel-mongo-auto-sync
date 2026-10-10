@@ -136,4 +136,5 @@ With background sync enabled, deleting a model removes its mini model from both 
 ## 7. Console commands
 
 - `mongo-sync:check-config` exits with code 1 when a configuration is invalid: it can be used as a CI step.
+- `mongo-sync:analyse` exits with code 1 when it finds anomalies or errors, also with `--fix` (a dispatched repair is not a clean scan): re-run it after the queue worker.
 - New: `mongo-sync:analyse [--fix]`, `mongo-sync:sync-collection {model}`, `mongo-sync:benchmark {model} {count=100}`.
