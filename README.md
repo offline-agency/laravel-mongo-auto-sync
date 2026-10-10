@@ -72,7 +72,7 @@ The sub document article has been updated with the new article, with no need of 
 You can see the new article on the category page because the package synchronizes the information for you by reading the Model Setup.
   
 **These example can be applied for all write operations on the database.**
-- Referenced sub documents [TO DO] 
+- Referenced sub documents (`HasOne` / `HasMany`): see [docs/referenced-relationships.md](docs/referenced-relationships.md)
 - Handle sub document as Model in order to exploit Laravel ORM support during write operation (without sync feature) [TO BE TEST] 
 - Handle referenced sub document as Model in order to exploit Laravel ORM support during write operation (without sync feature) [TO DO] 
 - Advance cast field support
@@ -193,7 +193,6 @@ composer test
 ## Roadmap :rocket:
 - Nested target synchronisation (level > 1).
 - Refactor **save()** method in order to handle CRUD operation on relationship also without sync.
-- Tests for referenced relationships (`HasOne` / `HasMany`).
 - Better support for all field types.
 - DestroyWithSync() without delete sub documents on other collections.
 - Add more tests.

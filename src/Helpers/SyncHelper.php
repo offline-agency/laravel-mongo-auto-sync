@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use MongoDB\BSON\ObjectId;
+use OfflineAgency\MongoAutoSync\Exceptions\InvalidConfigurationException;
 use OfflineAgency\MongoAutoSync\Exceptions\InvalidRequestException;
 use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 use stdClass;
@@ -201,6 +202,27 @@ class SyncHelper
         }
 
         return $named;
+    }
+
+    /**
+     * Whether destroyWithSync() deletes the children of a referenced (HasOne / HasMany) relationship: its
+     * 'onParentDelete' policy ('delete' or 'retain'); without one, the 4.0 pre-release behaviour (children are
+     * deleted only when the relationship declares a target).
+     *
+     * @param  array<mixed>  $relation
+     *
+     * @throws InvalidConfigurationException
+     */
+    public static function deletesReferencedChildren(array $relation): bool
+    {
+        $policy = $relation['onParentDelete'] ?? null;
+
+        return match ($policy) {
+            null => self::hasTarget($relation),
+            'delete' => true,
+            'retain' => false,
+            default => throw new InvalidConfigurationException(sprintf("Invalid onParentDelete policy %s: expected 'delete' or 'retain'.", json_encode($policy))),
+        };
     }
 
     /**
