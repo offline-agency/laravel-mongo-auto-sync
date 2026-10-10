@@ -281,6 +281,13 @@ jobs:
           for _ in $(seq 1 30); do docker exec mongo-rs mongosh --port 27018 --quiet --eval 'db.runCommand({ping:1}).ok' && break; sleep 2; done
           docker exec mongo-rs mongosh --port 27018 --quiet --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"127.0.0.1:27018"}]})'
           for _ in $(seq 1 30); do docker exec mongo-rs mongosh --port 27018 --quiet --eval 'db.hello().isWritablePrimary' | grep -q true && break; sleep 2; done
+          # fail here, with the server log, when mongod did not start or did not become primary
+          if ! docker exec mongo-rs mongosh --port 27018 --quiet --eval 'db.hello().isWritablePrimary' | grep -q true; then
+            docker ps -a --filter name=mongo-rs
+            docker logs mongo-rs 2>&1 | tail -50
+            echo "::error::the replica set did not start"
+            exit 1
+          fi
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
