@@ -11,6 +11,7 @@ use OfflineAgency\MongoAutoSync\Exceptions\InvalidRequestException;
 use OfflineAgency\MongoAutoSync\Exceptions\MongoAutoSyncException;
 use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
 use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
+use OfflineAgency\MongoAutoSync\Jobs\SyncTargetJob;
 use OfflineAgency\MongoAutoSync\Observers\MongoAutoSyncObserver;
 use OfflineAgency\MongoAutoSync\Relationships\ReferencedWritePlanner;
 use stdClass;
@@ -30,6 +31,24 @@ trait MainMongoTrait
      * @var bool
      */
     protected $has_partial_request;
+
+    /**
+     * Number of withoutTargetSync() scopes open on this instance.
+     */
+    private int $targetSyncDisabledDepth = 0;
+
+    /**
+     * Number of withCoalescedTargetSync() scopes open on this instance.
+     */
+    private int $coalescingDepth = 0;
+
+    /**
+     * Target sync recorded by the observer while coalescing, per relation: the union of the destinations to
+     * clean and whether a save changed the source.
+     *
+     * @var array<string, array{relation: array<string, mixed>, removed: list<string>, changed: bool}>
+     */
+    private array $pendingTargetSync = [];
 
     /**
      * @var Request|null
@@ -70,8 +89,10 @@ trait MainMongoTrait
 
         $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
         $this->validateRelationshipRequest($request);
-        $this->storeEditAllItems($request, 'add', $options);
-        $this->processAllRelationships($request, 'add', '', '', $options);
+        $this->withTargetSyncOption($options, fn () => $this->withCoalescedTargetSync(function () use ($request, $options) {
+            $this->storeEditAllItems($request, 'add', $options);
+            $this->processAllRelationships($request, 'add', '', '', $options);
+        }));
 
         // Dispatch the creation event
         $this->fireModelEvent('storeWithSync');
@@ -98,8 +119,10 @@ trait MainMongoTrait
 
         $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
         $this->validateRelationshipRequest($request);
-        $this->storeEditAllItems($request, 'update', $options);
-        $this->processAllRelationships($request, 'update', '', '', $options);
+        $this->withTargetSyncOption($options, fn () => $this->withCoalescedTargetSync(function () use ($request, $options) {
+            $this->storeEditAllItems($request, 'update', $options);
+            $this->processAllRelationships($request, 'update', '', '', $options);
+        }));
 
         // Dispatch the update event
         $this->fireModelEvent('updateWithSync');
@@ -110,6 +133,111 @@ trait MainMongoTrait
         }
 
         return $fresh;
+    }
+
+    /**
+     * Run $operation with the target sync of THIS model instance disabled: the source and its own (embedded and
+     * referenced) relationships are written and every Eloquent / package event fires, but no target document is
+     * written and no SyncTargetJob is dispatched for this instance (plain save() included). Other models saved
+     * inside the operation keep syncing; scopes nest and are restored after exceptions. Jobs queued by earlier
+     * operations are not cancelled.
+     *
+     * @template TReturn
+     *
+     * @param  callable(static): TReturn  $operation
+     * @return TReturn
+     */
+    public function withoutTargetSync(callable $operation): mixed
+    {
+        $this->targetSyncDisabledDepth++;
+
+        try {
+            return $operation($this);
+        } finally {
+            $this->targetSyncDisabledDepth--;
+        }
+    }
+
+    public function targetSyncEnabled(): bool
+    {
+        return $this->targetSyncDisabledDepth === 0;
+    }
+
+    /**
+     * Run $operation dispatching at most one SyncTargetJob per relation of THIS instance (background sync): the
+     * saves made inside are recorded and, when the outermost scope ends, one job per relation carries the
+     * destinations of the final stored state and the union of every destination left on the way. storeWithSync()
+     * and updateWithSync() run in such a scope. When $operation throws, the work already persisted is still
+     * dispatched before the exception is rethrown. The record lives in memory only: it is not a durable outbox.
+     *
+     * @template TReturn
+     *
+     * @param  callable(static): TReturn  $operation
+     * @return TReturn
+     */
+    public function withCoalescedTargetSync(callable $operation): mixed
+    {
+        $this->coalescingDepth++;
+
+        try {
+            return $operation($this);
+        } finally {
+            if (--$this->coalescingDepth === 0) {
+                $this->flushCoalescedTargetSync();
+            }
+        }
+    }
+
+    public function isCoalescingTargetSync(): bool
+    {
+        return $this->coalescingDepth > 0;
+    }
+
+    /**
+     * Called by the observer instead of dispatching while a coalescing scope is open.
+     *
+     * @param  array<string, mixed>  $relation
+     * @param  list<string>  $removed
+     */
+    public function recordTargetSync(string $method, array $relation, array $removed, bool $changed): void
+    {
+        $pending = $this->pendingTargetSync[$method] ?? ['relation' => $relation, 'removed' => [], 'changed' => false];
+        $this->pendingTargetSync[$method] = [
+            'relation' => $relation,
+            'removed' => array_values(array_unique([...$pending['removed'], ...$removed])),
+            'changed' => $pending['changed'] || $changed,
+        ];
+    }
+
+    private function flushCoalescedTargetSync(): void
+    {
+        $pending = $this->pendingTargetSync;
+        $this->pendingTargetSync = [];
+
+        foreach ($pending as $method => $entry) {
+            $current = SyncHelper::refIds(Arr::get($this->getAttributes(), $method));
+            $removed = array_values(array_diff($entry['removed'], $current));
+            if ($removed !== [] || ($entry['changed'] && $current !== [])) {
+                SyncTargetJob::dispatchFor($this, $method, $entry['relation'], $current, $removed);
+            }
+        }
+    }
+
+    /**
+     * Run $operation honouring the 'sync_targets' option of storeWithSync() / updateWithSync() (default true).
+     *
+     * @param  array<string, mixed>  $options
+     *
+     * @throws InvalidConfigurationException
+     */
+    private function withTargetSyncOption(array $options, callable $operation): void
+    {
+        $syncTargets = $options['sync_targets'] ?? true;
+        if (! is_bool($syncTargets)) {
+            throw new InvalidConfigurationException('The sync_targets option must be a boolean.');
+        }
+
+        $syncTargets ? $operation() : $this->withoutTargetSync($operation);
     }
 
     private function logSyncDebug(string $message): void
@@ -197,7 +325,7 @@ trait MainMongoTrait
         if ($syncTargets) {
             $this->delete();
         } else {
-            MongoAutoSyncObserver::withoutDispatching(fn () => $this->delete());
+            $this->withoutTargetSync(fn () => $this->delete());
         }
 
         // Dispatch the destroy event

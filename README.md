@@ -134,6 +134,34 @@ Nested targets (level > 1) are not synchronised, on either path.
 
 Sources stored on another connection or in a tenant database are synced in their own database, on both paths: see [docs/tenancy.md](docs/tenancy.md).
 
+One `storeWithSync()` / `updateWithSync()` dispatches at most one job per relationship, even though it saves the model more than once; an operation that changes nothing dispatches none. Group your own saves the same way with `withCoalescedTargetSync()`:
+
+```php
+$subItem->withCoalescedTargetSync(function (SubItem $subItem) {
+    $subItem->navigation = $first;  $subItem->save();
+    $subItem->navigation = $second; $subItem->save();
+});   // one job: the final navigation, and both previous ones to clean
+```
+
+The grouping is kept in memory for the operation only: if the operation throws, the work already saved is still dispatched before the exception is rethrown, but a crash of the process loses it (durable delivery is a separate design, [docs/architecture/durable-sync-delivery.md](docs/architecture/durable-sync-delivery.md)).
+
+### Disabling target sync for one operation
+
+Write a source (and its own embedded / referenced relationships) without touching or scheduling the targets of that operation ([#45](https://github.com/offline-agency/laravel-mongo-auto-sync/issues/45), [#47](https://github.com/offline-agency/laravel-mongo-auto-sync/issues/47)):
+
+```php
+$article->storeWithSync($request, [], ['sync_targets' => false]);
+$article->updateWithSync($request, [], ['sync_targets' => false]);
+$article->destroyWithSync(false);           // the source is deleted, targets and referenced children are left as they are
+
+$article->withoutTargetSync(function (Article $article) {
+    $article->title = ['en' => 'Draft'];
+    $article->save();                        // no target write, no SyncTargetJob for this instance
+});
+```
+
+The switch applies to the model instance and the operation only: validation (#55), referenced-child ownership (#46) and every Eloquent / package event still run; other models saved inside the callback keep syncing; scopes nest and are restored after an exception. It does not cancel jobs queued by **earlier** operations: such a job rebuilds the mini model from the stored source when it runs, so it can still propagate values written with the switch off.
+
 ## Console Commands
 
 ### Check Model Configuration
@@ -194,9 +222,7 @@ composer test
 
 ## Roadmap :rocket:
 - Nested target synchronisation (level > 1).
-- Refactor **save()** method in order to handle CRUD operation on relationship also without sync.
 - Better support for all field types.
-- DestroyWithSync() without delete sub documents on other collections.
 - Add more tests.
 - Nested relationships.
 - Benchmark MongoDB vs Mysql (write and read operation).
