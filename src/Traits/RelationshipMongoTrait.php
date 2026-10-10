@@ -7,8 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use LogicException;
 use MongoDB\BSON\UTCDateTime;
-use MongoDB\Collection;
-use MongoDB\Laravel\Connection;
+use MongoDB\Laravel\Connection as MongoConnection;
+use MongoDB\Laravel\Query\Builder as MongoQueryBuilder;
 use OfflineAgency\MongoAutoSync\Exceptions\MongoAutoSyncException;
 use OfflineAgency\MongoAutoSync\Helpers\SyncHelper;
 use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
@@ -138,6 +138,7 @@ trait RelationshipMongoTrait
     /**
      * Upsert the mini model of a source on this target with atomic updates: concurrent jobs writing other
      * sources on the same target cannot overwrite each other, and the same source is never duplicated.
+     * The updates run through the laravel-mongodb query builder, so they join the connection's transaction.
      *
      * @param  object  $mini_model
      * @param  bool  $is_EO_target
@@ -148,25 +149,23 @@ trait RelationshipMongoTrait
     {
         /** @var MDModel $mini_model */
         $mini_attributes = $mini_model->getAttributes();
-        $collection = $this->getMongoCollection();
-        $filter = ['_id' => ['$in' => SyncHelper::idVariants((string) $this->getKey())]];
         $touch = $this->touchedTimestamp();
 
         if ($is_EM_target) {
             $ref_ids = SyncHelper::idVariants($mini_attributes['ref_id'] ?? null);
             // a null field cannot be pushed to
-            $collection->updateOne($filter + [$method_on_target => null], ['$set' => [$method_on_target => []]]);
+            $this->targetQuery()->whereNull($method_on_target)->update(['$set' => [$method_on_target => []]]);
             if ($ref_ids !== []) {
-                $collection->updateOne($filter, ['$pull' => [$method_on_target => ['ref_id' => ['$in' => $ref_ids]]]]);
+                $this->targetQuery()->update(['$pull' => [$method_on_target => ['ref_id' => ['$in' => $ref_ids]]]]);
             }
             $update = ['$push' => [$method_on_target => $mini_attributes]];
             if ($touch !== []) {
                 $update['$set'] = $touch;
             }
             // skip the push when a concurrent job for the same source already added it
-            $collection->updateOne($filter + [$method_on_target.'.ref_id' => ['$nin' => $ref_ids]], $update);
+            $this->targetQuery()->whereNotIn($method_on_target.'.ref_id', $ref_ids)->update($update);
         } else {
-            $collection->updateOne($filter, ['$set' => [$method_on_target => $mini_attributes] + $touch]);
+            $this->targetQuery()->update(['$set' => [$method_on_target => $mini_attributes] + $touch]);
         }
 
         $this->reloadEmbedded($method_on_target);
@@ -187,14 +186,18 @@ trait RelationshipMongoTrait
         return [$column => $this->fromDateTime($this->freshTimestamp())];
     }
 
-    private function getMongoCollection(): Collection
+    /**
+     * laravel-mongodb query on this document only (inherits session, maxTimeMS and read preference).
+     */
+    private function targetQuery(): MongoQueryBuilder
     {
         $connection = $this->getConnection();
-        if (! $connection instanceof Connection) {
+        $query = $connection instanceof MongoConnection ? $this->newQueryWithoutScopes()->getQuery() : null;
+        if (! $query instanceof MongoQueryBuilder) {
             throw new LogicException('Target sync requires a MongoDB connection, got '.get_class($connection));
         }
 
-        return $connection->getCollection($this->getTable());
+        return $query->whereIn('_id', SyncHelper::idVariants((string) $this->getKey()));
     }
 
     /**
@@ -223,10 +226,6 @@ trait RelationshipMongoTrait
             return;
         }
 
-        $filter = [
-            '_id' => ['$in' => SyncHelper::idVariants((string) $this->getKey())],
-            $method_on_target.'.ref_id' => ['$in' => $ref_ids],
-        ];
         $touch = $this->touchedTimestamp();
 
         if ($is_EM_target) {
@@ -239,7 +238,8 @@ trait RelationshipMongoTrait
             $update = ['$set' => [$method_on_target => null] + $touch];
         }
 
-        $this->getMongoCollection()->updateOne($filter, $update);
+        // only documents that still reference the source are touched
+        $this->targetQuery()->whereIn($method_on_target.'.ref_id', $ref_ids)->update($update);
         $this->reloadEmbedded($method_on_target);
     }
 
