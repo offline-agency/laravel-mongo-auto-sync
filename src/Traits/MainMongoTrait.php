@@ -67,7 +67,7 @@ trait MainMongoTrait
         $this->logSyncDebug('storeWithSync started for model: '.get_class($this));
 
         $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
-        $this->assertRelationshipRefIdsAreSafe($request);
+        $this->assertRelationshipPayloadsAreValid($request);
         $this->storeEditAllItems($request, 'add', $options);
         $this->processAllRelationships($request, 'add', '', '', $options);
 
@@ -95,7 +95,7 @@ trait MainMongoTrait
         $this->logSyncDebug('updateWithSync started for model: '.get_class($this).' with ID: '.SyncHelper::toString($this->getKey()));
 
         $this->initDataForSync($request, $additionalData, $options, $target_additional_data);
-        $this->assertRelationshipRefIdsAreSafe($request);
+        $this->assertRelationshipPayloadsAreValid($request);
         $this->storeEditAllItems($request, 'update', $options);
         $this->processAllRelationships($request, 'update', '', '', $options);
 
@@ -118,15 +118,20 @@ trait MainMongoTrait
     }
 
     /**
-     * Reject, before anything is written, top-level relationship payloads whose ref_id is not a plain id.
+     * Reject, before anything is written, top-level relationship payloads whose ref_id is not a plain id or
+     * that do not hold a list of documents.
      *
      * @throws InvalidRequestException
      */
-    private function assertRelationshipRefIdsAreSafe(Request $request): void
+    private function assertRelationshipPayloadsAreValid(Request $request): void
     {
         foreach ($this->getMongoRelation() as $method => $relation) {
             if ($request->has($method)) {
-                SyncHelper::assertSafeRefIds((string) $method, $request->input($method), SyncHelper::idKeysFor($relation['type'] ?? null));
+                $value = $request->input($method);
+                SyncHelper::assertSafeRefIds((string) $method, $value, SyncHelper::idKeysFor($relation['type'] ?? null));
+                if ($value !== null) {
+                    SyncHelper::payloadDocuments((string) $method, $value);
+                }
             }
         }
     }
