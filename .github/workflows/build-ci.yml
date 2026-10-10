@@ -202,7 +202,7 @@ jobs:
           composer update --prefer-dist --no-progress --prefer-stable
           composer audit
           composer check-platform-reqs
-          composer show mongodb/laravel-mongodb mongodb/mongodb laravel/framework | grep -E '^(name|versions)'
+          for p in mongodb/laravel-mongodb mongodb/mongodb laravel/framework; do composer show "$p" | grep -E '^(name|versions)'; done
       - name: Run tests
         env:
           MONGO_HOST: 127.0.0.1
@@ -257,7 +257,7 @@ jobs:
           composer audit
           composer check-platform-reqs
           php -r 'echo "ext-mongodb ", phpversion("mongodb"), PHP_EOL;'
-          composer show mongodb/laravel-mongodb mongodb/mongodb laravel/framework | grep -E '^(name|versions)'
+          for p in mongodb/laravel-mongodb mongodb/mongodb laravel/framework; do composer show "$p" | grep -E '^(name|versions)'; done
       - name: Run tests
         env:
           MONGO_HOST: 127.0.0.1
@@ -297,11 +297,11 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          vendor/bin/pest --display-skipped | tee pest.log
+          vendor/bin/pest --colors=never --display-skipped | tee pest.log
           if grep -q "Transactions need a replica set" pest.log; then
             echo "::error::transaction tests were skipped"
             exit 1
           fi
           # the transaction tests must have run: 3 passed, none skipped
-          vendor/bin/pest tests/Compatibility/TransactionTest.php | tee tx.log
+          vendor/bin/pest --colors=never tests/Compatibility/TransactionTest.php | tee tx.log
           grep -Eq "Tests: +3 passed" tx.log
