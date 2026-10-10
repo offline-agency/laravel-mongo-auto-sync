@@ -480,7 +480,9 @@ trait RelationshipMongoTrait
                 $this->checkPropertyExistence($obj, $EOkey, $method, $model);
 
                 if ($is_ML) {
-                    $embedObj->$EOkey = SyncHelper::ml([], $obj->$EOkey);
+                    // a map of locales is stored as it is; any other value is the value of the current locale
+                    $value = $obj->$EOkey;
+                    $embedObj->$EOkey = is_object($value) || is_array($value) ? json_decode((string) json_encode($value), true) : SyncHelper::ml([], $value);
                 } elseif ($EOkey == 'updated_at' || $EOkey == 'created_at') {
                     // These are dynamic properties managed by Laravel
                     $embedObj->setAttribute($EOkey, now());
