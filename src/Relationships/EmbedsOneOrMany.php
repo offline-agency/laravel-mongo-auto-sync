@@ -286,7 +286,7 @@ abstract class EmbedsOneOrMany extends Relation
     /**
      * {@inheritdoc}
      *
-     * @param  array<string, mixed>|null  $records
+     * @param  array<array-key, mixed>|null  $records  attributes of one document (EmbedsOne) or a list of documents (EmbedsMany)
      * @return void
      */
     protected function setEmbedded($records)

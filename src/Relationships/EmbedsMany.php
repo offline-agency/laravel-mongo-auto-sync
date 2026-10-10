@@ -374,12 +374,12 @@ class EmbedsMany extends EmbedsOneOrMany
      */
     protected function setEmbedded($models)
     {
-        // The parent expects an associative array (or null): keep only the
-        // embedded documents, preserving their keys.
+        // Keep only the embedded documents and re-index them, as laravel-mongodb does: keys left by a
+        // removed item would make MongoDB store the list as an object.
         $records = [];
-        foreach ($models ?? [] as $key => $value) {
+        foreach ($models ?? [] as $value) {
             if (is_array($value)) {
-                $records[(string) $key] = $value;
+                $records[] = $value;
             }
         }
 
