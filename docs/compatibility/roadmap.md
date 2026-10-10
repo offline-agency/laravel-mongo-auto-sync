@@ -6,8 +6,8 @@ Evidence: **REPRODUCED** (observed with a test or probe; probes kept outside the
 | ID | Priority | Topic | Evidence | Proposed PR |
 | --- | --- | --- | --- | --- |
 | B | P1 | Concurrent workers can write old values | REPRODUCED | `fix/sync-concurrency` |
-| C | P1 | Jobs ignore the data connection (tenants) | REPRODUCED | `fix/sync-connection` |
-| A | **P0 – blocker for releasing 4.0** | Referenced relationships ownership (#46) | FIXED on `feat/46-safe-referenced-writes`, pending integration | `feat/46-safe-referenced-writes` |
+| C | P0 (F02) | Jobs ignore the data connection (tenants) | FIXED on `feat/f02-sync-context`, pending integration | `feat/f02-sync-context` |
+| A | **P0 – blocker for releasing 4.0** | Referenced relationships ownership (#46) | FIXED and included in develop (#93) | `feat/46-safe-referenced-writes` |
 | D-adapter | P2 | Package embedded relations vs laravel-mongodb relations | REPRODUCED | `refactor/embedded-relations-upstream` |
 | G | P2 | Growth limits (payload, fan-out, document size) | STATIC | `feat/sync-limits` |
 | R3 | P2 | Embedded increment events | REPRODUCED | part of D-adapter |
@@ -26,6 +26,8 @@ Evidence: **REPRODUCED** (observed with a test or probe; probes kept outside the
 - Compatibility: adds a field to the mini models (persisted format), no migration required (missing version = older).
 
 ## C. Tenants and connections (P1)
+
+- **Status:** fixed on `feat/f02-sync-context` (`SyncContext`, `SyncContextResolver`, `tests/Context/SyncContextTest.php`, `docs/tenancy.md`). Reproduced again on `8aee971`: synchronously, a source on `tenant_b` wrote its target in the default database. The text below is the original analysis.
 
 - Reproduced: a source saved on another connection (`setConnection('tenant2')`) dispatches a job that carries only class and id; the worker loads the source from the default connection, does not find it and only performs removals: the target is never updated, silently.
 - Proposal: carry the source connection name in the payload (`SyncTargetJob::$sourceConnection`, default null = model default), resolve source and targets on it, restore the previous default after exceptions; keep queue connection and data connection distinct. Tests: same id in two databases, worker with a different default connection, exception during the job.

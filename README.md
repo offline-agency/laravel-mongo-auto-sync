@@ -132,6 +132,8 @@ php artisan queue:work --queue=mongo_auto_sync
 
 Nested targets (level > 1) are not synchronised, on either path.
 
+Sources stored on another connection or in a tenant database are synced in their own database, on both paths: see [docs/tenancy.md](docs/tenancy.md).
+
 One `storeWithSync()` / `updateWithSync()` dispatches at most one job per relationship, even though it saves the model more than once; an operation that changes nothing dispatches none. Group your own saves the same way with `withCoalescedTargetSync()`:
 
 ```php

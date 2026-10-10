@@ -98,4 +98,6 @@ Any other value throws `InvalidConfigurationException` before anything is delete
 
 ## Supported subset
 
+Children are matched by the foreign key on the parent's connection (a child model declared on the same connection as the parent model follows a parent stored on another connection or tenant database, see [tenancy.md](tenancy.md)), with the child model's global scopes; extra constraints written inside the relation method are not applied.
+
 Only `HasOne` and `HasMany` written through `storeWithSync()` / `updateWithSync()` with a foreign key on the child. `BelongsTo`, `BelongsToMany` and morph relations are not supported. A referenced relationship declared on an embedded mini model is checked by the same rules when it is written, but not in the preflight (the preflight covers the top-level relationships only). Children are written one by one through their own `storeWithSync()` / `updateWithSync()`, so their Eloquent events fire.
