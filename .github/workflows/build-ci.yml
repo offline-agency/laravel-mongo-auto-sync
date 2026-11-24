@@ -2,58 +2,99 @@ name: CI
 
 on:
   push:
-    branches:
-    tags:
+    branches: [master]
   pull_request:
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
+  quality:
+    runs-on: ubuntu-latest
+    name: Code quality (PHP 8.4)
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mongodb, mbstring
+          tools: composer
+          coverage: none
+      - name: Validate composer.json
+        run: composer validate --strict
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+      - name: Pint
+        run: composer lint:check
+      - name: PHPStan
+        run: composer stan
+
+  tests:
+    runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        php: ['7.4', '8.0', '8.1']
-        os: ['ubuntu-latest']
-        mongodb: ['3.6', '4.0', '4.2', '5.0', '6.0', '7.0']
+        php: ['8.4', '8.5', '8.6']
+        laravel: ['12.*', '13.*']
+        mongodb: ['8.0']
+        stability: [prefer-stable]
+        include:
+          - laravel: '12.*'
+            testbench: '10.*'
+          - laravel: '13.*'
+            testbench: '11.*'
+          # Lowest supported dependencies
+          - php: '8.4'
+            laravel: '12.*'
+            testbench: '10.*'
+            mongodb: '8.0'
+            stability: prefer-lowest
+          # Older MongoDB server versions
+          - php: '8.4'
+            laravel: '13.*'
+            testbench: '11.*'
+            mongodb: '4.4'
+            stability: prefer-stable
+          - php: '8.4'
+            laravel: '13.*'
+            testbench: '11.*'
+            mongodb: '5.0'
+            stability: prefer-stable
+          - php: '8.4'
+            laravel: '13.*'
+            testbench: '11.*'
+            mongodb: '6.0'
+            stability: prefer-stable
+          - php: '8.4'
+            laravel: '13.*'
+            testbench: '11.*'
+            mongodb: '7.0'
+            stability: prefer-stable
     services:
       mongo:
         image: mongo:${{ matrix.mongodb }}
         ports:
           - 27017:27017
 
-    name: PHP v${{ matrix.php }} with Mongo v${{ matrix.mongodb }}
+    name: PHP ${{ matrix.php }} / Laravel ${{ matrix.laravel }} / MongoDB ${{ matrix.mongodb }} / ${{ matrix.stability }}
     steps:
-    - uses: actions/checkout@v2
-    - name: "Installing php"
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: ${{ matrix.php }}
-        extensions: curl,mbstring,xdebug
-        coverage: xdebug
-        tools: composer
-    - name: Show PHP version
-      run: php -v && composer -V
-    - name: Show Dockerfile version
-      run: if [[ "$DEBUG" == "true" ]]; then docker version && env; fi
-      env:
-        DEBUG: ${{secrets.DEBUG}}
-    - name: Download Composer cache dependencies from cache
-      id: composer-cache
-      run: echo "::set-output name=dir::$(composer config cache-files-dir)"
-    - name: Cache Composer dependencies
-      uses: actions/cache@v1
-      with:
-        path: ${{ steps.composer-cache.outputs.dir }}
-        key: ${{ matrix.os }}-composer-${{ hashFiles('**/composer.json') }}
-        restore-keys: ${{ matrix.os }}-composer-
-    - name: Install dependencies
-      run: |
-        composer install --no-interaction
-    - name: Run tests
-      run: |
-        ./vendor/bin/phpunit --coverage-clover coverage.xml
-      env:
-        MONGO_HOST: 0.0.0.0
-    - uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        fail_ci_if_error: false
+      - uses: actions/checkout@v4
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mongodb, mbstring, curl
+          tools: composer
+          coverage: xdebug
+      - name: Show PHP version
+        run: php -v && composer -V
+      - name: Install dependencies
+        run: |
+          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --dev --no-update --no-interaction
+          composer update --${{ matrix.stability }} --prefer-dist --no-interaction --no-progress --with-all-dependencies
+      - name: Run tests
+        run: ./vendor/bin/phpunit --coverage-clover coverage.xml
+        env:
+          MONGO_HOST: 127.0.0.1
+      - uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
