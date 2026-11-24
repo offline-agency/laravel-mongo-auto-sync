@@ -14,7 +14,7 @@ class StoreWIthSyncTest extends SyncTestCase
 {
     public function test_store_with_embeds_one_on_target()
     {
-        //Create a SubItem and test if the data is store correctly
+        // Create a SubItem and test if the data is store correctly
         $sub_item = $this->createSubItems(
             [
                 'text' => 'example sub item test',
@@ -27,7 +27,7 @@ class StoreWIthSyncTest extends SyncTestCase
         $this->assertEquals('HFGRT12345', $sub_item->code);
         $this->assertEquals('https://google.com', $sub_item->href);
 
-        //Create a mini Sub Item to associate to the new navigation
+        // Create a mini Sub Item to associate to the new navigation
         $sub_items = json_encode(
             [
                 (object) [
@@ -41,7 +41,7 @@ class StoreWIthSyncTest extends SyncTestCase
 
         $date = Date::now();
 
-        //Create a navigation and test if the data is store correctly
+        // Create a navigation and test if the data is store correctly
         $navigation = $this->createNavigation(
             [
                 'text' => 'example navigation text',
@@ -61,12 +61,12 @@ class StoreWIthSyncTest extends SyncTestCase
         $this->assertEquals('example navigation text', $navigation->text);
         $this->assertEquals('1234ABHFGRT5', $navigation->code);
         $this->assertEquals('https://www.netflix.com/browse', $navigation->href);
-        //$this->assertEquals($date, $navigation->date); TODO: fix precision date
+        // $this->assertEquals($date, $navigation->date); TODO: fix precision date
         $this->assertEquals('_blank', $navigation->target);
         $this->assertEquals('Random title', getTranslatedContent($navigation->title));
         $this->assertInstanceOf(MongoCollection::class, $navigation->sub_items);
 
-        //Check if the subitem target is updated correctly
+        // Check if the subitem target is updated correctly
         $sub_item = SubItem::find($sub_item->id);
         $mini_navigation = $sub_item->navigation;
         $this->assertNotNull($mini_navigation);
@@ -75,13 +75,13 @@ class StoreWIthSyncTest extends SyncTestCase
         $this->assertEquals('Random title', getTranslatedContent($mini_navigation->title));
         $this->assertEquals('example navigation text', $navigation->text);
 
-        //Clean all data that has been stored
+        // Clean all data that has been stored
         $this->cleanUp($navigation, $sub_item);
     }
 
     public function test_store_with_embeds_many_on_target()
     {
-        //Create a navigation and test if the data is store correctly
+        // Create a navigation and test if the data is store correctly
         $navigation = $this->createNavigation();
 
         $this->assertTrue($this->isNavigationCreated($navigation));
@@ -101,7 +101,7 @@ class StoreWIthSyncTest extends SyncTestCase
         $this->assertEquals('HFGRT12345', $sub_item->code);
         $this->assertEquals('https://google.com', $sub_item->href);
 
-        //Check target
+        // Check target
         $navigation = Navigation::find($navigation->id);
 
         $sub_item_mini = $navigation->sub_items[0];
@@ -113,7 +113,7 @@ class StoreWIthSyncTest extends SyncTestCase
         $this->assertEquals($sub_item->href, $sub_item_mini->href);
 
         $faker = Factory::create();
-        //Add more sub items and restart test
+        // Add more sub items and restart test
         $navigation->sub_items = [
             [
                 'ref_id' => $faker->uuid,
@@ -154,7 +154,7 @@ class StoreWIthSyncTest extends SyncTestCase
         $this->assertEquals($sub_item->code, $sub_item_mini->code);
         $this->assertEquals($sub_item->title, $sub_item_mini->title);
 
-        //clean data
+        // clean data
         $navigation->delete();
         $sub_item->delete();
     }

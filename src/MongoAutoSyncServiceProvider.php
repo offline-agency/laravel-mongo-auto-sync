@@ -44,7 +44,6 @@ class MongoAutoSyncServiceProvider extends BaseServiceProvider
     }
 
     /**
-     * @param  $path
      * @return string
      */
     private function packagePath($path)

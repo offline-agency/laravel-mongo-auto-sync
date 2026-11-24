@@ -44,30 +44,23 @@ class DropCollection extends Command
 
         $modelPath = $this->getModelPathByName($collection_name);
 
-        $model = $this->getModel($modelPath);
+        $model = $this->getModel($modelPath)->all();
 
-        if (! is_null($model)) {
-            $model = $model->all();
+        $count = $model->count();
+        $bar = $this->output->createProgressBar($count);
 
-            $count = $model->count();
-            $bar = $this->output->createProgressBar($count);
-
-            if ($count > 0) {
-                for ($i = 0; $i <= $count - 1; $i++) {
-                    $bar->advance();
-                    $model[$i]->destroyWithSync();
-                    $this->line($i + 1 .') Destroy item document with id #'.$model[$i]->getId());
-                }
-            } else {
-                $this->warn('No record found on collection '.strtolower($collection_name));
+        if ($count > 0) {
+            for ($i = 0; $i <= $count - 1; $i++) {
+                $bar->advance();
+                $model[$i]->destroyWithSync();
+                $this->line($i + 1 .') Destroy item document with id #'.$model[$i]->getId());
             }
         } else {
-            $this->error('Error Model not found \n');
+            $this->warn('No record found on collection '.strtolower($collection_name));
         }
     }
 
     /**
-     * @param  $collection_name
      * @return string
      *
      * @throws Exception
@@ -80,8 +73,6 @@ class DropCollection extends Command
     }
 
     /**
-     * @param  $path
-     * @param  $collection_name
      * @return string
      *
      * @throws Exception
@@ -118,7 +109,6 @@ class DropCollection extends Command
     }
 
     /**
-     * @param  string  $modelPath
      * @return MDModel
      *
      * @throws Exception

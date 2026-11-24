@@ -9,11 +9,33 @@ use OfflineAgency\MongoAutoSync\Traits\ModelAdditionalMethod;
 use OfflineAgency\MongoAutoSync\Traits\PlainMongoTrait;
 use OfflineAgency\MongoAutoSync\Traits\RelationshipMongoTrait;
 
+/**
+ * @property string|null $collection
+ * @property array $items
+ * @property mixed $slug
+ * @property mixed $status
+ * @property mixed $primarycategory
+ * @property mixed $is_deleted
+ * @property mixed $visibility
+ * @property mixed $ref_id
+ * @property mixed $is_active
+ * @property int|float|null $autoincrement_id
+ * @property mixed $name
+ */
 class MDModel extends Eloquent
 {
-    use MainMongoTrait, ModelAdditionalMethod, Helper, PlainMongoTrait, RelationshipMongoTrait;
+    use Helper, MainMongoTrait, ModelAdditionalMethod, PlainMongoTrait, RelationshipMongoTrait;
 
     protected $connection = 'mongodb';
+
+    /**
+     * Name of the MongoDB collection. mongodb/laravel-mongodb 5 only honours
+     * $table, so $collection is still supported for existing models.
+     *
+     * @var string|null
+     */
+    protected $collection;
+
     protected $dates = [
         'deleted_at',
         'created_at',
@@ -26,6 +48,14 @@ class MDModel extends Eloquent
     public function getId()
     {
         return $this->id;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTable()
+    {
+        return $this->collection ?? parent::getTable();
     }
 
     /**

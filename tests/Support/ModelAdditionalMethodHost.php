@@ -15,13 +15,16 @@ use OfflineAgency\MongoAutoSync\Traits\ModelAdditionalMethod;
  */
 class ModelAdditionalMethodHost
 {
-    use ModelAdditionalMethod,
-        Helper,
-        MainMongoTrait;
+    use Helper,
+        MainMongoTrait,
+        ModelAdditionalMethod;
 
     protected $ml;
+
     protected $md;
+
     protected $carbon_date;
+
     protected $array;
 
     protected $request;
@@ -74,7 +77,7 @@ class ModelAdditionalMethodHost
 
     public function setRequest()
     {
-        $this->request = new Request();
+        $this->request = new Request;
     }
 
     public function setMongoRelation($mongoRelation)

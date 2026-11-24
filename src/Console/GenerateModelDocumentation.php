@@ -76,7 +76,6 @@ class GenerateModelDocumentation extends Command
     }
 
     /**
-     * @param  $collection_name
      * @return string
      *
      * @throws Exception
@@ -89,8 +88,6 @@ class GenerateModelDocumentation extends Command
     }
 
     /**
-     * @param  $path
-     * @param  $collection_name
      * @return string
      *
      * @throws Exception
@@ -126,7 +123,6 @@ class GenerateModelDocumentation extends Command
     }
 
     /**
-     * @param  string  $modelPath
      * @return MDModel
      *
      * @throws Exception

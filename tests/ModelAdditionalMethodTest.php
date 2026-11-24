@@ -5,7 +5,6 @@ namespace Tests;
 use Carbon\Carbon;
 use DateTime;
 use Exception;
-use Illuminate\Http\Request;
 use MongoDB\BSON\UTCDateTime;
 use Tests\Support\ModelAdditionalMethodHost;
 
@@ -53,7 +52,7 @@ class ModelAdditionalMethodTest extends SyncTestCase
 
         // UTCDateTime
 
-        $this->host->setMd(new UTCDateTime(new DateTime()));
+        $this->host->setMd(new UTCDateTime(new DateTime));
 
         $parsed_value = $this->host->castValueToBeSaved('md', [
             'is-md' => true,

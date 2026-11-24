@@ -42,7 +42,7 @@ class MongoSyncTraitTest extends SyncTestCase
             'code' => $faker->creditCardNumber,
             'href' => $faker->url,
             'title' => $faker->text(30),
-            'date' => new UTCDateTime(new DateTime()),
+            'date' => new UTCDateTime(new DateTime),
             'target' => (object) [
                 'name' => $faker->text(20),
                 'code' => $faker->slug(2),
@@ -67,7 +67,7 @@ class MongoSyncTraitTest extends SyncTestCase
             'code' => $faker->creditCardNumber,
             'href' => null,
             'title' => $faker->text(30),
-            'date' => new UTCDateTime(new DateTime()),
+            'date' => new UTCDateTime(new DateTime),
             'target' => (object) [],
         ];
 
@@ -149,7 +149,7 @@ class MongoSyncTraitTest extends SyncTestCase
             'code' => $faker->creditCardNumber,
             'href' => $faker->text(50),
             'title' => $faker->text(30),
-            'date' => new UTCDateTime(new DateTime()),
+            'date' => new UTCDateTime(new DateTime),
             'target' => (object) [],
         ];
 
@@ -226,7 +226,7 @@ class MongoSyncTraitTest extends SyncTestCase
             'collection_type' => null,
             'navigation_code' => $navigation->code,
 
-            //Relation
+            // Relation
             'navigation' => $this->getNavigation($navigation->code),
         ];
 

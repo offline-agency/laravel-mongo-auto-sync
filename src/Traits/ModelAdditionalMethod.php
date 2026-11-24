@@ -14,22 +14,20 @@ trait ModelAdditionalMethod
 {
     protected $mini_models;
 
+    /**
+     * @param  array<int, static>  $models
+     * @return MongoCollection<int, static>
+     */
     public function newCollection(array $models = [])
     {
         return new MongoCollection($models);
     }
 
-    /**
-     * @return array
-     */
     public function getItems(): array
     {
         return $this->items;
     }
 
-    /**
-     * @return array
-     */
     public function getMongoRelation(): array
     {
         if (! empty($this->mongoRelation)) {
@@ -88,7 +86,6 @@ trait ModelAdditionalMethod
     }
 
     /**
-     * @param  array  $miniModelList
      * @return mixed
      *
      * @throws Exception
@@ -104,7 +101,6 @@ trait ModelAdditionalMethod
     }
 
     /**
-     * @param  string  $mini_model_path
      * @return MDModel
      *
      * @throws Exception
@@ -121,9 +117,6 @@ trait ModelAdditionalMethod
     }
 
     /**
-     * @param  string  $key
-     * @param  $item
-     * @param  string  $mini_model_path
      * @return array|mixed|UTCDateTime|null
      *
      * @throws Exception
@@ -150,7 +143,7 @@ trait ModelAdditionalMethod
             return new UTCDateTime(new DateTime($value));
         } elseif ($is_carbon_date) {
             if ($value == '') {
-                return new UTCDateTime();
+                return new UTCDateTime;
             }
 
             return new UTCDateTime($value);
@@ -162,7 +155,6 @@ trait ModelAdditionalMethod
     }
 
     /**
-     * @param  string  $mini_model_path
      * @return MDModel
      */
     public function getModelInstanceFromPath(string $mini_model_path)
@@ -171,8 +163,6 @@ trait ModelAdditionalMethod
     }
 
     /**
-     * @param  string  $key
-     * @param  string  $mini_model_path
      * @param  bool  $rewrite_ref_id_key
      * @return mixed
      */
@@ -186,11 +176,10 @@ trait ModelAdditionalMethod
 
         return Arr::has($target_additional_data, $mini_model_path.'.'.$key) ? Arr::get($target_additional_data, $mini_model_path.'.'.$key) : // Search on target_additional_data [] 4th parameter of updateWithSync() / storeWithSync()
             ($request->has($key) ? $request->input($key) : $db_value); // Search on Main Request 1st parameter of updateWithSync() / storeWithSync() or directly on database
-        //TODO: Add default value from Item Model
+        // TODO: Add default value from Item Model
     }
 
     /**
-     * @param  string  $key
      * @return mixed
      */
     private function getDbValue(string $key)
@@ -199,7 +188,6 @@ trait ModelAdditionalMethod
     }
 
     /**
-     * @param  string  $key
      * @return array
      *
      * @throws Exception
@@ -216,8 +204,6 @@ trait ModelAdditionalMethod
     }
 
     /**
-     * @param  string  $method
-     * @param  array  $relationship
      * @return false|string
      *
      * @throws Exception

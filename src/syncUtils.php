@@ -3,18 +3,19 @@
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Config;
 use MongoDB\Laravel\Eloquent\Model;
+use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 
 if (! function_exists('getTranslatedContent')) {
     /**
-     * @param  array  $mlCollection
+     * @param  mixed  $mlCollection
      * @return string
      */
     function getTranslatedContent($mlCollection)
     {
-        //Get current Lang
+        // Get current Lang
         $cl = Config::get('app.locale');
 
-        if (is_array($mlCollection) && (array_key_exists('en_EN', $mlCollection) || array_key_exists('it_IT', $mlCollection) || ! is_null($mlCollection || ! isset($destination)))) {
+        if (is_array($mlCollection)) {
             return $mlCollection[$cl];
         } else {
             return '';
@@ -28,15 +29,15 @@ if (! function_exists('cl')) {
      */
     function cl()
     {
-        //Get current Lang
+        // Get current Lang
         return Config::get('app.locale');
     }
 }
 
 if (! function_exists('ml')) {
-    //save a localized field
+    // save a localized field
     /**
-     * @param  array  $destination
+     * @param  array|null  $destination
      * @param  string  $input
      * @return array ready to be saved
      */
@@ -151,32 +152,31 @@ if (! function_exists('isFillable')) {
 
 if (! function_exists('getAID')) {
     /**
-     * @param  Model  $model
-     * @return string
+     * @return int|float
      */
     function getAID(Model $model)
     {
-        //Get Last Obj
+        // Get Last Obj
         $obj = $model->orderBy('created_at', 'desc')->first();
 
-        return is_null($obj) ? 1 : $obj->autoincrement_id + 1;
+        return is_null($obj) ? 1 : $obj->getAttribute('autoincrement_id') + 1;
     }
 }
 
 if (! function_exists('getArrayWithEmptyObj')) {
     /**
-     * @param  $model
+     * @param  class-string<MDModel>  $model
      * @return array
      */
     function getArrayWithEmptyObj($model, $is_EO, $is_EM)
     {
         $arr = [];
         if ($is_EO) {
-            $obj = new stdClass();
+            $obj = new stdClass;
             $embedObj = new $model;
             $EOitems = $embedObj->getItems();
 
-            //Current Obj Create
+            // Current Obj Create
             foreach ($EOitems as $EOkey => $item) {
                 $obj->$EOkey = null;
             }
@@ -190,15 +190,11 @@ if (! function_exists('getArrayWithEmptyObj')) {
 
 if (! function_exists('getCounterForRelationships')) {
     /**
-     * @param  $method
-     * @param  $is_EO
-     * @param  $is_EM
-     * @param  $i
      * @return string
      */
     function getCounterForRelationships($method, $is_EO, $is_EM, $i)
     {
-        if ($method === '' || ($method !== '' && $is_EO) || ($method === '' && $is_EM)) {
+        if ($method === '' || $is_EO) {
             return '';
         } else {
             return '-'.$i;

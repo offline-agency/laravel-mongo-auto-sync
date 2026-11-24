@@ -17,7 +17,7 @@ class MainMongoTraitTest extends SyncTestCase
         $this->host = new MainMongoTraitHost;
     }
 
-    public function test_checkPropertyExistence()
+    public function test_check_property_existence()
     {
         $this->expectException(Exception::class);
 
@@ -27,7 +27,7 @@ class MainMongoTraitTest extends SyncTestCase
         );
     }
 
-    public function test_checkArrayExistence()
+    public function test_check_array_existence()
     {
         $this->expectException(Exception::class);
 
@@ -37,9 +37,9 @@ class MainMongoTraitTest extends SyncTestCase
         );
     }
 
-    public function test_checkRequestExistence()
+    public function test_check_request_existence()
     {
-        $request = new Request();
+        $request = new Request;
 
         $this->expectException(Exception::class);
 
