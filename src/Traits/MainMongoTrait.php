@@ -228,8 +228,26 @@ trait MainMongoTrait
      */
     public function setRequest(Request $request, array $additionalData): void
     {
-        $request = $request->merge($additionalData);
+        $request = $request->merge($this->normalizeAdditionalData($additionalData));
         $this->request = $request;
+    }
+
+    /**
+     * The request input bag only accepts scalars, arrays, Stringable objects
+     * and null, so stdClass values are converted to arrays.
+     *
+     * @param  array  $additionalData
+     * @return array
+     */
+    private function normalizeAdditionalData(array $additionalData): array
+    {
+        foreach ($additionalData as $key => $value) {
+            if ($value instanceof stdClass) {
+                $additionalData[$key] = json_decode(json_encode($value), true);
+            }
+        }
+
+        return $additionalData;
     }
 
     /**

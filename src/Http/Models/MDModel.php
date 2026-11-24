@@ -2,7 +2,7 @@
 
 namespace OfflineAgency\MongoAutoSync\Http\Models;
 
-use Jenssegers\Mongodb\Eloquent\Model as Eloquent;
+use MongoDB\Laravel\Eloquent\Model as Eloquent;
 use OfflineAgency\MongoAutoSync\Traits\Helper;
 use OfflineAgency\MongoAutoSync\Traits\MainMongoTrait;
 use OfflineAgency\MongoAutoSync\Traits\ModelAdditionalMethod;

@@ -77,7 +77,7 @@ class MongoSyncTraitTest extends SyncTestCase
         $this->assertIsString($navigation->text);
         $this->assertNull($navigation->href);
         $this->assertIsArray($navigation->title);
-        $this->assertIsObject($navigation->target);
+        $this->assertIsArray($navigation->target);
     }
 
     public function test_update_with_sync_with_embeds_one_on_target()
@@ -156,7 +156,7 @@ class MongoSyncTraitTest extends SyncTestCase
         $navigation->updateWithSync($request, $arr, $options);
 
         $this->assertTrue($this->isUpdated($navigation));
-        $this->assertIsObject($navigation->target);
+        $this->assertIsArray($navigation->target);
         $this->assertIsArray($navigation->title);
         $this->assertIsString($navigation->href);
     }
