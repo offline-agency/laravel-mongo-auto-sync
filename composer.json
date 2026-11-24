@@ -14,6 +14,8 @@
         "mongodb/laravel-mongodb": "^5.6"
     },
     "require-dev": {
+        "larastan/larastan": "^3.0",
+        "laravel/pint": "^1.0",
         "orchestra/testbench": "^10.0|^11.0",
         "phpunit/phpcov": "^11.0|^12.0|^13.0",
         "phpunit/phpunit": "^11.5|^12.0|^13.0"
@@ -42,7 +44,10 @@
         ]
     },
     "scripts": {
-        "test": "vendor/bin/phpunit"
+        "test": "vendor/bin/phpunit",
+        "lint": "vendor/bin/pint",
+        "lint:check": "vendor/bin/pint --test",
+        "stan": "vendor/bin/phpstan analyse --no-progress --memory-limit=1G"
     },
     "config": {
         "preferred-install": "dist",
