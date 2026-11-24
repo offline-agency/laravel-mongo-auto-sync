@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'CHANGELOG.md'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Tag and publish the GitHub Release
+    if: github.repository_owner == 'offline-agency'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG_PREFIX: ''
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Release the newest CHANGELOG version if it has no tag yet
+        run: |
+          set -euo pipefail
+
+          VERSION=$(grep -m1 -oE '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' CHANGELOG.md | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || true)
+          if [ -z "$VERSION" ]; then
+            echo "No version heading in CHANGELOG.md, nothing to release."
+            exit 0
+          fi
+          TAG="${TAG_PREFIX}${VERSION}"
+
+          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+            echo "Tag ${TAG} already exists, nothing to release."
+            exit 0
+          fi
+
+          LATEST=$(git tag --list "${TAG_PREFIX}[0-9]*" --sort=-v:refname | sed "s/^${TAG_PREFIX}//" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -n1 || true)
+          if [ -n "$LATEST" ] && [ "$(printf '%s\n%s\n' "$LATEST" "$VERSION" | sort -V | tail -n1)" != "$VERSION" ]; then
+            echo "::error::CHANGELOG version ${VERSION} is lower than the latest tag ${LATEST}."
+            exit 1
+          fi
+
+          awk -v h="## [${VERSION}]" 'index($0, h) == 1 {found = 1; next} found && /^## \[/ {exit} found {print}' CHANGELOG.md > /tmp/release-notes.md
+          [ -s /tmp/release-notes.md ] || echo "Release ${VERSION}" > /tmp/release-notes.md
+
+          gh release create "$TAG" --target "$GITHUB_SHA" --title "$TAG" --notes-file /tmp/release-notes.md --latest

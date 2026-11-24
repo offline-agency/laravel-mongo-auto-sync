@@ -3,7 +3,7 @@
 All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [4.0.0] - Unreleased
+## [4.0.0]
 
 See [docs/v4/upgrading.md](docs/v4/upgrading.md) for the migration guide.
 
@@ -18,6 +18,7 @@ See [docs/v4/upgrading.md](docs/v4/upgrading.md) for the migration guide.
 - Support for Laravel 12 and 13.
 - Pint (`laravel` preset) and PHPStan with Larastan at level 5 (no baseline), with the `lint`, `lint:check` and `stan` composer scripts.
 - CI: test matrix on PHP 8.4, 8.5 and 8.6 with Laravel 12 and 13, a `prefer-lowest` job and MongoDB 4.4 to 8.0 server versions, plus `composer validate --strict`, Pint and PHPStan jobs.
+- `release.yml` workflow: merging a change that adds a new version heading to `CHANGELOG.md` on `master` creates the tag and the GitHub Release automatically, using that section as release notes.
 - Documentation split by major version in `docs/` (`docs/v4/`), with an upgrade guide from v3.
 - `CHANGELOG.md`.
 - Tests for the console commands, `is-md` date fields, the `getBySlug` 404 and partial requests: line, method and class coverage is now 100%.
