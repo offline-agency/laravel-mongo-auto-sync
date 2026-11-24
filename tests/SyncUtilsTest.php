@@ -374,4 +374,13 @@ class SyncUtilsTest extends SyncTestCase
         $this->assertEquals('EmbedsOne', $outEO);
         $this->assertEquals('EmbedsMany', $outDefaultValue);
     }
+
+    public function test_helpers_are_not_redefined_when_the_file_is_loaded_again()
+    {
+        require __DIR__.'/../src/syncUtils.php';
+
+        $this->assertTrue(function_exists('getTranslatedContent'));
+        $this->assertTrue(function_exists('getCounterForRelationships'));
+        $this->assertEquals('', getTranslatedContent(''));
+    }
 }

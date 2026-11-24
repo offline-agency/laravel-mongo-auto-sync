@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use OfflineAgency\MongoAutoSync\Extensions\MongoCollection;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Tests\Models\Article;
 use Tests\Models\Category;
@@ -343,5 +344,18 @@ class MongoCollectionTest extends SyncTestCase
         User::truncate();
         Permission::truncate();
         Role::truncate();
+    }
+
+    public function test_get_by_slug_not_found_aborts_with_404()
+    {
+        $article = new Article;
+        $article->slug = [cl() => 'a-slug'];
+
+        $collection = new MongoCollection([$article]);
+
+        $this->expectException(NotFoundHttpException::class);
+        $this->expectExceptionMessage('error.Tests\Models\Article');
+
+        $collection->getBySlug('another-slug');
     }
 }

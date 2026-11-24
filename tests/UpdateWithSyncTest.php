@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Date;
 use OfflineAgency\MongoAutoSync\Extensions\MongoCollection;
+use Tests\Models\Article;
+use Tests\Models\Category;
 use Tests\Models\MiniNavigation;
 use Tests\Models\Navigation;
 use Tests\Models\SubItem;
@@ -481,5 +483,27 @@ class UpdateWithSyncTest extends SyncTestCase
 
         $sub_item_original->delete();
         $navigation->delete();
+    }
+
+    public function test_partial_update_skips_relationships_without_target_that_are_not_in_the_request()
+    {
+        Article::truncate();
+        Category::truncate();
+        $this->prepareArticleData(['status' => 'published'], 1);
+
+        $article = Article::all()->first();
+        $category_id = $article->primarycategory->ref_id;
+
+        $article = $article->updateWithSync(new Request, [
+            'title' => 'Partially updated',
+        ], [
+            'request_type' => 'partial',
+        ]);
+
+        $this->assertEquals('Partially updated', getTranslatedContent($article->title));
+        $this->assertEquals($category_id, $article->primarycategory->ref_id);
+
+        Article::truncate();
+        Category::truncate();
     }
 }

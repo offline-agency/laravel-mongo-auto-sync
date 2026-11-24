@@ -200,11 +200,11 @@ if (! function_exists('getCounterForRelationships')) {
             return '-'.$i;
         }
     }
+}
 
-    if (! function_exists('getTypeOnTarget')) {
-        function getTypeOnTarget($relation)
-        {
-            return Arr::has($relation, 'typeOnTarget') ? Arr::get($relation, 'typeOnTarget') : 'EmbedsMany';
-        }
+if (! function_exists('getTypeOnTarget')) {
+    function getTypeOnTarget($relation)
+    {
+        return Arr::has($relation, 'typeOnTarget') ? Arr::get($relation, 'typeOnTarget') : 'EmbedsMany';
     }
 }

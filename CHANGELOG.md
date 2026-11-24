@@ -20,6 +20,7 @@ See [docs/v4/upgrading.md](docs/v4/upgrading.md) for the migration guide.
 - CI: test matrix on PHP 8.4, 8.5 and 8.6 with Laravel 12 and 13, a `prefer-lowest` job and MongoDB 4.4 to 8.0 server versions, plus `composer validate --strict`, Pint and PHPStan jobs.
 - Documentation split by major version in `docs/` (`docs/v4/`), with an upgrade guide from v3.
 - `CHANGELOG.md`.
+- Tests for the console commands, `is-md` date fields, the `getBySlug` 404 and partial requests: line, method and class coverage is now 100%.
 
 ### Changed
 - Development dependencies: `orchestra/testbench` ^10.0 or ^11.0, `phpunit/phpunit` ^11.5, ^12.0 or ^13.0, `phpunit/phpcov` ^11.0, ^12.0 or ^13.0. `phpunit.xml` migrated to the current schema.
