@@ -25,7 +25,7 @@ Albero risolto su 8.4, 8.5, 8.6. Nessun bloccante.
 3.1.1 → **4.0.0** (MAJOR): PHP minimo alzato, framework tolti, driver sostituito con cambio di namespace.
 
 ## Fatto da sapere
-- Il branch `develop` contiene già una riscrittura 4.0 non rilasciata (124 commit avanti a `master`, `UPGRADE-4.0.md`, CHANGELOG `4.0.0 - Unreleased`). La PR #101 parte da `master` ed è un aggiornamento minimo: serve una decisione umana su quale strada tenere prima di rilasciare 4.0.0.
+- Il branch `develop` contiene già una riscrittura 4.0 non rilasciata (124 commit avanti a `master`, `UPGRADE-4.0.md`, CHANGELOG `4.0.0 - Unreleased`). La PR #101 parte da `master` ed è un aggiornamento minimo: serve una decisione umana su quale strada tenere prima del merge, perché il merge pubblica 4.0.0 in automatico.
 - Gli stati intermedi Laravel 8→9→10→11 non sono stati committati: non installabili su PHP 8.4+.
 - Test: i trait vanno usati in classi host (`tests/Support/`), `Helper::isArray()` confligge con `Assert::isArray()` (final) di PHPUnit 13.
 - `Request::merge()` di Laravel 12/13 rifiuta gli `stdClass`: `MainMongoTrait::setRequest()` li converte in array.
@@ -44,9 +44,15 @@ Latest Release, Packagist, Downloads, PHP, License, Scrutinizer, codecov: OK. Te
 ## Branch / PR
 `chore/php-8.6-upgrade` / https://github.com/offline-agency/laravel-mongo-auto-sync/pull/101
 
-## Da fare dopo il merge
+## Rilascio
+- Nessuna automazione di release esistente su `master` (il branch `develop` ne ha una, non ancora su `master`).
+- Aggiunto `.github/workflows/release.yml` (tag senza prefisso `v`, come 3.1.1): al push su `master` che tocca `CHANGELOG.md` crea il tag e la GitHub Release della prima versione `## [X.Y.Z]` del CHANGELOG, con quella sezione come note. Dry-run locale: `WOULD RELEASE 4.0.0`, note identiche alla sezione.
+- Il CHANGELOG usa `## [4.0.0]` senza "Unreleased" né data (la data è quella della Release).
+- Fallback manuale, solo se il job fallisce:
 ```bash
-awk '/^## \[4.0.0\]/{f=1;next} /^## /{f=0} f' CHANGELOG.md > release-notes-4.0.0.md
+awk '/^## \[4.0.0\]/{f=1;next} /^## \[/{f=0} f' CHANGELOG.md > release-notes-4.0.0.md
 gh release create 4.0.0 --target master --title "4.0.0" --notes-file release-notes-4.0.0.md
 ```
-Poi sostituire "Unreleased" con la data nel `CHANGELOG.md`.
+
+## Copertura
+100% di classi, metodi e righe (83 test, 297 asserzioni), misurata in Docker (PHP 8.4 + Xdebug) perché Herd non ha un driver di coverage. Con PHPUnit 13 la copertura parte dopo il bootstrap: `syncUtils.php` va ricaricato in un test per coprire le guardie `function_exists`.
