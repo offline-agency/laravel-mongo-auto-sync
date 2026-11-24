@@ -10,18 +10,14 @@ use MongoDB\BSON\UTCDateTime;
 trait PlainMongoTrait
 {
     /**
-     * @param  Request  $request
-     * @param  string  $event
-     * @param  array  $options
-     *
      * @throws Exception
      */
     public function storeEditAllItems(Request $request, string $event, array $options)
     {
-        //Get the item name
+        // Get the item name
         $items = $this->getItems();
 
-        //Current Obj Create
+        // Current Obj Create
         foreach ($items as $key => $item) {
             $is_ML = isML($item);
             $is_MD = isMD($item);

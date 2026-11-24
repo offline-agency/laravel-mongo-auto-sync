@@ -3,6 +3,7 @@
 namespace Tests;
 
 use Hash;
+use Illuminate\Foundation\Application;
 
 trait CreatesApplication
 {
@@ -31,7 +32,7 @@ trait CreatesApplication
      *
      * Needs to be implemented by subclasses.
      *
-     * @return \Illuminate\Foundation\Application
+     * @return Application
      */
     public function createApplication()
     {

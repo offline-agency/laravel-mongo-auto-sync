@@ -13,12 +13,6 @@ trait RelationshipMongoTrait
     public $is_partial_request;
 
     /**
-     * @param  Request  $request
-     * @param  string  $event
-     * @param  string  $parent
-     * @param  string  $counter
-     * @param  array  $options
-     *
      * @throws Exception
      */
     public function processAllRelationships(Request $request, string $event, string $parent, string $counter, array $options)
@@ -26,12 +20,12 @@ trait RelationshipMongoTrait
         $this->setIsPartialRequest($options);
         $this->setMiniModels(); // For target Sync
 
-        //Get the relation info
+        // Get the relation info
         $relations = $this->getMongoRelation();
 
-        //Process all relationships
+        // Process all relationships
         foreach ($relations as $method => $relation) {
-            //Get Relation Save Mode
+            // Get Relation Save Mode
             $type = $relation['type'];
             $model = $relation['model'];
             $hasTarget = hasTarget($relation);
@@ -71,13 +65,13 @@ trait RelationshipMongoTrait
                 $objs = getArrayWithEmptyObj($model, $is_EO, $is_EM);
             }
 
-            if ($is_EO || $is_EM) {//EmbedsOne Create - EmbedsMany Create
+            if ($is_EO || $is_EM) {// EmbedsOne Create - EmbedsMany Create
                 if ($event == 'update' && $is_embeds_has_to_be_updated) {
-                    //Delete EmbedsMany or EmbedsOne on Target - TODO: check if it is necessary to run deleteTargetObj method
+                    // Delete EmbedsMany or EmbedsOne on Target - TODO: check if it is necessary to run deleteTargetObj method
                     if ($hasTarget) {
                         $this->deleteTargetObj($method, $modelTarget, $methodOnTarget, $is_EO, $is_EM, $is_EO_target, $is_EM_target);
                     }
-                    //Delete EmbedsMany or EmbedsOne on current object
+                    // Delete EmbedsMany or EmbedsOne on current object
                     if ($is_EM) {
                         $this->$method = [];
                         $this->save();
@@ -123,8 +117,6 @@ trait RelationshipMongoTrait
     }
 
     /**
-     * @param  $mini_model
-     * @param  string  $method_on_target
      * @param  bool  $is_EO_target
      * @param  bool  $is_EM_target
      *
@@ -132,6 +124,8 @@ trait RelationshipMongoTrait
      */
     public function updateRelationWithSync($mini_model, string $method_on_target, $is_EO_target, $is_EM_target)
     {
+        $new_values = null;
+
         if ($is_EM_target) {
             $new_values = [];
             throw_if(
@@ -186,23 +180,11 @@ trait RelationshipMongoTrait
     }
 
     /**
-     * @param  Request  $request
-     * @param  $obj
-     * @param  $type
-     * @param  $model
-     * @param  $method
-     * @param  $modelTarget
-     * @param  $methodOnTarget
-     * @param  $modelOnTarget
-     * @param  $event
-     * @param  $hasTarget
      * @param  bool  $is_EO
      * @param  bool  $is_EM
      * @param  bool  $is_EO_target
      * @param  bool  $is_EM_target
-     * @param  $i
      * @param  bool  $is_embeds_has_to_be_updated
-     * @param  $options
      *
      * @throws Exception
      */
@@ -221,10 +203,6 @@ trait RelationshipMongoTrait
      * @param  string  $method
      * @param  string  $modelTarget
      * @param  string  $methodOnTarget
-     * @param  bool  $is_EO
-     * @param  bool  $is_EM
-     * @param  bool  $is_EO_target
-     * @param  bool  $is_EM_target
      */
     public function deleteTargetObj($method, $modelTarget, $methodOnTarget, bool $is_EO, bool $is_EM, bool $is_EO_target, bool $is_EM_target)
     {
@@ -241,13 +219,6 @@ trait RelationshipMongoTrait
         }
     }
 
-    /**
-     * @param  string|null  $target_id
-     * @param  string  $modelTarget
-     * @param  string  $methodOnTarget
-     * @param  bool  $is_EO_target
-     * @param  bool  $is_EM_target
-     */
     public function handleSubTarget(?string $target_id, string $modelTarget, string $methodOnTarget, bool $is_EO_target, bool $is_EM_target)
     {
         if ($is_EM_target) {
@@ -264,31 +235,20 @@ trait RelationshipMongoTrait
                 $target->save();
             }
         } elseif ($is_EO_target) {
-            //Do nothing because when we are updating we already init the informations
+            // Do nothing because when we are updating we already init the informations
         }
     }
 
     /**
-     * @param  Request  $request
-     * @param  $obj
-     * @param  $type
-     * @param  $model
-     * @param  $method
-     * @param  $event
-     * @param  $is_EO
-     * @param  $is_EM
-     * @param  $i
-     * @param  $options
-     *
      * @throws Exception
      */
     private function processEmbedOnCurrentCollection(Request $request, $obj, $type, $model, $method, $event, $is_EO, $is_EM, $i, $options)
     {
-        //Init the embed one model
+        // Init the embed one model
         $embedObj = new $model;
 
         $EOitems = $embedObj->getItems();
-        //Current Obj Create
+        // Current Obj Create
         foreach ($EOitems as $EOkey => $item) {
             if (! is_null($obj)) {
                 $is_ML = isML($item);
@@ -311,13 +271,13 @@ trait RelationshipMongoTrait
             }
         }
 
-        //else if($is_EM){//To be implemented}
-        //else if($is_HM){//To be implemented}
-        //else if($is_HO){//To be implemented}
+        // else if($is_EM){//To be implemented}
+        // else if($is_HM){//To be implemented}
+        // else if($is_HO){//To be implemented}
 
-        //Get counter for embeds many with level > 1
+        // Get counter for embeds many with level > 1
         $counter = getCounterForRelationships($method, $is_EO, $is_EM, $i);
-        //Check for another Level of Relationship
+        // Check for another Level of Relationship
         $embedObj->processAllRelationships($request, $event, $method.'-', $counter, $options);
 
         if ($is_EO) {
@@ -328,13 +288,6 @@ trait RelationshipMongoTrait
     }
 
     /**
-     * @param  $modelTarget
-     * @param  $obj
-     * @param  $methodOnTarget
-     * @param  $modelOnTarget
-     * @param  bool  $is_EO_target
-     * @param  bool  $is_EM_target
-     *
      * @throws Exception
      */
     private function processEmbedOnTargetCollection($modelTarget, $obj, $methodOnTarget, $modelOnTarget, bool $is_EO_target, bool $is_EM_target)
@@ -344,8 +297,8 @@ trait RelationshipMongoTrait
             $miniModel = $this->getEmbedModel($modelOnTarget);
             $modelToBeSync->setIsPartialRequest([], $this->getIsPartialRequest());
             $modelToBeSync->updateRelationWithSync($miniModel, $methodOnTarget, $is_EO_target, $is_EM_target);
-            //TODO:Sync target on level > 1
-            //$modelToBeSync->processAllRelationships($request, $event, $methodOnTarget, $methodOnTarget . "-");
+            // TODO:Sync target on level > 1
+            // $modelToBeSync->processAllRelationships($request, $event, $methodOnTarget, $methodOnTarget . "-");
         }
     }
 

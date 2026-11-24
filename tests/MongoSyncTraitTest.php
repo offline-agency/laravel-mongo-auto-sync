@@ -42,7 +42,7 @@ class MongoSyncTraitTest extends SyncTestCase
             'code' => $faker->creditCardNumber,
             'href' => $faker->url,
             'title' => $faker->text(30),
-            'date' => new UTCDateTime(new DateTime()),
+            'date' => new UTCDateTime(new DateTime),
             'target' => (object) [
                 'name' => $faker->text(20),
                 'code' => $faker->slug(2),
@@ -67,7 +67,7 @@ class MongoSyncTraitTest extends SyncTestCase
             'code' => $faker->creditCardNumber,
             'href' => null,
             'title' => $faker->text(30),
-            'date' => new UTCDateTime(new DateTime()),
+            'date' => new UTCDateTime(new DateTime),
             'target' => (object) [],
         ];
 
@@ -77,7 +77,7 @@ class MongoSyncTraitTest extends SyncTestCase
         $this->assertIsString($navigation->text);
         $this->assertNull($navigation->href);
         $this->assertIsArray($navigation->title);
-        $this->assertIsObject($navigation->target);
+        $this->assertIsArray($navigation->target);
     }
 
     public function test_update_with_sync_with_embeds_one_on_target()
@@ -149,14 +149,14 @@ class MongoSyncTraitTest extends SyncTestCase
             'code' => $faker->creditCardNumber,
             'href' => $faker->text(50),
             'title' => $faker->text(30),
-            'date' => new UTCDateTime(new DateTime()),
+            'date' => new UTCDateTime(new DateTime),
             'target' => (object) [],
         ];
 
         $navigation->updateWithSync($request, $arr, $options);
 
         $this->assertTrue($this->isUpdated($navigation));
-        $this->assertIsObject($navigation->target);
+        $this->assertIsArray($navigation->target);
         $this->assertIsArray($navigation->title);
         $this->assertIsString($navigation->href);
     }
@@ -226,7 +226,7 @@ class MongoSyncTraitTest extends SyncTestCase
             'collection_type' => null,
             'navigation_code' => $navigation->code,
 
-            //Relation
+            // Relation
             'navigation' => $this->getNavigation($navigation->code),
         ];
 

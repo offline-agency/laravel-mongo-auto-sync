@@ -21,7 +21,6 @@ use Tests\Models\User;
 class SyncTestCase extends TestCase
 {
     /**
-     * @param  array  $data
      * @return SubItem
      *
      * @throws Exception
@@ -48,7 +47,6 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param  array  $data
      * @return Item
      *
      * @throws Exception
@@ -76,7 +74,6 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param  array  $data
      * @return Navigation
      *
      * @throws Exception
@@ -112,7 +109,6 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param  array  $data
      * @return Category
      *
      * @throws Exception
@@ -144,7 +140,6 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param  array  $data
      * @return Permission
      *
      * @throws Exception
@@ -174,7 +169,6 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param  array  $data
      * @return Role
      *
      * @throws Exception
@@ -204,9 +198,6 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param  array  $data
-     * @param  int  $size
-     *
      * @throws Exception
      */
     public function createArticles(
@@ -249,9 +240,6 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param  array  $data
-     * @param  int  $size
-     *
      * @throws Exception
      */
     public function createUsers(
@@ -283,9 +271,6 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param  array  $data
-     * @param  int  $size
-     *
      * @throws Exception
      */
     public function prepareArticleData(
@@ -349,7 +334,7 @@ class SyncTestCase extends TestCase
             'primarycategory' => $miniPrimaryCategory,
             'categories' => $miniCategories,
         ];
-        //dd($relationshipValues);
+        // dd($relationshipValues);
         $mergedData = array_merge($relationshipValues, $data);
 
         $this->createArticles($mergedData, $size);
@@ -416,7 +401,6 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param  $category_id
      * @return object
      *
      * @throws Exception
@@ -441,7 +425,6 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param  $permission_id
      * @return object
      *
      * @throws Exception
@@ -465,7 +448,6 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param  $role_id
      * @return object
      *
      * @throws Exception
@@ -489,7 +471,6 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param  string  $autoincrement_id
      * @return false|string
      */
     public function getMiniArticle(string $autoincrement_id = '')
@@ -529,7 +510,6 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param  string  $navigation_id
      * @return false|string
      *
      * @throws Exception
@@ -560,7 +540,6 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param  $navigation
      * @return bool
      */
     public function isNavigationCreated($navigation)
@@ -569,7 +548,6 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param  $item
      * @return bool
      */
     public function isItemCreated($item)
@@ -578,9 +556,6 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param  Navigation  $navigation
-     * @param  SubItem  $sub_item
-     *
      * @throws Exception
      */
     public function cleanUp(Navigation $navigation, SubItem $sub_item)
@@ -590,7 +565,6 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param  $item
      * @return bool
      */
     public function isItemUpdatedCorrectly($item)
@@ -599,7 +573,6 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param  $navigation
      * @return bool
      */
     public function isNavigationUpdatedCorrectly($navigation)
@@ -608,7 +581,6 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param  $navigation
      * @return bool
      */
     public function isUpdated($navigation)
@@ -617,8 +589,6 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param  $navigation_id
-     * @param  $item_id
      * @return bool
      */
     public function isItemAddedInNavigationCollection($navigation_id, $item_id)
@@ -635,7 +605,6 @@ class SyncTestCase extends TestCase
     }
 
     /**
-     * @param  $navigation_code
      * @return false|string
      */
     public function getNavigation($navigation_code)

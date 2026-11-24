@@ -8,7 +8,6 @@ use Illuminate\Support\Arr;
 trait Helper
 {
     /**
-     * @param  $options
      * @return bool|mixed
      *
      * @throws Exception
@@ -21,7 +20,6 @@ trait Helper
     }
 
     /**
-     * @param  $options
      * @return bool|mixed
      *
      * @throws Exception
@@ -34,8 +32,6 @@ trait Helper
     }
 
     /**
-     * @param  $options
-     *
      * @throws Exception
      */
     private function validateOptions($options)
@@ -46,9 +42,6 @@ trait Helper
     }
 
     /**
-     * @param  $value
-     * @param  string  $expected
-     *
      * @throws Exception
      */
     private function validateOptionValue($value, string $expected)
@@ -59,9 +52,6 @@ trait Helper
     }
 
     /**
-     * @param  array  $options
-     * @param  string  $key
-     * @param  string  $expected
      * @return bool|mixed
      *
      * @throws Exception

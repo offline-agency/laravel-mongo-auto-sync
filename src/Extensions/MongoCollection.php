@@ -3,14 +3,21 @@
 namespace OfflineAgency\MongoAutoSync\Extensions;
 
 use Illuminate\Database\Eloquent\Collection;
+use OfflineAgency\MongoAutoSync\Http\Models\MDModel;
 
+/**
+ * @template TKey of array-key
+ * @template TModel of MDModel
+ *
+ * @extends Collection<TKey, TModel>
+ */
 class MongoCollection extends Collection
 {
-    //Method to retrieve a single element of a collection by slug, very useful for frontend
+    // Method to retrieve a single element of a collection by slug, very useful for frontend
     public function getBySlugAndStatus($category = null, $myslug = null)
     {
         $cl = cl();
-        //TODO: move primarycategory, status, slug on config file
+        // TODO: move primarycategory, status, slug on config file
         $out = $this->filter(function ($col) use ($category, $myslug, $cl) {
             if ($col->slug[$cl] === $myslug && $col->status === 'published' && $col->primarycategory->slug[$cl] === $category) {
                 return true;
@@ -18,7 +25,7 @@ class MongoCollection extends Collection
                 return false;
             }
         })->first();
-        if (! $out) {//Handler 404 Object Not Found
+        if (! $out) {// Handler 404 Object Not Found
             $obj_name = get_class($this->first());
             $message = __('error.'.$obj_name);
             abort(404, $message);
@@ -39,7 +46,7 @@ class MongoCollection extends Collection
                 return true;
             }
         })->first();
-        if (! $out) {//Handler 404 Object Not Found
+        if (! $out) {// Handler 404 Object Not Found
             $obj_name = get_class($this->first());
             $message = __('error.'.$obj_name);
             abort(404, $message);
@@ -48,7 +55,7 @@ class MongoCollection extends Collection
         }
     }
 
-    //Method to retrieve only not deleted item of a collection - Check on is_deleted custom property added on MDMODEL ovverriding init, delete
+    // Method to retrieve only not deleted item of a collection - Check on is_deleted custom property added on MDMODEL ovverriding init, delete
 
     /**
      * @return MongoCollection
@@ -64,7 +71,7 @@ class MongoCollection extends Collection
         });
     }
 
-    //Method to retrieve only published item of a collection - Check on status entry
+    // Method to retrieve only published item of a collection - Check on status entry
 
     /**
      * @return MongoCollection
@@ -80,7 +87,7 @@ class MongoCollection extends Collection
         });
     }
 
-    //Method to retrieve only public item of a collection - Check on status entry
+    // Method to retrieve only public item of a collection - Check on status entry
 
     /**
      * @return MongoCollection
@@ -96,10 +103,9 @@ class MongoCollection extends Collection
         });
     }
 
-    //Check if the collection has an item with ref_id equal to id of the obj pass in to the parameter, useful to mark a category already selected in edit
+    // Check if the collection has an item with ref_id equal to id of the obj pass in to the parameter, useful to mark a category already selected in edit
 
     /**
-     * @param  $obj
      * @return bool
      */
     public function hasItem($obj)
@@ -127,10 +133,9 @@ class MongoCollection extends Collection
         }
     }
 
-    //Move the item with ref_id equal to the parameter, useful for edit primary category
+    // Move the item with ref_id equal to the parameter, useful for edit primary category
 
     /**
-     * @param  $id
      * @return $this
      */
     public function moveFirst($id)
@@ -165,7 +170,6 @@ class MongoCollection extends Collection
     }
 
     /**
-     * @param  string  $aid
      * @return mixed
      */
     public function findByAID(string $aid)
@@ -176,7 +180,6 @@ class MongoCollection extends Collection
     }
 
     /**
-     * @param  $id
      * @return bool
      */
     public function hasPermission($id)
@@ -199,7 +202,6 @@ class MongoCollection extends Collection
     }
 
     /**
-     * @param  $name
      * @return bool
      */
     public function hasRole($name)
@@ -222,7 +224,6 @@ class MongoCollection extends Collection
     }
 
     /**
-     * @param  $name
      * @return bool
      */
     public function checkPermission($name)

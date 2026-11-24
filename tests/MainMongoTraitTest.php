@@ -4,35 +4,42 @@ namespace Tests;
 
 use Exception;
 use Illuminate\Http\Request;
-use OfflineAgency\MongoAutoSync\Traits\MainMongoTrait;
+use Tests\Support\MainMongoTraitHost;
 
 class MainMongoTraitTest extends SyncTestCase
 {
-    use MainMongoTrait;
+    protected MainMongoTraitHost $host;
 
-    public function test_checkPropertyExistence()
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->host = new MainMongoTraitHost;
+    }
+
+    public function test_check_property_existence()
     {
         $this->expectException(Exception::class);
 
-        $this->checkPropertyExistence(
+        $this->host->checkPropertyExistence(
             (object) ['key' => 'value'],
             'fake_key'
         );
     }
 
-    public function test_checkArrayExistence()
+    public function test_check_array_existence()
     {
         $this->expectException(Exception::class);
 
-        $this->checkArrayExistence(
+        $this->host->checkArrayExistence(
             ['key' => 'value'],
             'fake_key'
         );
     }
 
-    public function test_checkRequestExistence()
+    public function test_check_request_existence()
     {
-        $request = new Request();
+        $request = new Request;
 
         $this->expectException(Exception::class);
 
@@ -40,7 +47,7 @@ class MainMongoTraitTest extends SyncTestCase
             ['key' => 'value'],
         ]);
 
-        $this->checkRequestExistence(
+        $this->host->callCheckRequestExistence(
             $request,
             'fake_key'
         );
